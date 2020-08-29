@@ -287,7 +287,15 @@ int main(){/*{{{*/
 	/*Close input file*/
 	if(fclose(fid)!=0) std::cerr<<"could not close file " << inputfile;
 
-	/*Constants*/
+	/*Now prepare nodal functions and areas*/
+	double* alpha   = NULL;
+	double* beta    = NULL;
+	double* areas   = NULL;
+	double* weights = NULL;
+	NodalCoeffs(&areas,&alpha,&beta,index,x,y,nbe);
+	Weights(&weights,index,areas,nbe,nbv);
+
+	/*Other Constants needed to solve*/
 	int n_glen = 3;
 	int damp = 2;
 	double rele = 1e-1;
@@ -297,16 +305,9 @@ int main(){/*{{{*/
 	int nout_iter = 1000;
 	double epsi = 1e-8;
 
-	/*Initial guesses */
-	//int vx [nbv] = {0};
-	//int vy [nbv] = {0};
 	//double etan [nbe] = {1e14};
 	//int dvxdt [nbv] = {0};
 	//int dvydt [nbv] = {0};
-
-
-	//NodalCoeffs(x, y);
-	//Weights();
 	//derive_x_elem(vx);
 	//derive_y_elem(vy);
 
