@@ -191,6 +191,47 @@ void  FetchData(FILE* fid,double** pmatrix,int* pM,int* pN,const char* data_name
 	if(pM)*pM=M;
 	if(pN)*pN=N;
 }/*}}}*/
+void  WriteData(FILE* fid,double* matrix,int M,int N,const char* data_name){/*{{{*/
+
+	   /*First write enum: */
+   int length=(strlen(data_name)+1)*sizeof(char);
+   fwrite(&length,sizeof(int),1,fid);
+   fwrite(data_name,length,1,fid);
+
+   /*Now write time and step: */
+	double time = 0.;
+	int    step = 1;
+   fwrite(&time,sizeof(double),1,fid);
+   fwrite(&step,sizeof(int),1,fid);
+
+   /*writing a IssmDouble array, type is 3:*/
+   int type=3;
+   fwrite(&type,sizeof(int),1,fid);
+   fwrite(&M,sizeof(int),1,fid);
+   fwrite(&N,sizeof(int),1,fid);
+   fwrite(matrix,M*N*sizeof(double),1,fid);
+}/*}}}*/
+void  WriteData(FILE* fid,const char* string,const char* data_name){/*{{{*/
+
+	/*First write enum: */
+	int length=(strlen(data_name)+1)*sizeof(char);
+	fwrite(&length,sizeof(int),1,fid);
+	fwrite(data_name,length,1,fid);
+
+	/*Now write time and step: */
+	double time = 0.;
+	int    step = 1;
+	fwrite(&time,sizeof(double),1,fid);
+	fwrite(&step,sizeof(int),1,fid);
+
+	/*writing a string, type is 2: */
+   int type=2;
+   fwrite(&type,sizeof(int),1,fid);
+
+   length=(strlen(string)+1)*sizeof(char);
+   fwrite(&length,sizeof(int),1,fid);
+   fwrite(string,length,1,fid);
+}/*}}}*/
 /*}}}*/
 void NodalCoeffs(double** pareas,double** palpha,double** pbeta,int* index,double* x,double* y,int nbe){/*{{{*/
 
@@ -279,7 +320,8 @@ void elem2node(double* f_v,double* f_e,int* index,double* areas,double* weights,
 int main(){/*{{{*/
 
 	/*Open input binary file*/
-	const char* inputfile = "./input.bin";
+	const char* inputfile  = "./input.bin";
+	const char* outputfile = "./output.outbin";
 	FILE* fid = fopen(inputfile,"rb");
    if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
 
@@ -518,6 +560,14 @@ int main(){/*{{{*/
 	delete [] dvydy;
 	delete [] KVx;
 	delete [] KVy;
+
+	/*Write output*/
+	fid = fopen(outputfile,"wb");
+   if(fid==NULL) std::cerr<<"could not open file " << outputfile << " for binary reading or writing";
+	WriteData(fid,"PTsolution","SolutionType");
+	WriteData(fid,vx,nbv,1,"Vx");
+	WriteData(fid,vy,nbv,1,"Vy");
+	if(fclose(fid)!=0) std::cerr<<"could not close file " << outputfile;
 
    /*Cleanup and return*/
 	delete [] index;
