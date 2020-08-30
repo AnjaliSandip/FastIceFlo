@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string.h>
 #include <cmath>
 using namespace std;
 
@@ -40,7 +41,7 @@ FILE* SetFilePointerToData(FILE* fid,int* pcode,int* pvector_type,const char* da
 			if(fread(record_name,record_name_size*sizeof(char),1,fid)==0){
 				/*we have reached the end of the file. break: */
 				found=0;
-				delete record_name;
+				delete [] record_name;
 				break;
 			}
 			if(strncmp(record_name,mddot,3)!=0){
@@ -57,7 +58,7 @@ FILE* SetFilePointerToData(FILE* fid,int* pcode,int* pvector_type,const char* da
 					if(fread(&vector_type,sizeof(int),1,fid)!=1) std::cerr<<"Could not read vector_type";
 				}
 				found=1;
-				delete record_name;
+				delete [] record_name;
 				break;
 			}
 			else{
@@ -65,7 +66,7 @@ FILE* SetFilePointerToData(FILE* fid,int* pcode,int* pvector_type,const char* da
 				if(fread(&record_length,sizeof(long long),1,fid)!=1) std::cerr<<"Could not read record_length";
 				/*skip: */
 				fseek(fid,record_length,SEEK_CUR);
-				delete record_name;
+				delete [] record_name;
 			}
 		}
 	if(!found) std::cerr<<"could not find data with name \"" << data_name << "\" in binary file";
@@ -134,7 +135,7 @@ void  FetchData(FILE* fid,int** pmatrix,int* pM,int* pN,const char* data_name){/
 		integer_matrix=NULL;
 	}
 	/*Free ressources:*/
-	delete matrix;
+	delete [] matrix;
 
 	/*Assign output pointers: */
 	*pmatrix=integer_matrix;
@@ -287,7 +288,7 @@ void elem2node(double* f_v,double* f_e,int* index,double* areas,double* weights,
 int main(){/*{{{*/
 
 	/*Open input binary file*/
-	const char* inputfile = "/Users/mmorligh/Desktop/issmuci/trunk-jpl/execution/test101-08-24-2020-08-42-58-1175/test101.bin";
+	const char* inputfile = "./test101.bin";
 	FILE* fid = fopen(inputfile,"rb");
    if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
 
@@ -380,9 +381,9 @@ int main(){/*{{{*/
    }
 
    /*Compute RHS amd ML once for all*/
-   double *ML  = NULL;
-   double *Fvx = NULL;
-   double *Fvy = NULL;
+	double* ML  = new double[nbv];
+	double* Fvx = new double[nbv];
+	double* Fvy = new double[nbv];
    for(int i=0;i<nbv;i++){
       ML[i]  = 0.;
       Fvx[i] = 0.;
@@ -436,6 +437,7 @@ int main(){/*{{{*/
 		derive_y_elem(eps_yy,vy,index,beta,nbe);
 
 		/*More later...*/
+		break;
    }
 
    /*Cleanup and return*/
