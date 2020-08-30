@@ -415,7 +415,9 @@ int main(){/*{{{*/
 	double* dvydy   = new double[nbe];
 	double* KVx     = new double[nbv];
 	double* KVy     = new double[nbv];
-   for(int iter=0;iter<niter;iter++){
+	int     iter;
+	double  iterror;
+   for(iter=0;iter<niter;iter++){
 
       /*Timesteps - GPU KERNEL 1*/
       elem2node(eta_nbv,etan,index,areas,weights,nbe,nbv);
@@ -462,6 +464,15 @@ int main(){/*{{{*/
 		for(int i=0;i<nbv;i++){
 			vx[i] = vx[i] + dVxdt[i]*dtVx[i];
 			vy[i] = vy[i] + dVydt[i]*dtVy[i];
+			/*Apply Dirichlet boundary condition*/
+			if(vertexonboundary[i]){
+				vx[i] = 0.;
+				vy[i] = 0.;
+
+				/*Residual should also be 0 (for convergence)*/
+				dVxdt[i] = 0.;
+				dVydt[i] = 0.;
+			}
 		}
 
 		/*Update viscosity*/
@@ -476,9 +487,25 @@ int main(){/*{{{*/
 			etan[i] = min(exp(rele*log(eta_it) + (1-rele)*log(etan[i])),eta_0*1e5);
 		}
 
-		/*More later...*/
-		break;
+		/*Compute error*/
+		double normX = 0.;
+		double normY = 0.;
+		for(int i=0;i<nbv;i++){
+			normX += pow(dVxdt[i],2);
+			normY += pow(dVydt[i],2);
+		}
+		normX  = sqrt(normX)/double(nbv);
+		normY  = sqrt(normY)/double(nbv);
+
+		/*Check convergence*/
+		iterror = max(normX,normY);
+		if((iterror < epsi) && (iter > 2)) break;
+		if ((iter%nout_iter)==1){
+			std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
+		}
    }
+	std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
+
 	/*Cleanup intermediary vectors*/
 	delete [] eta_nbv;
 	delete [] dtVx;
