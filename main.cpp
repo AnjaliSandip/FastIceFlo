@@ -251,8 +251,8 @@ void derive_xy_elem(double* dfdx_e,double* dfdy_e,double* f,int* index,double* a
 		int n1 = index[i*3+0]-1;
 		int n2 = index[i*3+1]-1;
 		int n3 = index[i*3+2]-1;
-		dfdx_e[i] = f[n1]*alpha[i*3+0] + f[n2]*alpha[i*3+1] + f[n2]*alpha[i*3+2];
-		dfdy_e[i] = f[n1]*beta[i*3+0]  + f[n2]*beta[i*3+1]  + f[n2]*beta[i*3+2];
+		dfdx_e[i] = f[n1]*alpha[i*3+0] + f[n2]*alpha[i*3+1] + f[n3]*alpha[i*3+2];
+		dfdy_e[i] = f[n1]*beta[ i*3+0] + f[n2]*beta[ i*3+1] + f[n3]*beta[ i*3+2];
 	}
 }/*}}}*/
 void elem2node(double* f_v,double* f_e,int* index,double* areas,double* weights,int nbe,int nbv){/*{{{*/
@@ -329,7 +329,7 @@ int main(){/*{{{*/
 	double* dVxdt = new double[nbv];
 	for(int i=0;i<nbv;i++) dVxdt[i] = 0.;
 	double* dVydt = new double[nbv];
-	for(int i=0;i<nbv;i++) dVxdt[i] = 0.;
+	for(int i=0;i<nbv;i++) dVydt[i] = 0.;
 
 	/*Manage derivatives once for all*/
 	double* alpha   = NULL;
@@ -419,7 +419,7 @@ int main(){/*{{{*/
 	double* KVy     = new double[nbv];
 	int     iter;
 	double  iterror;
-   for(iter=0;iter<niter;iter++){
+   for(iter=1;iter<=niter;iter++){
 
       /*Timesteps - GPU KERNEL 1*/
       elem2node(eta_nbv,etan,index,areas,weights,nbe,nbv);
@@ -444,20 +444,12 @@ int main(){/*{{{*/
 			double eps_yy = dvydy[n];
 			double eps_xy = .5*(dvxdy[n]+dvydx[n]);
 			for(int i=0;i<3;i++){
-				for(int j=0;j<3;j++){
-					 KVx[index[n*3+i]-1] += 2*Helem[n]*eta_e*(2*eps_xx+eps_yy)*alpha[n*3+i]*areas[n] + \
-													2*Helem[n]*eta_e*eps_xy*beta[n*3+i]*areas[n];
-					 KVy[index[n*3+i]-1] += 2*Helem[n]*eta_e*eps_xy*alpha[n*3+i]*areas[n] + \
-													2*Helem[n]*eta_e*(2*eps_yy+eps_xx)*beta[n*3+i]*areas[n];
-				}
+				KVx[index[n*3+i]-1] += 2*Helem[n]*eta_e*(2*eps_xx+eps_yy)*alpha[n*3+i]*areas[n] + \
+											  2*Helem[n]*eta_e*eps_xy*beta[n*3+i]*areas[n];
+				KVy[index[n*3+i]-1] += 2*Helem[n]*eta_e*eps_xy*alpha[n*3+i]*areas[n] + \
+											  2*Helem[n]*eta_e*(2*eps_yy+eps_xx)*beta[n*3+i]*areas[n];
 			}
 		}
-		//for(int i=0;i<10;i++){
-		//	printf("%g %g\n",KVx[i],KVy[i]);
-		//	//printf("%g %g\n",dvxdx[i],dvydy[i]);
-		//	//printf("%g %g\n",vx[i],vy[i]);
-		//}
-		//return 1;
 
 		/*Velocity rate update in the x and y, refer to equation 19 in Rass paper*/
 		for(int i=0;i<nbv;i++){
@@ -524,6 +516,8 @@ int main(){/*{{{*/
 	delete [] dvxdy;
 	delete [] dvydx;
 	delete [] dvydy;
+	delete [] KVx;
+	delete [] KVy;
 
    /*Cleanup and return*/
 	delete [] index;
@@ -533,6 +527,7 @@ int main(){/*{{{*/
 	delete [] H;
 	delete [] surface;
 	delete [] rheology_B;
+	delete [] rheology_B_temp;
 	delete [] vx;
    delete [] vy;
    delete [] etan;
