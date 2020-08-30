@@ -317,6 +317,32 @@ void elem2node(double* f_v,double* f_e,int* index,double* areas,double* weights,
    for(int i=0;i<nbv;i++) f_v[i] = f_v[i]/weights[i];
 
 }/*}}}*/
+void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,double* areas,double* weights,int nbe,int nbv){/*{{{*/
+
+   /*Get element size*/
+   double  xmin,xmax,ymin,ymax;
+   double* dx_elem = new double[nbe];
+   double* dy_elem = new double[nbe];
+   for(int i=0;i<nbe;i++){
+      int n1 = index[i*3+0]-1;
+      int n2 = index[i*3+1]-1;
+      int n3 = index[i*3+2]-1;
+      xmin = min(min(x[n1],x[n2]),x[n3]);
+      xmax = max(max(x[n1],x[n2]),x[n3]);
+      ymin = min(min(y[n1],y[n2]),y[n3]);
+      ymax = max(max(y[n1],y[n2]),y[n3]);
+      dx_elem[i] = xmax - xmin;
+      dy_elem[i] = ymax - ymin;
+   }
+
+	/*Average over each node*/
+   elem2node(resolx,dx_elem,index,areas,weights,nbe,nbv);
+   elem2node(resoly,dy_elem,index,areas,weights,nbe,nbv);
+
+	/*Cleanup and return*/
+   delete [] dx_elem;
+   delete [] dy_elem;
+}/*}}}*/
 int main(){/*{{{*/
 
 	/*Open input binary file*/
@@ -382,26 +408,9 @@ int main(){/*{{{*/
 	Weights(&weights,index,areas,nbe,nbv);
 
    /*MeshSize*/
-   double xmin,xmax,ymin,ymax;
-   double* dx_elem = new double[nbe];
-   double* dy_elem = new double[nbe];
-   for(int i=0;i<nbe;i++){
-      int n1 = index[i*3+0]-1;
-      int n2 = index[i*3+1]-1;
-      int n3 = index[i*3+2]-1;
-      xmin = min(min(x[n1],x[n2]),x[n3]);
-      xmax = max(max(x[n1],x[n2]),x[n3]);
-      ymin = min(min(y[n1],y[n2]),y[n3]);
-      ymax = max(max(y[n1],y[n2]),y[n3]);
-      dx_elem[i] = xmax - xmin;
-      dy_elem[i] = ymax - ymin;
-   }
-   double* resolx = new double[nbv];
-   double* resoly = new double[nbv];
-   elem2node(resolx,dx_elem,index,areas,weights,nbe,nbv);
-   elem2node(resoly,dy_elem,index,areas,weights,nbe,nbv);
-   delete [] dx_elem;
-   delete [] dy_elem;
+	double* resolx = new double[nbv];
+	double* resoly = new double[nbv];
+	MeshSize(resolx,resoly,index,x,y,areas,weights,nbe,nbv);
 
    /*Physical properties once for all*/
    double* dsdx = new double[nbe];
@@ -451,8 +460,6 @@ int main(){/*{{{*/
 
    /*Main loop, allocate a few vectors needed for the computation*/
 	double* eta_nbv = new double[nbv];
-	double* dtVx    = new double[nbv];
-	double* dtVy    = new double[nbv];
 	double* dvxdx   = new double[nbe];
 	double* dvxdy   = new double[nbe];
 	double* dvydx   = new double[nbe];
@@ -462,14 +469,6 @@ int main(){/*{{{*/
 	int     iter;
 	double  iterror;
    for(iter=1;iter<=niter;iter++){
-
-      /*Timesteps - GPU KERNEL 1*/
-      elem2node(eta_nbv,etan,index,areas,weights,nbe,nbv);
-      /*Explicit CFL time step for viscous flow, x and y directions*/
-      for(int i=0;i<nbv;i++){
-         dtVx[i] = rho*pow(resolx[i],2)/(4*H[i]*eta_nbv[i]*(1.+eta_b)*4.1);
-         dtVy[i] = rho*pow(resoly[i],2)/(4*H[i]*eta_nbv[i]*(1.+eta_b)*4.1);
-      }
 
 		/*Strain rates - GPU KERNEL 2*/
 		derive_xy_elem(dvxdx,dvxdy,vx,index,alpha,beta,nbe);
@@ -493,20 +492,30 @@ int main(){/*{{{*/
 			}
 		}
 
+		/*Get current viscosity on nodes (Needed for time stepping)*/
+		elem2node(eta_nbv,etan,index,areas,weights,nbe,nbv);
+
 		/*Velocity rate update in the x and y, refer to equation 19 in Rass paper*/
+		double normX = 0.;
+		double normY = 0.;
 		for(int i=0;i<nbv;i++){
+
+			/*1. Get time derivative based on residual (dV/dt)*/
 			double ResVx =  1./(rho*ML[i])*(-KVx[i] + Fvx[i]); //rate of velocity in the x, equation 23
 			double ResVy =  1./(rho*ML[i])*(-KVy[i] + Fvy[i]); //rate of velocity in the y, equation 24
-
 			dVxdt[i] = dVxdt[i]*(1.-damp/20.) + ResVx;
 			dVydt[i] = dVydt[i]*(1.-damp/20.) + ResVy;
-		}
-
-		/*velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
-		for(int i=0;i<nbv;i++){
 			if(isnan(dVxdt[i])){ std::cerr<<"Found NaN in dVxdt[i]"; return 1;}
-			vx[i] = vx[i] + dVxdt[i]*dtVx[i];
-			vy[i] = vy[i] + dVydt[i]*dtVy[i];
+			if(isnan(dVydt[i])){ std::cerr<<"Found NaN in dVydt[i]"; return 1;}
+
+			/*2. Explicit CFL time step for viscous flow, x and y directions*/
+         double dtVx = rho*pow(resolx[i],2)/(4*H[i]*eta_nbv[i]*(1.+eta_b)*4.1);
+         double dtVy = rho*pow(resoly[i],2)/(4*H[i]*eta_nbv[i]*(1.+eta_b)*4.1);
+
+			/*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
+			vx[i] = vx[i] + dVxdt[i]*dtVx;
+			vy[i] = vy[i] + dVydt[i]*dtVy;
+
 			/*Apply Dirichlet boundary condition*/
 			if(vertexonboundary[i]){
 				vx[i] = 0.;
@@ -516,9 +525,24 @@ int main(){/*{{{*/
 				dVxdt[i] = 0.;
 				dVydt[i] = 0.;
 			}
+
+			/*4. Update error*/
+			normX += pow(dVxdt[i],2);
+			normY += pow(dVydt[i],2);
 		}
 
-		/*Update viscosity*/
+		/*Get final error estimate*/
+		normX  = sqrt(normX)/double(nbv);
+		normY  = sqrt(normY)/double(nbv);
+
+		/*Check convergence*/
+		iterror = max(normX,normY);
+		if((iterror < epsi) && (iter > 2)) break;
+		if ((iter%nout_iter)==1){
+			std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
+		}
+
+		/*LAST: Update viscosity*/
 		for(int i=0;i<nbe;i++){
 			double eps_xx = dvxdx[i];
 			double eps_yy = dvydy[i];
@@ -531,29 +555,11 @@ int main(){/*{{{*/
 			if(isnan(etan[i])){ std::cerr<<"Found NaN in etan[i]"; return 1;}
 		}
 
-		/*Compute error*/
-		double normX = 0.;
-		double normY = 0.;
-		for(int i=0;i<nbv;i++){
-			normX += pow(dVxdt[i],2);
-			normY += pow(dVydt[i],2);
-		}
-		normX  = sqrt(normX)/double(nbv);
-		normY  = sqrt(normY)/double(nbv);
-
-		/*Check convergence*/
-		iterror = max(normX,normY);
-		if((iterror < epsi) && (iter > 2)) break;
-		if ((iter%nout_iter)==1){
-			std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
-		}
    }
 	std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
 
 	/*Cleanup intermediary vectors*/
 	delete [] eta_nbv;
-	delete [] dtVx;
-	delete [] dtVy;
 	delete [] dvxdx;
 	delete [] dvxdy;
 	delete [] dvydx;
