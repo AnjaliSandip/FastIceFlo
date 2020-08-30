@@ -213,7 +213,7 @@ void NodalCoeffs(double** pareas,double** palpha,double** pbeta,int* index,doubl
         double invdet = 1./(x1 * (y2 - y3) - x2 * (y1 - y3) + x3 * (y1 - y2));
 
         alpha[i*3+0] = invdet * (y2 - y3);
-        alpha[i*3+1] = invdet * (y2 - y3);
+        alpha[i*3+1] = invdet * (y3 - y1);
         alpha[i*3+2] = invdet * (y1 - y2);
 
         beta[i*3+0] = invdet * (x3 - x2);
@@ -431,7 +431,7 @@ int main(){/*{{{*/
 
 		/*Strain rates - GPU KERNEL 2*/
 		derive_xy_elem(dvxdx,dvxdy,vx,index,alpha,beta,nbe);
-		derive_xy_elem(dvydx,dvydy,vx,index,alpha,beta,nbe);
+		derive_xy_elem(dvydx,dvydy,vy,index,alpha,beta,nbe);
 
 		/*'KV' term in equation 22*/
 		for(int i=0;i<nbv;i++){
@@ -452,6 +452,12 @@ int main(){/*{{{*/
 				}
 			}
 		}
+		//for(int i=0;i<10;i++){
+		//	printf("%g %g\n",KVx[i],KVy[i]);
+		//	//printf("%g %g\n",dvxdx[i],dvydy[i]);
+		//	//printf("%g %g\n",vx[i],vy[i]);
+		//}
+		//return 1;
 
 		/*Velocity rate update in the x and y, refer to equation 19 in Rass paper*/
 		for(int i=0;i<nbv;i++){
