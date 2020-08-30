@@ -244,25 +244,16 @@ void Weights(double** pweights,int* index,double* areas,int nbe,int nbv){/*{{{*/
 	 /*Assign output pointer*/
 	 *pweights = weights;
 }/*}}}*/
-void derive_x_elem(double* dfdx_e,double* f,int* index,double* alpha,int nbe){/*{{{*/
+void derive_xy_elem(double* dfdx_e,double* dfdy_e,double* f,int* index,double* alpha,double* beta,int nbe){/*{{{*/
 
-	/*WARNING!! Assume that dfdx_e has been properly allocated*/
+	/*WARNING!! Assume that dfdx_e and dfdy_e have been properly allocated*/
 	for(int i=0;i<nbe;i++){
 		int n1 = index[i*3+0]-1;
 		int n2 = index[i*3+1]-1;
 		int n3 = index[i*3+2]-1;
-		dfdx_e[i]=f[n1]*alpha[i*3+0] + f[n2]*alpha[i*3+1] + f[n2]*alpha[i*3+2];
+		dfdx_e[i] = f[n1]*alpha[i*3+0] + f[n2]*alpha[i*3+1] + f[n2]*alpha[i*3+2];
+		dfdy_e[i] = f[n1]*beta[i*3+0]  + f[n2]*beta[i*3+1]  + f[n2]*beta[i*3+2];
 	}
-}/*}}}*/
-void derive_y_elem(double* dfdy_e,double* f,int* index,double* beta,int nbe){/*{{{*/
-
-   /*WARNING!! Assume that dfdx_e has been properly allocated*/
-   for(int i=0;i<nbe;i++){
-      int n1 = index[i*3+0]-1;
-      int n2 = index[i*3+1]-1;
-      int n3 = index[i*3+2]-1;
-      dfdy_e[i]=f[n1]*beta[i*3+0] + f[n2]*beta[i*3+1] + f[n2]*beta[i*3+2];
-   }
 }/*}}}*/
 void elem2node(double* f_v,double* f_e,int* index,double* areas,double* weights,int nbe,int nbv){/*{{{*/
 
@@ -324,7 +315,7 @@ int main(){/*{{{*/
 
 	/*Constants*/
 	int    n_glen    = 3;
-	int    damp      = 2;
+	double damp      = 2.;
 	double rele      = 1e-1;
 	double eta_b     = 0.5;
 	double eta_0     = 1.e+14 / 2.;
@@ -373,8 +364,7 @@ int main(){/*{{{*/
    /*Physical properties once for all*/
    double* dsdx = new double[nbe];
    double* dsdy = new double[nbe];
-   derive_x_elem(dsdx,surface,index,alpha,nbe);
-   derive_y_elem(dsdy,surface,index,beta,nbe);
+   derive_xy_elem(dsdx,dsdy,surface,index,alpha,beta,nbe);
    double* Helem = new double[nbe];
    for(int i=0;i<nbe;i++){
       Helem[i] = 1./3. * (H[index[i*3+0]-1] + H[index[i*3+1]-1] + H[index[i*3+2]-1]);
@@ -395,9 +385,9 @@ int main(){/*{{{*/
          for(int j=0;j<3;j++){
             // \int_E phi_i * phi_i dE = A/6 and % \int_E phi_i * phi_j dE = A/12
             if(i==j)
-             ML[index[n*3+j]-1] += areas[n]/6;
+             ML[index[n*3+j]-1] += areas[n]/6.;
             else     
-             ML[index[n*3+j]-1] += areas[n]/12;
+             ML[index[n*3+j]-1] += areas[n]/12.;
          }
       }
          /*RHS, 'F ' in equation 22*/
@@ -415,13 +405,16 @@ int main(){/*{{{*/
       }
    }
 
-   /*Main loop!*/
+   /*Main loop, allocate a few vectors needed for the computation*/
 	double* eta_nbv = new double[nbv];
 	double* dtVx    = new double[nbv];
 	double* dtVy    = new double[nbv];
-	double* eps_xx  = new double[nbe];
-	double* eps_yy  = new double[nbe];
-	double* eps_xy  = new double[nbe];
+	double* dvxdx   = new double[nbe];
+	double* dvxdy   = new double[nbe];
+	double* dvydx   = new double[nbe];
+	double* dvydy   = new double[nbe];
+	double* KVx     = new double[nbv];
+	double* KVy     = new double[nbv];
    for(int iter=0;iter<niter;iter++){
 
       /*Timesteps - GPU KERNEL 1*/
@@ -433,12 +426,67 @@ int main(){/*{{{*/
       }
 
 		/*Strain rates - GPU KERNEL 2*/
-		derive_x_elem(eps_xx,vx,index,alpha,nbe);
-		derive_y_elem(eps_yy,vy,index,beta,nbe);
+		derive_xy_elem(dvxdx,dvxdy,vx,index,alpha,beta,nbe);
+		derive_xy_elem(dvydx,dvydy,vx,index,alpha,beta,nbe);
+
+		/*'KV' term in equation 22*/
+		for(int i=0;i<nbv;i++){
+			KVx[i] = 0.;
+			KVy[i] = 0.;
+		}
+		for(int n=0;n<nbe;n++){
+			double eta_e  = etan[n];
+			double eps_xx = dvxdx[n];
+			double eps_yy = dvydy[n];
+			double eps_xy = .5*(dvxdy[n]+dvydx[n]);
+			for(int i=0;i<3;i++){
+				for(int j=0;j<3;j++){
+					 KVx[index[n*3+i]-1] += 2*Helem[n]*eta_e*(2*eps_xx+eps_yy)*alpha[n*3+i]*areas[n] + \
+													2*Helem[n]*eta_e*eps_xy*beta[n*3+i]*areas[n];
+					 KVy[index[n*3+i]-1] += 2*Helem[n]*eta_e*eps_xy*alpha[n*3+i]*areas[n] + \
+													2*Helem[n]*eta_e*(2*eps_yy+eps_xx)*beta[n*3+i]*areas[n];
+				}
+			}
+		}
+
+		/*Velocity rate update in the x and y, refer to equation 19 in Rass paper*/
+		for(int i=0;i<nbv;i++){
+			double ResVx =  1./(rho*ML[i])*(-KVx[i] + Fvx[i]); //rate of velocity in the x, equation 23
+			double ResVy =  1./(rho*ML[i])*(-KVy[i] + Fvy[i]); //rate of velocity in the y, equation 24
+
+			dVxdt[i] = dVxdt[i]*(1.-damp/20.) + ResVx;
+			dVydt[i] = dVydt[i]*(1.-damp/20.) + ResVy;
+		}
+
+		/*velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
+		for(int i=0;i<nbv;i++){
+			vx[i] = vx[i] + dVxdt[i]*dtVx[i];
+			vy[i] = vy[i] + dVydt[i]*dtVy[i];
+		}
+
+		/*Update viscosity*/
+		for(int i=0;i<nbe;i++){
+			double eps_xx = dvxdx[i];
+			double eps_yy = dvydy[i];
+			double eps_xy = .5*(dvxdy[i]+dvydx[i]);
+			double EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy;
+			double eta_it = 1.e+14/2.;
+			if(EII2>0.) eta_it = rheology_B[i]/(2*pow(EII2,(n_glen-1)/(2*n_glen)));
+
+			etan[i] = min(exp(rele*log(eta_it) + (1-rele)*log(etan[i])),eta_0*1e5);
+		}
 
 		/*More later...*/
 		break;
    }
+	/*Cleanup intermediary vectors*/
+	delete [] eta_nbv;
+	delete [] dtVx;
+	delete [] dtVy;
+	delete [] dvxdx;
+	delete [] dvxdy;
+	delete [] dvydx;
+	delete [] dvydy;
 
    /*Cleanup and return*/
 	delete [] index;
@@ -465,10 +513,6 @@ int main(){/*{{{*/
    delete [] ML;
    delete [] Fvx;
    delete [] Fvy;
-	delete [] dtVx;
-	delete [] dtVy;
-	delete [] eps_xx;
-	delete [] eps_yy;
-	delete [] eps_xy;
+
 	return 0;
 }/*}}}*/
