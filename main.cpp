@@ -279,7 +279,7 @@ void elem2node(double* f_v,double* f_e,int* index,double* areas,double* weights,
 int main(){/*{{{*/
 
 	/*Open input binary file*/
-	const char* inputfile = "./test101.bin";
+	const char* inputfile = "./input.bin";
 	FILE* fid = fopen(inputfile,"rb");
    if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
 
@@ -292,7 +292,7 @@ int main(){/*{{{*/
 	double *y                = NULL;
 	double *H                = NULL;
 	double *surface          = NULL;
-	double *rheology_B       = NULL;
+	double *rheology_B_temp  = NULL;
 	double *vx               = NULL;
 	double *vy               = NULL;
 	FetchData(fid,&nbe,"md.mesh.numberofelements");
@@ -306,7 +306,7 @@ int main(){/*{{{*/
 	FetchData(fid,&y,&M,&N,"md.mesh.y");
 	FetchData(fid,&H,&M,&N,"md.geometry.thickness");
 	FetchData(fid,&surface,&M,&N,"md.geometry.surface");
-   FetchData(fid,&rheology_B,&M,&N,"md.materials.rheology_B");
+   FetchData(fid,&rheology_B_temp,&M,&N,"md.materials.rheology_B");
 	FetchData(fid,&vx,&M,&N,"md.initialization.vx");
 	FetchData(fid,&vy,&M,&N,"md.initialization.vy");
 
@@ -314,7 +314,7 @@ int main(){/*{{{*/
 	if(fclose(fid)!=0) std::cerr<<"could not close file " << inputfile;
 
 	/*Constants*/
-	int    n_glen    = 3;
+	double n_glen    = 3.;
 	double damp      = 2.;
 	double rele      = 1e-1;
 	double eta_b     = 0.5;
@@ -365,9 +365,11 @@ int main(){/*{{{*/
    double* dsdx = new double[nbe];
    double* dsdy = new double[nbe];
    derive_xy_elem(dsdx,dsdy,surface,index,alpha,beta,nbe);
-   double* Helem = new double[nbe];
+   double* Helem      = new double[nbe];
+	double* rheology_B = new double[nbe];
    for(int i=0;i<nbe;i++){
       Helem[i] = 1./3. * (H[index[i*3+0]-1] + H[index[i*3+1]-1] + H[index[i*3+2]-1]);
+		rheology_B[i] = 1./3. * (rheology_B_temp[index[i*3+0]-1] + rheology_B_temp[index[i*3+1]-1] + rheology_B_temp[index[i*3+2]-1]);
    }
 
    /*Compute RHS amd ML once for all*/
@@ -462,6 +464,7 @@ int main(){/*{{{*/
 
 		/*velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
 		for(int i=0;i<nbv;i++){
+			if(isnan(dVxdt[i])){ std::cerr<<"Found NaN in dVxdt[i]"; return 1;}
 			vx[i] = vx[i] + dVxdt[i]*dtVx[i];
 			vy[i] = vy[i] + dVydt[i]*dtVy[i];
 			/*Apply Dirichlet boundary condition*/
@@ -482,9 +485,10 @@ int main(){/*{{{*/
 			double eps_xy = .5*(dvxdy[i]+dvydx[i]);
 			double EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy;
 			double eta_it = 1.e+14/2.;
-			if(EII2>0.) eta_it = rheology_B[i]/(2*pow(EII2,(n_glen-1)/(2*n_glen)));
+			if(EII2>0.) eta_it = rheology_B[i]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
 
 			etan[i] = min(exp(rele*log(eta_it) + (1-rele)*log(etan[i])),eta_0*1e5);
+			if(isnan(etan[i])){ std::cerr<<"Found NaN in etan[i]"; return 1;}
 		}
 
 		/*Compute error*/
