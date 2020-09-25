@@ -479,16 +479,6 @@ KVy_2[ix] = 2*Helem[ix]*eta_e*eps_xy*alpha[ix*3+2]*areas[ix] + 2*Helem[ix]*eta_e
 
 
 
-   
-  
-// for(int i=0;i<3;i++){
-  //             KVxx[ix*3 + i] = 2*Helem[ix]*eta_e*(2*eps_xx + eps_yy)*alpha[ix*3+i]*areas[ix] + 2*Helem[ix]*eta_e*eps_xy*beta[ix*3+i]*areas[ix];
-              //  KVyy[ix*3 + i] = 2*Helem[ix]*eta_e*eps_xy*alpha[ix*3+i]*areas[ix] + 2*Helem[ix]*eta_e*(2*eps_yy + eps_xx)*beta[ix*3+i]*areas[ix];
-    //        } 
-
-//__syncthreads();
-
-
 if (ix == 0)
 
     {
@@ -567,8 +557,8 @@ __syncthreads();
 
 	        /*1. Get time derivative based on residual (dV/dt)*/
 	        if (ix < nbv)
-	        ResVx = 1./(rho*ML[ix])*(-KVx[ix]);   // //rate of velocity in the x, equation 23
-            //     ResVx = rho* ML[ix]; 
+	        ResVx = 1./(rho*ML[ix])*(-KVx[ix] +Fvx[ix]);   // //rate of velocity in the x, equation 23
+     
 
                 dVxdt[ix] =  ResVx;
 
