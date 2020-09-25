@@ -386,7 +386,7 @@ int main(){/*{{{*/
 	double damp      = 2.;
 	double rele      = 1e-1;
 	double eta_b     = 0.5;
-	double eta_0     = 1.e+14 / 2.;
+	double eta_0     = 1.e+14/2.;
 	int    niter     = 5e6;
 	int    nout_iter = 1000;
 	double epsi      = 1e-8;
@@ -443,7 +443,7 @@ int main(){/*{{{*/
              ML[index[n*3+j]-1] += areas[n]/12.;
          }
       }
-         /*RHS, 'F ' in equation 22*/
+		/*RHS, 'F ' in equation 22*/
       for(int i=0;i<3;i++){
          for(int j=0;j<3;j++){
             if(i==j){
@@ -532,8 +532,8 @@ int main(){/*{{{*/
 		}
 
 		/*Get final error estimate*/
-		normX  = sqrt(normX)/double(nbv);
-		normY  = sqrt(normY)/double(nbv);
+		normX = sqrt(normX)/double(nbv);
+		normY = sqrt(normY)/double(nbv);
 
 		/*Check convergence*/
 		iterror = max(normX,normY);
