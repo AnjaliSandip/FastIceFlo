@@ -1,6 +1,6 @@
 %md=squaremesh(model(),1000000,1000000,20,20);
 md=triangle(model(),'./TestFiles/Square.exp',50000.);
-%md=triangle(model(),'./TestFiles/Square.exp',20000.);
+md=triangle(model(),'./TestFiles/Square.exp',20000.);
 md=setmask(md,'all','');
 md=parameterize(md,'./TestFiles/SquareShelfConstrained.par');
 md.stressbalance.restol=1e-6;
@@ -120,38 +120,35 @@ for iter = 1:niter % Pseudo-Transient cycles
 	%Velocity rate update in the x and y, refer to equation 19 in Rass paper
 	normX = 0;
 	normY = 0;
-	for i=1:nbv
 
-		%1. Get time derivative based on residual (dV/dt)
-		ResVx =  1./(rho*ML(i))*(-KVx(i) + Fvx(i)); %rate of velocity in the x, equation 23
-		ResVy =  1./(rho*ML(i))*(-KVy(i) + Fvy(i)); %rate of velocity in the y, equation 24
-		dVxdt(i) = dVxdt(i)*(1.-damp/20.) + ResVx;
-		dVydt(i) = dVydt(i)*(1.-damp/20.) + ResVy;
-		if(isnan(dVxdt(i))) error('Found NaN in dVxdt[i]'); end
-		if(isnan(dVydt(i))) error('Found NaN in dVydt[i]'); end
+	%1. Get time derivative based on residual (dV/dt)
+	ResVx =  1./(rho*ML).*(-KVx + Fvx); %rate of velocity in the x, equation 23
+	ResVy =  1./(rho*ML).*(-KVy + Fvy); %rate of velocity in the y, equation 24
+	dVxdt = dVxdt*(1.-damp/20.) + ResVx;
+	dVydt = dVydt*(1.-damp/20.) + ResVy;
+	if(any(isnan(dVxdt))) error('Found NaN in dVxdt[i]'); end
+	if(any(isnan(dVydt))) error('Found NaN in dVydt[i]'); end
 
-		%2. Explicit CFL time step for viscous flow, x and y directions
-		dtVx = rho*resolx(i)^2/(4*H(i)*eta_nbv(i)*(1.+eta_b)*4.1);
-		dtVy = rho*resoly(i)^2/(4*H(i)*eta_nbv(i)*(1.+eta_b)*4.1);
+	%2. Explicit CFL time step for viscous flow, x and y directions
+	dtVx = rho*resolx.^2./(4*H.*eta_nbv*(1.+eta_b)*4.1);
+	dtVy = rho*resoly.^2./(4*H.*eta_nbv*(1.+eta_b)*4.1);
 
-		%3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy
-		vx(i) = vx(i) + dVxdt(i)*dtVx;
-		vy(i) = vy(i) + dVydt(i)*dtVy;
+	%3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy
+	vx = vx + dVxdt.*dtVx;
+	vy = vy + dVydt.*dtVy;
 
-		%Apply Dirichlet boundary condition
-		if(vertexonboundary(i))
-			vx(i) = 0.;
-			vy(i) = 0.;
+	%Apply Dirichlet boundary condition
+	pos = find(vertexonboundary);
+	vx(pos) = 0.;
+	vy(pos) = 0.;
 
-			%Residual should also be 0 (for convergence)
-			dVxdt(i) = 0.;
-			dVydt(i) = 0.;
-		end
+	%Residual should also be 0 (for convergence)
+	dVxdt(pos) = 0.;
+	dVydt(pos) = 0.;
 
-		%4. Update error
-		normX = normX + dVxdt(i)^2;
-		normY = normY + dVydt(i)^2;
-	end
+	%4. Update error
+	normX = normX + sum(dVxdt.^2);
+	normY = normY + sum(dVydt.^2);
 
 	%Get final error estimate
 	normX = sqrt(normX)/nbv;
