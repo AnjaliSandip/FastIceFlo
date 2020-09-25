@@ -1,6 +1,18 @@
-%md=squaremesh(model(),1000000,1000000,20,20);
-md=triangle(model(),'./TestFiles/Square.exp',50000.);
-md=triangle(model(),'./TestFiles/Square.exp',20000.);
+%Choose your mesh
+meshid = 4;
+switch(meshid)
+	case 1 %uniform structured
+		md=squaremesh(model(),1000000,1000000,20,20);
+	case 2 %uniform unstructured coarse
+		md=triangle(model(),'./TestFiles/Square.exp',50000.);
+	case 3 %uniform unstructured finer
+		md=triangle(model(),'./TestFiles/Square.exp',20000.);
+	case 4 %non unfiform unstructured
+		hvertices=[100e3;100e3;1e3;100e3];
+		md=bamg(md,'domain','TestFiles/Square.exp','hvertices',hvertices);
+	otherwise
+		error('not supported yet');
+end
 md=setmask(md,'all','');
 md=parameterize(md,'./TestFiles/SquareShelfConstrained.par');
 md.stressbalance.restol=1e-6;
