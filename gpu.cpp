@@ -502,17 +502,19 @@ int main(){/*{{{*/
 		double ny  = -(x[pairids[1]]-x[pairids[0]])/len;
 
 		/*RHS*/
-		for(int k=0;k<2;k++){
-			for(int i=0;i<2;i++){
-				for(int j=0;j<2;j++){
-					if(i==j && j==k){
-						Fvx[pairids[i]] += 1./2.*(-rho_w*g*pow(base[pairids[j]],2)+rho*g*pow(H[pairids[j]],2))*nx*len/4.;
-						Fvy[pairids[i]] += 1./2.*(-rho_w*g*pow(base[pairids[j]],2)+rho*g*pow(H[pairids[j]],2))*ny*len/4.;
-					}
-					else{
-						Fvx[pairids[i]] += 1./2.*(-rho_w*g*pow(base[pairids[j]],2)+rho*g*pow(H[pairids[j]],2))*nx*len/12.;
-						Fvy[pairids[i]] += 1./2.*(-rho_w*g*pow(base[pairids[j]],2)+rho*g*pow(H[pairids[j]],2))*ny*len/12.;
-					}
+		for(int i=0;i<2;i++){
+			for(int j=0;j<2;j++){
+				double bibj = base[pairids[i]]*base[pairids[j]];
+				double HiHj = H[pairids[i]]*H[pairids[j]];
+				for(int k=0;k<2;k++){
+					  if(i==j && j==k){
+						  Fvx[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/4.;
+						  Fvy[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/4.;
+					  }
+					  else{
+						  Fvx[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/12.;
+						  Fvy[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/12.;
+					  }
 				}
 			}
 		}

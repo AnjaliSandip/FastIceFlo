@@ -135,15 +135,17 @@ for n=1:nbe
 	ny  = -(x(pairids(2))-x(pairids(1)))/len;
 
 	%RHS
-	for k=1:2
-		for i=1:2
-			for j=1:2
+	for i=1:2
+		for j=1:2
+			bibj = base(pairids(i))*base(pairids(j));
+			HiHj = H(pairids(i))*H(pairids(j));
+			for k=1:2
 				if i==j && j==k
-					Fvx(pairids(i)) = Fvx(pairids(i)) +1/2*(-rho_w*g*base(pairids(j))^2+rho*g*H(pairids(j))^2)*nx*len/4.;
-					Fvy(pairids(i)) = Fvy(pairids(i)) +1/2*(-rho_w*g*base(pairids(j))^2+rho*g*H(pairids(j))^2)*ny*len/4.;
+					Fvx(pairids(k)) = Fvx(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/4.;
+					Fvy(pairids(k)) = Fvy(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/4.;
 				else
-					Fvx(pairids(i)) = Fvx(pairids(i)) +1/2*(-rho_w*g*base(pairids(j))^2+rho*g*H(pairids(j))^2)*nx*len/12.;
-					Fvy(pairids(i)) = Fvy(pairids(i)) +1/2*(-rho_w*g*base(pairids(j))^2+rho*g*H(pairids(j))^2)*ny*len/12.;
+					Fvx(pairids(k)) = Fvx(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/12.;
+					Fvy(pairids(k)) = Fvy(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/12.;
 				end
 			end
 		end
