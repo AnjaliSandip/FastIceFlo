@@ -1,5 +1,5 @@
 %Choose your mesh
-meshid = 4;
+meshid = 2;
 switch(meshid)
 	case 1 %uniform structured
 		md=squaremesh(model(),1000000,1000000,20,20);
@@ -15,6 +15,7 @@ switch(meshid)
 end
 md=setmask(md,'all','');
 md=parameterize(md,'./TestFiles/SquareShelfConstrained.par');
+md=parameterize(md,'./TestFiles/SquareShelf.par');
 md.stressbalance.restol=1e-6;
 md=setflowequation(md,'SSA','all');
 
@@ -29,13 +30,18 @@ nbe              = md.mesh.numberofelements;
 nbv              = md.mesh.numberofvertices;
 g                = md.constants.g;
 rho              = md.materials.rho_ice;
+rho_w            = md.materials.rho_water;
 yts              = md.constants.yts;
 index            = md.mesh.elements;
-vertexonboundary = md.mesh.vertexonboundary;
+spcvx            = md.stressbalance.spcvx;
+spcvy            = md.stressbalance.spcvy;
 x                = md.mesh.x;
 y                = md.mesh.y;
 H                = md.geometry.thickness;
 surface          = md.geometry.surface;
+base             = md.geometry.base;
+ice_levelset     = md.mask.ice_levelset;
+ocean_levelset   = md.mask.ocean_levelset;
 rheology_B_temp  = md.materials.rheology_B;
 vx               = md.initialization.vx/yts;
 vy               = md.initialization.vy/yts;
@@ -99,6 +105,51 @@ for n=1:nbe
 	end
 end
 
+%Add ocean water pressure at the ice front
+for n=1:nbe
+	%Determine if there is an ice front there
+	level = ice_levelset(index(n,:));
+	count = 0;
+	for i=1:3
+		if(level(i)<0.) count = count+1; end
+	end
+	if (count~=1) continue; end
+
+	%Ok this element has an ice front, get indices of the 2 vertices
+	seg1 = [index(n,1) index(n,2)];
+	seg2 = [index(n,2) index(n,3)];
+	seg3 = [index(n,3) index(n,1)];
+	if     ice_levelset(seg1(1))>=0 && ice_levelset(seg1(2))>=0
+		pairids = seg1;
+	elseif ice_levelset(seg2(1))>=0 && ice_levelset(seg2(2))>=0
+		pairids = seg2;
+	elseif ice_levelset(seg3(1))>=0 && ice_levelset(seg3(2))>=0
+		pairids = seg3;
+	else
+		error('not supported');
+	end
+
+	%Get normal
+	len = sqrt((x(pairids(2))-x(pairids(1)))^2 + (y(pairids(2))-y(pairids(1)))^2);
+	nx  = +(y(pairids(2))-y(pairids(1)))/len;
+	ny  = -(x(pairids(2))-x(pairids(1)))/len;
+
+	%RHS
+	for k=1:2
+		for i=1:2
+			for j=1:2
+				if i==j && j==k
+					Fvx(pairids(i)) = Fvx(pairids(i)) +1/2*(-rho_w*g*base(pairids(j))^2+rho*g*H(pairids(j))^2)*nx*len/4.;
+					Fvy(pairids(i)) = Fvy(pairids(i)) +1/2*(-rho_w*g*base(pairids(j))^2+rho*g*H(pairids(j))^2)*ny*len/4.;
+				else
+					Fvx(pairids(i)) = Fvx(pairids(i)) +1/2*(-rho_w*g*base(pairids(j))^2+rho*g*H(pairids(j))^2)*nx*len/12.;
+					Fvy(pairids(i)) = Fvy(pairids(i)) +1/2*(-rho_w*g*base(pairids(j))^2+rho*g*H(pairids(j))^2)*ny*len/12.;
+				end
+			end
+		end
+	end
+end
+
 %Main loop, allocate a few vectors needed for the computation
 
 tic
@@ -149,13 +200,12 @@ for iter = 1:niter % Pseudo-Transient cycles
 	vx = vx + dVxdt.*dtVx;
 	vy = vy + dVydt.*dtVy;
 
-	%Apply Dirichlet boundary condition
-	pos = find(vertexonboundary);
-	vx(pos) = 0.;
-	vy(pos) = 0.;
-
-	%Residual should also be 0 (for convergence)
+	%Apply Dirichlet boundary condition, Residual should also be 0 (for convergence)
+	pos = find(~isnan(spcvx));
+	vx(pos) = spcvx(pos);
 	dVxdt(pos) = 0.;
+	pos = find(~isnan(spcvy));
+	vy(pos) = spcvy(pos);
 	dVydt(pos) = 0.;
 
 	%4. Update error

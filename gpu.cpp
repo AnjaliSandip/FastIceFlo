@@ -353,27 +353,36 @@ int main(){/*{{{*/
 
 	/*Get All we need from binary file*/
 	int    nbe,nbv,M,N;
-   double g,rho,yts;
-	int    *index            = NULL;
-	int    *vertexonboundary = NULL;
-	double *x                = NULL;
-	double *y                = NULL;
-	double *H                = NULL;
-	double *surface          = NULL;
-	double *rheology_B_temp  = NULL;
-	double *vx               = NULL;
-	double *vy               = NULL;
+   double g,rho,rho_w,yts;
+	int    *index           = NULL;
+	double *spcvx           = NULL;
+	double *spcvy           = NULL;
+	double *x               = NULL;
+	double *y               = NULL;
+	double *H               = NULL;
+	double *surface         = NULL;
+	double *base            = NULL;
+   double *ice_levelset    = NULL;
+   double *ocean_levelset  = NULL;
+	double *rheology_B_temp = NULL;
+	double *vx              = NULL;
+	double *vy              = NULL;
 	FetchData(fid,&nbe,"md.mesh.numberofelements");
 	FetchData(fid,&nbv,"md.mesh.numberofvertices");
    FetchData(fid,&g,"md.constants.g");
    FetchData(fid,&rho,"md.materials.rho_ice");
+   FetchData(fid,&rho_w,"md.materials.rho_water");
    FetchData(fid,&yts,"md.constants.yts");
 	FetchData(fid,&index,&M,&N,"md.mesh.elements");
-   FetchData(fid,&vertexonboundary,&M,&N,"md.mesh.vertexonboundary");
+   FetchData(fid,&spcvx,&M,&N,"md.stressbalance.spcvx");
+   FetchData(fid,&spcvy,&M,&N,"md.stressbalance.spcvy");
 	FetchData(fid,&x,&M,&N,"md.mesh.x");
 	FetchData(fid,&y,&M,&N,"md.mesh.y");
 	FetchData(fid,&H,&M,&N,"md.geometry.thickness");
 	FetchData(fid,&surface,&M,&N,"md.geometry.surface");
+   FetchData(fid,&base,&M,&N,"md.geometry.base");
+   FetchData(fid,&ice_levelset,&M,&N,"md.mask.ice_levelset");
+   FetchData(fid,&ocean_levelset,&M,&N,"md.mask.ocean_levelset");
    FetchData(fid,&rheology_B_temp,&M,&N,"md.materials.rheology_B");
 	FetchData(fid,&vx,&M,&N,"md.initialization.vx");
 	FetchData(fid,&vy,&M,&N,"md.initialization.vy");
@@ -458,6 +467,57 @@ int main(){/*{{{*/
       }
    }
 
+   /*Add ocean water pressure at the ice front*/
+	double level[3];
+	for(int n=0;n<nbe;n++){
+		/*Determine if there is an ice front there*/
+		level[0] = ice_levelset[index[n*3+0]-1];
+		level[1] = ice_levelset[index[n*3+1]-1];
+		level[2] = ice_levelset[index[n*3+2]-1];
+		int count = 0;
+		for(int i=0;i<3;i++) if(level[i]<0.) count++;
+		if(count!=1) continue;
+
+		/*Ok this element has an ice front, get indices of the 2 vertices*/
+		int seg1[2] = {index[n*3+0]-1,index[n*3+1]-1};
+		int seg2[2] = {index[n*3+1]-1,index[n*3+2]-1};
+		int seg3[2] = {index[n*3+2]-1,index[n*3+0]-1};
+		int pairids[2];
+		if(ice_levelset[seg1[0]]>=0 && ice_levelset[seg1[1]]>=0){
+			pairids[0] = seg1[0]; pairids[1] = seg1[1];
+		}
+		else if (ice_levelset[seg2[0]]>=0 && ice_levelset[seg2[1]]>=0){
+			pairids[0] = seg2[0]; pairids[1] = seg2[1];
+		}
+		else if (ice_levelset[seg3[0]]>=0 && ice_levelset[seg3[1]]>=0){
+			pairids[0] = seg3[0]; pairids[1] = seg3[1];
+		}
+		else{
+			std::cerr<<"case not supported";
+		}
+
+		/*Get normal*/
+		double len = sqrt(pow(x[pairids[1]]-x[pairids[0]],2) + pow(y[pairids[1]]-y[pairids[0]],2) );
+		double nx  = +(y[pairids[1]]-y[pairids[0]])/len;
+		double ny  = -(x[pairids[1]]-x[pairids[0]])/len;
+
+		/*RHS*/
+		for(int k=0;k<2;k++){
+			for(int i=0;i<2;i++){
+				for(int j=0;j<2;j++){
+					if(i==j && j==k){
+						Fvx[pairids[i]] += 1./2.*(-rho_w*g*pow(base[pairids[j]],2)+rho*g*pow(H[pairids[j]],2))*nx*len/4.;
+						Fvy[pairids[i]] += 1./2.*(-rho_w*g*pow(base[pairids[j]],2)+rho*g*pow(H[pairids[j]],2))*ny*len/4.;
+					}
+					else{
+						Fvx[pairids[i]] += 1./2.*(-rho_w*g*pow(base[pairids[j]],2)+rho*g*pow(H[pairids[j]],2))*nx*len/12.;
+						Fvy[pairids[i]] += 1./2.*(-rho_w*g*pow(base[pairids[j]],2)+rho*g*pow(H[pairids[j]],2))*ny*len/12.;
+					}
+				}
+			}
+		}
+	}
+
    /*Main loop, allocate a few vectors needed for the computation*/
 	double* eta_nbv = new double[nbv];
 	double* dvxdx   = new double[nbe];
@@ -516,15 +576,15 @@ int main(){/*{{{*/
 			vx[i] = vx[i] + dVxdt[i]*dtVx;
 			vy[i] = vy[i] + dVydt[i]*dtVy;
 
-			/*Apply Dirichlet boundary condition*/
-			if(vertexonboundary[i]){
+			/*Apply Dirichlet boundary condition,*Residual should also be 0 (for convergence)*/
+			if(!isnan(spcvx[i])){
 				vx[i] = 0.;
-				vy[i] = 0.;
-
-				/*Residual should also be 0 (for convergence)*/
-				dVxdt[i] = 0.;
-				dVydt[i] = 0.;
-			}
+            dVxdt[i] = 0.;
+         }
+         if(!isnan(spcvy[i])){
+            vy[i] = 0.;
+            dVydt[i] = 0.;
+         }
 
 			/*4. Update error*/
 			normX += pow(dVxdt[i],2);
@@ -577,11 +637,15 @@ int main(){/*{{{*/
 
    /*Cleanup and return*/
 	delete [] index;
-	delete [] vertexonboundary;
 	delete [] x;
 	delete [] y;
 	delete [] H;
 	delete [] surface;
+   delete [] base;
+   delete [] spcvx;
+   delete [] spcvy;
+   delete [] ice_levelset;
+   delete [] ocean_levelset;
 	delete [] rheology_B;
 	delete [] rheology_B_temp;
 	delete [] vx;
