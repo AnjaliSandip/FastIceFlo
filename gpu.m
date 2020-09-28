@@ -13,10 +13,19 @@ switch(meshid)
 	otherwise
 		error('not supported yet');
 end
-md=setmask(md,'all','');
-md=parameterize(md,'./TestFiles/SquareShelfConstrained.par');
-md=parameterize(md,'./TestFiles/SquareShelf.par');
-md.stressbalance.restol=1e-6;
+
+%Floating ice, Homorgeneous Dirichlet everywhere
+md=setmask(md,'all',''); md=parameterize(md,'./TestFiles/SquareShelfConstrained.par');
+%Floating ice, Neumann at ice front
+md=setmask(md,'all',''); md=parameterize(md,'./TestFiles/SquareShelf.par');
+%Grounded ice, Homorgeneous Dirichlet everywhere
+md=setmask(md,'','');    md=parameterize(md,'./TestFiles/SquareSheetConstrained.par');
+%Grounding line and Neumann at ice front
+md=setmask(md,'./TestFiles/SquareShelf.exp',''); md=parameterize(md,'./TestFiles/SquareSheetShelf.par'); pos=find(md.mesh.y<5e5); md.geometry.bed(pos) = md.geometry.base(pos); md=sethydrostaticmask(md);
+
+md.stressbalance.restol=1e-10;
+md.groundingline.friction_interpolation = 'SubelementFriction1';
+md.groundingline.migration = 'SubelementMigration';
 md=setflowequation(md,'SSA','all');
 
 %Linear case
@@ -45,6 +54,7 @@ ocean_levelset   = md.mask.ocean_levelset;
 rheology_B_temp  = md.materials.rheology_B;
 vx               = md.initialization.vx/yts;
 vy               = md.initialization.vy/yts;
+friction         = md.friction.coefficient;
 
 % =================== SIMILAR TO C++ FILE LINE 384 DOWN ===================
 
@@ -76,9 +86,10 @@ Helem       = mean(H(index),2);
 rheology_B  = mean(rheology_B_temp(index),2);
 
 %Compute RHS amd ML once for all
-ML  = zeros(nbv,1);
-Fvx = zeros(nbv,1);
-Fvy = zeros(nbv,1);
+ML            = zeros(nbv,1);
+Fvx           = zeros(nbv,1);
+Fvy           = zeros(nbv,1);
+groundedratio = zeros(nbe,1);
 for n=1:nbe
 	%Lumped mass matrix
 	for i=1:3
@@ -91,7 +102,8 @@ for n=1:nbe
 			end
 		end
 	end
-	%RHS
+
+	%RHS (Driving stress term)
 	for i=1:3
 		for j=1:3
 			if i==j
@@ -103,53 +115,94 @@ for n=1:nbe
 			end
 		end
 	end
-end
 
-%Add ocean water pressure at the ice front
-for n=1:nbe
-	%Determine if there is an ice front there
+   %RHS (Water pressure at the ice front)
 	level = ice_levelset(index(n,:));
 	count = 0;
 	for i=1:3
 		if(level(i)<0.) count = count+1; end
 	end
-	if (count~=1) continue; end
+	if(count==1)
+		%This element has an ice front, get indices of the 2 vertices
+		seg1 = [index(n,1) index(n,2)];
+		seg2 = [index(n,2) index(n,3)];
+		seg3 = [index(n,3) index(n,1)];
+		if     ice_levelset(seg1(1))>=0 && ice_levelset(seg1(2))>=0
+			pairids = seg1;
+		elseif ice_levelset(seg2(1))>=0 && ice_levelset(seg2(2))>=0
+			pairids = seg2;
+		elseif ice_levelset(seg3(1))>=0 && ice_levelset(seg3(2))>=0
+			pairids = seg3;
+		else
+			error('not supported');
+		end
 
-	%Ok this element has an ice front, get indices of the 2 vertices
-	seg1 = [index(n,1) index(n,2)];
-	seg2 = [index(n,2) index(n,3)];
-	seg3 = [index(n,3) index(n,1)];
-	if     ice_levelset(seg1(1))>=0 && ice_levelset(seg1(2))>=0
-		pairids = seg1;
-	elseif ice_levelset(seg2(1))>=0 && ice_levelset(seg2(2))>=0
-		pairids = seg2;
-	elseif ice_levelset(seg3(1))>=0 && ice_levelset(seg3(2))>=0
-		pairids = seg3;
-	else
-		error('not supported');
-	end
+		%Get normal
+		len = sqrt((x(pairids(2))-x(pairids(1)))^2 + (y(pairids(2))-y(pairids(1)))^2);
+		nx  = +(y(pairids(2))-y(pairids(1)))/len;
+		ny  = -(x(pairids(2))-x(pairids(1)))/len;
 
-	%Get normal
-	len = sqrt((x(pairids(2))-x(pairids(1)))^2 + (y(pairids(2))-y(pairids(1)))^2);
-	nx  = +(y(pairids(2))-y(pairids(1)))/len;
-	ny  = -(x(pairids(2))-x(pairids(1)))/len;
-
-	%RHS
-	for i=1:2
-		for j=1:2
-			bibj = base(pairids(i))*base(pairids(j));
-			HiHj = H(pairids(i))*H(pairids(j));
-			for k=1:2
-				if i==j && j==k
-					Fvx(pairids(k)) = Fvx(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/4.;
-					Fvy(pairids(k)) = Fvy(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/4.;
-				else
-					Fvx(pairids(k)) = Fvx(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/12.;
-					Fvy(pairids(k)) = Fvy(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/12.;
+		%add RHS
+		for i=1:2
+			for j=1:2
+				bibj = base(pairids(i))*base(pairids(j));
+				HiHj = H(pairids(i))*H(pairids(j));
+				for k=1:2
+					if i==j && j==k
+						Fvx(pairids(k)) = Fvx(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/4.;
+						Fvy(pairids(k)) = Fvy(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/4.;
+					else
+						Fvx(pairids(k)) = Fvx(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/12.;
+						Fvy(pairids(k)) = Fvy(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/12.;
+					end
 				end
 			end
 		end
 	end
+
+	%One more thing in this element loop: prepare groundedarea needed later for the calculation of basal friction
+	level = ocean_levelset(index(n,:));
+	if level(1)>0 && level(2)>0 && level(3)>0
+		%Completely grounded
+		groundedratio(n)=1.;
+	elseif level(1)<0 && level(2)<0 && level(3)<0
+		%Completely floating
+		groundedratio(n)=0.;
+	else
+		%Partially floating,
+		if(level(1)*level(2)>0) %Nodes 0 and 1 are similar, so points must be found on segment 0-2 and 1-2
+			s1=level(3)/(level(3)-level(2));
+			s2=level(3)/(level(3)-level(1));
+		elseif(level(2)*level(3)>0) %Nodes 1 and 2 are similar, so points must be found on segment 0-1 and 0-2
+			s1=level(1)/(level(1)-level(2));
+			s2=level(1)/(level(1)-level(3));
+		elseif(level(1)*level(3)>0) %Nodes 0 and 2 are similar, so points must be found on segment 1-0 and 1-2
+			s1=level(2)/(level(2)-level(1));
+			s2=level(2)/(level(2)-level(3));
+		else
+			error('not supposed to be here...');
+		end
+
+		if(level(1)*level(2)*level(3)>0)
+			groundedratio(n)= s1*s2;
+		else
+			groundedratio(n)= (1-s1*s2);
+		end
+	end
+end
+
+%Finally add calculation of friction coefficient:
+alpha2 = zeros(nbv,1);
+for i=1:nbv
+
+   %Compute effective pressure
+   p_ice   = g*rho*H(i);
+   p_water = -rho_w*g*base(i);
+   Neff    = p_ice - p_water;
+   if(Neff<0.) Neff=0.; end
+
+   %Compute alpha2
+   alpha2(i) = friction(i)^2*Neff;
 end
 
 %Main loop, allocate a few vectors needed for the computation
@@ -165,6 +218,7 @@ for iter = 1:niter % Pseudo-Transient cycles
 	KVx  = zeros(nbv,1);
 	KVy  = zeros(nbv,1);
 	for n=1:nbe
+		%Viscous Deformation
 		eta_e  = etan(n);
 		eps_xx = dvxdx(n);
 		eps_yy = dvydy(n);
@@ -176,6 +230,25 @@ for iter = 1:niter % Pseudo-Transient cycles
 			KVy(index(n,i)) = KVy(index(n,i))+ ...
 				2*Helem(n)*eta_e*eps_xy*alpha(n,i)*areas(n) + ...
 				2*Helem(n)*eta_e*(2*eps_yy+eps_xx)*beta(n,i)*areas(n);
+		end
+		%Add basal friction
+		if groundedratio(n)>0.
+         for k=1:3
+            for i=1:3
+               for j=1:3
+                  if i==j && j==k
+                     KVx(index(n,k)) = KVx(index(n,k))+ groundedratio(n)*alpha2(index(n,i))*vx(index(n,j))*areas(n)/10.;
+                     KVy(index(n,k)) = KVy(index(n,k))+ groundedratio(n)*alpha2(index(n,i))*vy(index(n,j))*areas(n)/10.;
+                  elseif (i~=j) && (j~=k) && (k~=i)
+                     KVx(index(n,k)) = KVx(index(n,k))+ groundedratio(n)*alpha2(index(n,i))*vx(index(n,j))*areas(n)/60.;
+                     KVy(index(n,k)) = KVy(index(n,k))+ groundedratio(n)*alpha2(index(n,i))*vy(index(n,j))*areas(n)/60.;
+                  else
+                     KVx(index(n,k)) = KVx(index(n,k))+ groundedratio(n)*alpha2(index(n,i))*vx(index(n,j))*areas(n)/30.;
+                     KVy(index(n,k)) = KVy(index(n,k))+ groundedratio(n)*alpha2(index(n,i))*vy(index(n,j))*areas(n)/30.;
+                  end
+               end
+            end
+         end
 		end
 	end
 
