@@ -1,7 +1,8 @@
 # GPU_Computing
 
-#Meeting 10/02/2020
-Anjali:
+Meeting 10/02/2020
+
+Anjali 
 - finish basal friction in CUDA
 - cleanup code
 Mathieu:
