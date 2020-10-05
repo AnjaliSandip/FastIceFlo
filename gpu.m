@@ -23,6 +23,8 @@ md=setmask(md,'','');    md=parameterize(md,'./TestFiles/SquareSheetConstrained.
 %Grounding line and Neumann at ice front
 md=setmask(md,'./TestFiles/SquareShelf.exp',''); md=parameterize(md,'./TestFiles/SquareSheetShelf.par'); pos=find(md.mesh.y<5e5); md.geometry.bed(pos) = md.geometry.base(pos); md=sethydrostaticmask(md);
 
+md.mask.ice_levelset(md.mesh.y>80e4)=+1;
+
 md.stressbalance.restol=1e-10;
 md.groundingline.friction_interpolation = 'SubelementFriction1';
 md.groundingline.migration = 'SubelementMigration';
@@ -90,7 +92,9 @@ ML            = zeros(nbv,1);
 Fvx           = zeros(nbv,1);
 Fvy           = zeros(nbv,1);
 groundedratio = zeros(nbe,1);
+isice         = false(nbe,1);
 for n=1:nbe
+
 	%Lumped mass matrix
 	for i=1:3
 		for j=1:3
@@ -101,6 +105,20 @@ for n=1:nbe
 				ML(index(n,j)) = ML(index(n,j))+areas(n)/12;
 			end
 		end
+	end
+
+	%Is there ice at all in the current element?
+	level = ice_levelset(index(n,:));
+	if level(1)<0 || level(2)<0 || level(3)<0
+		isice(n)= true;
+	else
+		%We can skip this element altogether
+		isice(n) = false;
+		for i=1:3
+			vx(index(n,i)) = 0.;
+			vy(index(n,i)) = 0.;
+		end
+		continue;
 	end
 
 	%RHS (Driving stress term)
@@ -218,6 +236,10 @@ for iter = 1:niter % Pseudo-Transient cycles
 	KVx  = zeros(nbv,1);
 	KVy  = zeros(nbv,1);
 	for n=1:nbe
+
+		%Skip if no ice
+		if ~isice(n) continue; end
+
 		%Viscous Deformation
 		eta_e  = etan(n);
 		eps_xx = dvxdx(n);
@@ -303,6 +325,7 @@ for iter = 1:niter % Pseudo-Transient cycles
 
 	%LAST: Update viscosity
 	for i=1:nbe
+		if ~isice(i) continue; end
 		eps_xx = dvxdx(i);
 		eps_yy = dvydy(i);
 		eps_xy = .5*(dvxdy(i)+dvydx(i));

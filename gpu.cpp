@@ -439,6 +439,8 @@ int main(){/*{{{*/
 	double* Fvx           = new double[nbv];
 	double* Fvy           = new double[nbv];
 	double* groundedratio = new double[nbe];
+	bool*   isice         = new bool[nbe];
+	double  level[3];
 	for(int i=0;i<nbv;i++){
 		ML[i]  = 0.;
 		Fvx[i] = 0.;
@@ -454,6 +456,21 @@ int main(){/*{{{*/
 				else     
 				 ML[index[n*3+j]-1] += areas[n]/12.;
 			}
+		}
+		/*Is there ice at all in the current element?*/
+		level[0] = ice_levelset[index[n*3+0]-1];
+		level[1] = ice_levelset[index[n*3+1]-1];
+		level[2] = ice_levelset[index[n*3+2]-1];
+		if(level[0]<0 || level[1]<0 || level[2]<0){
+			isice[n] = true;
+		}
+		else{
+			isice[n] = false;
+			for(int i=0;i<3;i++){
+				vx[index[n*3+i]-1] = 0.;
+				vy[index[n*3+i]-1] = 0.;
+			}
+			continue;
 		}
 		/*RHS, 'F ' in equation 22 (Driving Stress)*/
 		for(int i=0;i<3;i++){
@@ -471,7 +488,6 @@ int main(){/*{{{*/
 	}
 
 	/*RHS (Water pressure at the ice front)*/
-	double level[3];
 	for(int n=0;n<nbe;n++){
 		/*Determine if there is an ice front there*/
 		level[0] = ice_levelset[index[n*3+0]-1];
@@ -600,6 +616,10 @@ int main(){/*{{{*/
 			KVy[i] = 0.;
 		}
 		for(int n=0;n<nbe;n++){
+
+			/*Skip if no ice*/
+			if(!isice[n]) continue;
+
 			/*Viscous Deformation*/
 			double eta_e  = etan[n];
 			double eps_xx = dvxdx[n];
@@ -686,6 +706,7 @@ int main(){/*{{{*/
 
 		/*LAST: Update viscosity*/
 		for(int i=0;i<nbe;i++){
+			if(!isice[i]) continue;
 			double eps_xx = dvxdx[i];
 			double eps_yy = dvydy[i];
 			double eps_xy = .5*(dvxdy[i]+dvydx[i]);
@@ -728,6 +749,8 @@ int main(){/*{{{*/
 	delete [] spcvy;
 	delete [] ice_levelset;
 	delete [] ocean_levelset;
+	delete [] groundedratio;
+	delete [] isice;
 	delete [] rheology_B;
 	delete [] rheology_B_temp;
 	delete [] vx;
