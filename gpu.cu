@@ -919,7 +919,7 @@ cudaMemcpy(d_groundedratio, groundedratio, nbe*sizeof(double), cudaMemcpyHostToD
         normX = 0.;
         normY = 0.;
 
-        /*dVxdt, dVydt - GPU KERNEL 4*/
+        /*dVxdt, dVydt - GPU KERNEL 2*/
         Main <<<gridSize,blockSize>>> (d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_vx, d_vy, d_resolx, d_resoly, d_H, d_eta_nbv, d_spcvx, d_spcvy, eta_b, rho, damp, nbv, nbe); cudaDeviceSynchronize();  
 
        cudaMemcpy(dVxdt, d_dVxdt, nbv*sizeof(double), cudaMemcpyDeviceToHost );
@@ -943,7 +943,7 @@ cudaMemcpy(d_groundedratio, groundedratio, nbe*sizeof(double), cudaMemcpyHostToD
          std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
         }
   
-         /*Viscosity - GPU KERNEL 5*/     
+         /*Viscosity - GPU KERNEL 3*/     
    Viscosity <<<gridSize,blockSize>>>  (dvxdx, dvydy, dvxdy, dvydx, d_etan, d_rheology_B, rele, eta_0, n_glen, nbe);  cudaDeviceSynchronize();  
     }
 
