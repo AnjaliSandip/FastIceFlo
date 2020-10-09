@@ -445,7 +445,7 @@ __global__ void KV(double* KVx, double* KVy, double* KVx_0, double* KVx_1, doubl
 	__syncthreads();
 
 }/*}}}*/
-__global__ void  Main(double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* vx, double* vy, double* resolx, double* resoly, double* H, double* eta_nbv, double* spcvx, double* spcvy, double eta_b, double rho, double damp, int nbv, int nbe) {/*{{{*/
+__global__ void  Main(double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* vx, double* vy, double* resolx, double* resoly, double* H, double* eta_nbv, double* spcvx, double* spcvy, double eta_b, double rho, double damp, int nbv, int nbe, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* etan, double* rheology_B, double rele, double eta_0, double n_glen) {/*{{{*/
 
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -480,12 +480,7 @@ __global__ void  Main(double* ML, double* KVx, double* KVy, double* Fvx, double*
 			dVydt[ix] = 0.;
       }
 	}
-
-}/*}}}*/
-__global__ void Viscosity(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* etan, double* rheology_B, double rele, double eta_0, double n_glen, int nbe){/*{{{*/
-
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-
+	
 	double eps_xx;
 	double eps_yy;
 	double eps_xy;
@@ -502,10 +497,11 @@ __global__ void Viscosity(double* dvxdx, double* dvydy, double* dvxdy, double* d
 		eta_it = 1.e+14/2.;  
 		if(EII2>0.) eta_it = B/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
 
-      etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);
-   }
+      etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);}
+	
 
 }/*}}}*/
+
 
 /*Main*/
 int main(){/*{{{*/
@@ -781,10 +777,9 @@ int main(){/*{{{*/
 	cudaMalloc(&d_areas, nbe*sizeof(double));
 	cudaMemcpy(d_areas, areas, nbe*sizeof(double), cudaMemcpyHostToDevice); 
 
-   double* eta_nbv = new double[nbv];
+        double* eta_nbv = new double[nbv];
 	double *d_eta_nbv;
 	cudaMalloc(&d_eta_nbv, nbv*sizeof(double));
-	cudaMemcpy(d_eta_nbv, eta_nbv, nbv*sizeof(double), cudaMemcpyHostToDevice);/*FIXME: do we REALLY need to copy?? it's empty right now*/
 
 	double *d_weights;
 	cudaMalloc(&d_weights, nbv*sizeof(double));
@@ -841,54 +836,53 @@ int main(){/*{{{*/
 
    /*------------ allocate relevant vectors on host (GPU)---------------*/
 
-	double *dvxdx = new double[nbe]; /*FIXME: I don't think you need to allocate on host*/
+	double *dvxdx;
 	cudaMalloc(&dvxdx,nbe*sizeof(double));
 
-	double *dvxdy =  new double[nbe];
+	double *dvxdy;
 	cudaMalloc(&dvxdy, nbe*sizeof(double));
 
-	double *dvydx = new double[nbe];
+	double *dvydx;
 	cudaMalloc(&dvydx, nbe*sizeof(double));
 
-	double *dvydy = new double[nbe];
+	double *dvydy;
 	cudaMalloc(&dvydy, nbe*sizeof(double));
 
-	double *KVx = new double[nbv];
+	double *KVx;
 	cudaMalloc(&KVx, nbv*sizeof(double));
 
-	double *KVy = new double[nbv];
+	double *KVy;
 	cudaMalloc(&KVy, nbv*sizeof(double));
 
-	double *KVx_0 = new double[nbe];
+	double *KVx_0;
 	cudaMalloc(&KVx_0, nbe*sizeof(double));
 
-	double *KVx_1 = new double[nbe];
+	double *KVx_1;
 	cudaMalloc(&KVx_1, nbe*sizeof(double));
 
-	double *KVx_2 = new double[nbe];
+	double *KVx_2;
 	cudaMalloc(&KVx_2, nbe*sizeof(double));
 
-	double *KVy_0 = new double[nbe];
+	double *KVy_0;
 	cudaMalloc(&KVy_0, nbe*sizeof(double));
 
-	double *KVy_1 = new double[nbe];
+	double *KVy_1;
 	cudaMalloc(&KVy_1, nbe*sizeof(double));
 
-	double *KVy_2 = new double[nbe];
+	double *KVy_2;
 	cudaMalloc(&KVy_2, nbe*sizeof(double));
 
-	double *KVxx = new double[nbe];
+	double *KVxx;
 	cudaMalloc(&KVxx, nbe*sizeof(double));
 
-	double *KVyy = new double[nbe];
+	double *KVyy;
 	cudaMalloc(&KVyy, nbe*sizeof(double));
 
-	double *eta_nbv_gpu = new double[nbe];
+	double *eta_nbv_gpu;
 	cudaMalloc(&eta_nbv_gpu, nbe*sizeof(double));
 
 	/*Main loop*/
-	double normX; /*FIXME: do we need to declare these variables here?*/
-	double normY;
+	int iter;
 	double iterror;
 	for(int iter=1;iter<=niter;iter++){
 
@@ -896,12 +890,12 @@ int main(){/*{{{*/
 		KV <<<gridSize,blockSize>>> (KVx, KVy, KVx_0, KVx_1, KVx_2, KVy_0, KVy_1, KVy_2, KVxx, KVyy, d_vx, d_vy, d_alpha2, d_groundedratio, d_etan, dvxdx, dvydy, dvxdy, dvydx, d_Helem, d_areas, d_alpha, d_beta, d_index, nbv, nbe, d_eta_nbv, eta_nbv_gpu, d_weights); cudaDeviceSynchronize();               
 
 		/*Velocity rate update in the x and y, refer to equation 19 in Rass paper*/
-		normX = 0.;
-		normY = 0.;
+		double normX = 0.;
+		double normY = 0.;
 
 		/*dVxdt, dVydt - GPU KERNEL 2*/
-		Main <<<gridSize,blockSize>>> (d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_vx, d_vy, d_resolx, d_resoly, d_H, d_eta_nbv, d_spcvx, d_spcvy, eta_b, rho, damp, nbv, nbe); cudaDeviceSynchronize();  
-
+		Main <<<gridSize,blockSize>>> (d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_vx, d_vy, d_resolx, d_resoly, d_H, d_eta_nbv, d_spcvx, d_spcvy, eta_b, rho, damp, nbv, nbe, dvxdx, dvydy, dvxdy, dvydx, d_etan, d_rheology_B, rele, eta_0, n_glen); cudaDeviceSynchronize();  
+		
       /*4. Update error*/
       /*FIXME: can we do this in Main so that we don't need to copy the WHOLE vector from device to host?*/
 		cudaMemcpy(dVxdt, d_dVxdt, nbv*sizeof(double), cudaMemcpyDeviceToHost );
@@ -922,14 +916,13 @@ int main(){/*{{{*/
 			std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
 		}
 
-		/*Updayte Viscosity - GPU KERNEL 3*/ /*FIXME: why not do this within the second Kernel if that saves time?*/
-		Viscosity <<<gridSize,blockSize>>>  (dvxdx, dvydy, dvxdy, dvydx, d_etan, d_rheology_B, rele, eta_0, n_glen, nbe);  cudaDeviceSynchronize();  
 	}
 
    /*Copy results from Device to host*/
 	cudaMemcpy(vx, d_vx, nbv*sizeof(double), cudaMemcpyDeviceToHost );
 	cudaMemcpy(vy, d_vy, nbv*sizeof(double), cudaMemcpyDeviceToHost ); 
-   std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
+        
+	std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
 
 	/*Write output*/
 	fid = fopen(outputfile,"wb");
@@ -940,7 +933,7 @@ int main(){/*{{{*/
 	if(fclose(fid)!=0) std::cerr<<"could not close file " << outputfile;
 
 	/*Cleanup and return*/
-   delete [] eta_nbv;
+        delete [] eta_nbv;
 	delete [] index;
 	delete [] x;
 	delete [] y;
