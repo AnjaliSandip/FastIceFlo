@@ -445,7 +445,7 @@ __global__ void KV(double* KVx, double* KVy, double* KVx_0, double* KVx_1, doubl
 	__syncthreads();
 
 }/*}}}*/
-__global__ void  Main(double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* vx, double* vy, double* resolx, double* resoly, double* H, double* eta_nbv, double* spcvx, double* spcvy, double eta_b, double rho, double damp, int nbv, int nbe, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* etan, double* rheology_B, double rele, double eta_0, double n_glen) {/*{{{*/
+__global__ void  PseudoTimeStepping (double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* vx, double* vy, double* resolx, double* resoly, double* H, double* eta_nbv, double* spcvx, double* spcvy, double eta_b, double rho, double damp, int nbv, int nbe, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* etan, double* rheology_B, double rele, double eta_0, double n_glen) {/*{{{*/
 
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -836,55 +836,55 @@ int main(){/*{{{*/
 
    /*------------ allocate relevant vectors on host (GPU)---------------*/
 
-	double *dvxdx;
+	double *dvxdx = NULL;
 	cudaMalloc(&dvxdx,nbe*sizeof(double));
 
-	double *dvxdy;
+	double *dvxdy = NULL;
 	cudaMalloc(&dvxdy, nbe*sizeof(double));
 
-	double *dvydx;
+	double *dvydx = NULL;
 	cudaMalloc(&dvydx, nbe*sizeof(double));
 
-	double *dvydy;
+	double *dvydy = NULL;
 	cudaMalloc(&dvydy, nbe*sizeof(double));
 
-	double *KVx;
+	double *KVx = NULL;
 	cudaMalloc(&KVx, nbv*sizeof(double));
 
-	double *KVy;
+	double *KVy = NULL;
 	cudaMalloc(&KVy, nbv*sizeof(double));
 
-	double *KVx_0;
+	double *KVx_0 = NULL;
 	cudaMalloc(&KVx_0, nbe*sizeof(double));
 
-	double *KVx_1;
+	double *KVx_1 = NULL;
 	cudaMalloc(&KVx_1, nbe*sizeof(double));
 
-	double *KVx_2;
+	double *KVx_2 = NULL;
 	cudaMalloc(&KVx_2, nbe*sizeof(double));
 
-	double *KVy_0;
+	double *KVy_0 = NULL;
 	cudaMalloc(&KVy_0, nbe*sizeof(double));
 
-	double *KVy_1;
+	double *KVy_1 = NULL;
 	cudaMalloc(&KVy_1, nbe*sizeof(double));
 
-	double *KVy_2;
+	double *KVy_2 = NULL;
 	cudaMalloc(&KVy_2, nbe*sizeof(double));
 
-	double *KVxx;
+	double *KVxx = NULL;
 	cudaMalloc(&KVxx, nbe*sizeof(double));
 
-	double *KVyy;
+	double *KVyy = NULL;
 	cudaMalloc(&KVyy, nbe*sizeof(double));
 
-	double *eta_nbv_gpu;
+	double *eta_nbv_gpu = NULL;
 	cudaMalloc(&eta_nbv_gpu, nbe*sizeof(double));
 
 	/*Main loop*/
 	int iter;
 	double iterror;
-	for(int iter=1;iter<=niter;iter++){
+	for(iter=1;iter<=niter;iter++){
 
 		/*'KV' term in equation 22 - GPU KERNEL 1*/ 
 		KV <<<gridSize,blockSize>>> (KVx, KVy, KVx_0, KVx_1, KVx_2, KVy_0, KVy_1, KVy_2, KVxx, KVyy, d_vx, d_vy, d_alpha2, d_groundedratio, d_etan, dvxdx, dvydy, dvxdy, dvydx, d_Helem, d_areas, d_alpha, d_beta, d_index, nbv, nbe, d_eta_nbv, eta_nbv_gpu, d_weights); cudaDeviceSynchronize();               
@@ -894,7 +894,7 @@ int main(){/*{{{*/
 		double normY = 0.;
 
 		/*dVxdt, dVydt - GPU KERNEL 2*/
-		Main <<<gridSize,blockSize>>> (d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_vx, d_vy, d_resolx, d_resoly, d_H, d_eta_nbv, d_spcvx, d_spcvy, eta_b, rho, damp, nbv, nbe, dvxdx, dvydy, dvxdy, dvydx, d_etan, d_rheology_B, rele, eta_0, n_glen); cudaDeviceSynchronize();  
+		PseudoTimeStepping <<<gridSize,blockSize>>> (d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_vx, d_vy, d_resolx, d_resoly, d_H, d_eta_nbv, d_spcvx, d_spcvy, eta_b, rho, damp, nbv, nbe, dvxdx, dvydy, dvxdy, dvydx, d_etan, d_rheology_B, rele, eta_0, n_glen); cudaDeviceSynchronize();  
 		
       /*4. Update error*/
       /*FIXME: can we do this in Main so that we don't need to copy the WHOLE vector from device to host?*/
