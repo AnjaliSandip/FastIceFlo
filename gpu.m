@@ -66,9 +66,10 @@ damp      = 2;
 rele      = 1e-1;
 eta_b     = 0.5;
 eta_0     = 1.e+14/2.;
-niter     = 5e6;
+niter     = 5e5;
 nout_iter = 1000;
 epsi      = 1e-8;
+relaxation = 1/10; %1 = no relaxation, <1 = under-relaxation (more stable)
 
 %Initial guesses (except vx and vy that we already loaded)
 etan   = 1.e+14*ones(nbe,1);
@@ -86,6 +87,10 @@ weights=Weights(index,areas,nbe,nbv);
 [dsdx dsdy] = derive_xy_elem(surface,index,alpha,beta,nbe);
 Helem       = mean(H(index),2);
 rheology_B  = mean(rheology_B_temp(index),2);
+
+%Linear integration points order 3
+wgt3=[0.555555555555556, 0.888888888888889, 0.555555555555556];
+xg3 =[-0.774596669241483, 0.000000000000000, 0.774596669241483];
 
 %Compute RHS amd ML once for all
 ML            = zeros(nbv,1);
@@ -161,20 +166,16 @@ for n=1:nbe
 		ny  = -(x(pairids(2))-x(pairids(1)))/len;
 
 		%add RHS
-		for i=1:2
-			for j=1:2
-				bibj = base(pairids(i))*base(pairids(j));
-				HiHj = H(pairids(i))*H(pairids(j));
-				for k=1:2
-					if i==j && j==k
-						Fvx(pairids(k)) = Fvx(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/4.;
-						Fvy(pairids(k)) = Fvy(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/4.;
-					else
-						Fvx(pairids(k)) = Fvx(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/12.;
-						Fvy(pairids(k)) = Fvy(pairids(k)) +1/2*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/12.;
-					end
-				end
-			end
+		for gg=1:3
+			phi1 = (1.-xg3(gg))/2.;
+			phi2 = (1.+xg3(gg))/2.;
+			bg = base(pairids(1))*phi1 + base(pairids(2))*phi2;
+			Hg = H(pairids(1))*phi1 + H(pairids(2))*phi2;
+			bg = min(bg,0);
+			Fvx(pairids(1)) = Fvx(pairids(1)) +wgt3(gg)/2*1/2*(-rho_w*g*bg^2+rho*g*Hg^2)*nx*len*phi1;
+			Fvx(pairids(2)) = Fvx(pairids(2)) +wgt3(gg)/2*1/2*(-rho_w*g*bg^2+rho*g*Hg^2)*nx*len*phi2;
+			Fvy(pairids(1)) = Fvy(pairids(1)) +wgt3(gg)/2*1/2*(-rho_w*g*bg^2+rho*g*Hg^2)*ny*len*phi1;
+			Fvy(pairids(2)) = Fvy(pairids(2)) +wgt3(gg)/2*1/2*(-rho_w*g*bg^2+rho*g*Hg^2)*ny*len*phi2;
 		end
 	end
 
@@ -290,8 +291,8 @@ for iter = 1:niter % Pseudo-Transient cycles
 	if(any(isnan(dVydt))) error('Found NaN in dVydt[i]'); end
 
 	%2. Explicit CFL time step for viscous flow, x and y directions
-	dtVx = rho*resolx.^2./(4*H.*eta_nbv*(1.+eta_b)*4.1);
-	dtVy = rho*resoly.^2./(4*H.*eta_nbv*(1.+eta_b)*4.1);
+	dtVx = rho*resolx.^2./(4*max(10,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
+	dtVy = rho*resoly.^2./(4*max(10,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
 
 	%3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy
 	vx = vx + dVxdt.*dtVx;
