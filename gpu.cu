@@ -7,6 +7,9 @@ using namespace std;
 #define blockSize 1024
 #define gridSize  32
 
+  __managed__  double normX;   //variable shared between host and device
+  __managed__  double normY;
+
 /*CPU Code*/
 /*I/O stuff {{{*/
 FILE* SetFilePointerToData(FILE* fid,int* pcode,int* pvector_type,const char* data_name){/*{{{*/
@@ -353,7 +356,8 @@ void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,doubl
 }/*}}}*/
 
 /*CUDA Code*/
-__global__ void KV(double* KVx, double* KVy, double* KVx_0, double* KVx_1, double* KVx_2, double* KVy_0, double* KVy_1, double* KVy_2, double* KVxx, double* KVyy, double* vx, double* vy, double* alpha2, double* groundedratio, double* etan, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* Helem, double* areas, double* alpha, double* beta, int* index, int nbv, int nbe, double* eta_nbv, double* eta_nbv_gpu, double* weights){/*{{{*/
+__global__ void PseudoTimeStepping(double* KVx, double* KVy, double* KVx_0, double* KVx_1, double* KVx_2, double* KVy_0, double* KVy_1, double* KVy_2, double* KVxx, double* KVyy, double* vx, double* vy, double* alpha2, double* groundedratio, double* etan, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* Helem, double* areas, double* alpha, double* beta, int* index, int nbv, int nbe, double* eta_nbv, double* eta_nbv_gpu, double* weights, double rho, double* ML,  double* Fvx, double* Fvy, double* dVxdt, double* dVydt,  double* resolx, double* resoly, double* H, double damp, double eta_b, double* spcvx, double* spcvy,  double* rheology_B, double rele, double eta_0, double n_glen){/*{{{*/ 
+	
 
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -373,8 +377,7 @@ __global__ void KV(double* KVx, double* KVy, double* KVx_0, double* KVx_1, doubl
 
 		for(int i=0;i<nbe;i++){
 			for(int j=0; j<3;j++){
-				eta_nbv[index[i*3+j]-1] += eta_nbv_gpu[i];
-         }
+				eta_nbv[index[i*3+j]-1] += eta_nbv_gpu[i];}
       }
 
 		/*Divide by sum of areas*/
@@ -443,12 +446,7 @@ __global__ void KV(double* KVx, double* KVy, double* KVx_0, double* KVx_1, doubl
 
 	}
 	__syncthreads();
-
-}/*}}}*/
-__global__ void  PseudoTimeStepping (double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* vx, double* vy, double* resolx, double* resoly, double* H, double* eta_nbv, double* spcvx, double* spcvy, double eta_b, double rho, double damp, int nbv, int nbe, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* etan, double* rheology_B, double rele, double eta_0, double n_glen) {/*{{{*/
-
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-
+	
 	double ResVx;
 	double ResVy;
 	double dtVx;
@@ -472,18 +470,17 @@ __global__ void  PseudoTimeStepping (double* ML, double* KVx, double* KVy, doubl
 		/*Apply Dirichlet boundary condition*/
 		if(!isnan(spcvx[ix])){
 			vx[ix]    = 0.;
-			dVxdt[ix] = 0.;
-      }
+			dVxdt[ix] = 0.;}
 
 		if(!isnan(spcvy[ix])){
 			vy[ix]    = 0.;
-			dVydt[ix] = 0.;
-      }
+			dVydt[ix] = 0.;}
+
+	      /*Update error*/
+                normX += pow(dVxdt[ix],2);
+                normY += pow(dVydt[ix],2);
 	}
 	
-	double eps_xx;
-	double eps_yy;
-	double eps_xy;
 	double EII2;
 	double eta_it;
 	double B;
@@ -498,8 +495,6 @@ __global__ void  PseudoTimeStepping (double* ML, double* KVx, double* KVy, doubl
 		if(EII2>0.) eta_it = B/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
 
       etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);}
-	
-
 }/*}}}*/
 
 
@@ -886,24 +881,11 @@ int main(){/*{{{*/
 	double iterror;
 	for(iter=1;iter<=niter;iter++){
 
-		/*'KV' term in equation 22 - GPU KERNEL 1*/ 
-		KV <<<gridSize,blockSize>>> (KVx, KVy, KVx_0, KVx_1, KVx_2, KVy_0, KVy_1, KVy_2, KVxx, KVyy, d_vx, d_vy, d_alpha2, d_groundedratio, d_etan, dvxdx, dvydy, dvxdy, dvydx, d_Helem, d_areas, d_alpha, d_beta, d_index, nbv, nbe, d_eta_nbv, eta_nbv_gpu, d_weights); cudaDeviceSynchronize();               
+		 normX = 0;
+                 normY = 0;
 
-		/*Velocity rate update in the x and y, refer to equation 19 in Rass paper*/
-		double normX = 0.;
-		double normY = 0.;
-
-		/*dVxdt, dVydt - GPU KERNEL 2*/
-		PseudoTimeStepping <<<gridSize,blockSize>>> (d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_vx, d_vy, d_resolx, d_resoly, d_H, d_eta_nbv, d_spcvx, d_spcvy, eta_b, rho, damp, nbv, nbe, dvxdx, dvydy, dvxdy, dvydx, d_etan, d_rheology_B, rele, eta_0, n_glen); cudaDeviceSynchronize();  
-		
-      /*4. Update error*/
-      /*FIXME: can we do this in Main so that we don't need to copy the WHOLE vector from device to host?*/
-		cudaMemcpy(dVxdt, d_dVxdt, nbv*sizeof(double), cudaMemcpyDeviceToHost );
-		cudaMemcpy(dVydt, d_dVydt, nbv*sizeof(double), cudaMemcpyDeviceToHost );
-		for(int i=0;i<nbv;i++){
-			normX += pow(dVxdt[i],2);
-			normY += pow(dVydt[i],2);
-		}
+PseudoTimeStepping <<<gridSize,blockSize>>> (KVx, KVy, KVx_0, KVx_1, KVx_2, KVy_0, KVy_1, KVy_2, KVxx, KVyy, d_vx, d_vy, d_alpha2, d_groundedratio, d_etan, dvxdx, dvydy, dvxdy, dvydx, d_Helem, d_areas, d_alpha, d_beta, d_index, nbv, nbe, d_eta_nbv, eta_nbv_gpu, d_weights, rho, d_ML, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, damp,eta_b, d_spcvx, d_spcvy, d_rheology_B, rele, eta_0, n_glen); cudaDeviceSynchronize();
+  	          
 
 		/*Get final error estimate*/
 		normX  = sqrt(normX)/double(nbv);
@@ -913,12 +895,10 @@ int main(){/*{{{*/
 		iterror = max(normX,normY);
 		if((iterror < epsi) && (iter > 2)) break;
 		if ((iter%nout_iter)==1){
-			std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
-		}
-
+			std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;}
 	}
 
-   /*Copy results from Device to host*/
+        /*Copy results from Device to host*/
 	cudaMemcpy(vx, d_vx, nbv*sizeof(double), cudaMemcpyDeviceToHost );
 	cudaMemcpy(vy, d_vy, nbv*sizeof(double), cudaMemcpyDeviceToHost ); 
         
