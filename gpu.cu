@@ -475,11 +475,11 @@ __global__ void PseudoTimeStepping(double* KVx, double* KVy, double* KVx_0, doub
 
 		/*Apply Dirichlet boundary condition*/
 		if(!isnan(spcvx[ix])){
-			vx[ix]    = 0.;
+			vx[ix]    = spcvx[ix];
 			dVxdt[ix] = 0.;}
 
 		if(!isnan(spcvy[ix])){
-			vy[ix]    = 0.;
+			vy[ix]    = spcvy[ix];
 			dVydt[ix] = 0.;}
         }
 	
