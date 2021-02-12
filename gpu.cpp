@@ -434,6 +434,11 @@ int main(){/*{{{*/
 		rheology_B[i] = 1./3. * (rheology_B_temp[index[i*3+0]-1] + rheology_B_temp[index[i*3+1]-1] + rheology_B_temp[index[i*3+2]-1]);
 	}
 
+       
+	/*Linear integration points order 3*/
+        double wgt3[] = { 0.555555555555556, 0.888888888888889, 0.555555555555556 };
+        double xg3[] = { -0.774596669241483, 0.000000000000000, 0.774596669241483 };
+	
 	/*Compute RHS amd ML once for all*/
 	double* ML            = new double[nbv];
 	double* Fvx           = new double[nbv];
@@ -521,23 +526,18 @@ int main(){/*{{{*/
 			double ny  = -(x[pairids[1]]-x[pairids[0]])/len;
 
 			/*RHS*/
-			for(int i=0;i<2;i++){
-				for(int j=0;j<2;j++){
-					double bibj = base[pairids[i]]*base[pairids[j]];
-					double HiHj = H[pairids[i]]*H[pairids[j]];
-					for(int k=0;k<2;k++){
-						if(i==j && j==k){
-							Fvx[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/4.;
-							Fvy[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/4.;
-						}
-						else{
-							Fvx[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/12.;
-							Fvy[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/12.;
-						}
-					}
-				}
-			}
-		}
+		for(int gg=0;gg<2;gg++){
+                double phi1 = (1.0 -xg3[gg])/2.;
+                double phi2 = (1.0 +xg3[gg])/2.;
+                double bg = base[pairids[0]]*phi1 + base[pairids[1]]*phi2;
+                double Hg = H[pairids[0]]*phi1 + H[pairids[1]]*phi2;
+                bg = min(bg,0.0);
+                Fvx[pairids[0]] = Fvx[pairids[0]] +wgt3[gg]/2*1/2*(-rho_w*g* pow(bg,2)+rho*g*pow(Hg,2))*nx*len*phi1;
+                Fvx[pairids[1]] = Fvx[pairids[1]] +wgt3[gg]/2*1/2*(-rho_w*g*pow(bg,2)+rho*g*pow(Hg,2))*nx*len*phi2;
+                Fvy[pairids[0]] = Fvy[pairids[0]] +wgt3[gg]/2*1/2*(-rho_w*g*pow(bg,2)+rho*g*pow(Hg,2))*ny*len*phi1;
+                Fvy[pairids[1]] = Fvy[pairids[1]] +wgt3[gg]/2*1/2*(-rho_w*g*pow(bg,2)+rho*g*pow(Hg,2))*ny*len*phi2;
+            }
+        }
 
 		/*One more thing in this element loop: prepare groundedarea needed later for the calculation of basal friction*/
 		level[0] = ocean_levelset[index[n*3+0]-1];
@@ -594,14 +594,34 @@ int main(){/*{{{*/
 		alpha2[i] = pow(friction[i],2)*Neff;
 	}
 
+	
+    //Initial viscosity//
+    double* dvxdx   = new double[nbe];
+    double* dvxdy   = new double[nbe];
+    double* dvydx   = new double[nbe];
+    double* dvydy   = new double[nbe];
+
+    derive_xy_elem(dvxdx,dvxdy,vx,index,alpha,beta,nbe);
+    derive_xy_elem(dvydx,dvydy,vy,index,alpha,beta,nbe);
+
+    for(int i=0;i<nbe;i++){
+        if(!isice[i]) continue;
+        double eps_xx = dvxdx[i];
+        double eps_yy = dvydy[i];
+        double eps_xy = .5*(dvxdy[i]+dvydx[i]);
+        double EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy;
+        double eta_it = 1.e+14/2.;
+        if(EII2>0.) eta_it = rheology_B[i]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
+
+        etan[i] = min(exp(rele*log(eta_it) + (1-rele)*log(etan[i])),eta_0*1e5);
+        if(isnan(etan[i])){ std::cerr<<"Found NaN in etan[i]"; return 1;}
+    }
+	
 	/*Main loop, allocate a few vectors needed for the computation*/
 	double* eta_nbv = new double[nbv];
-	double* dvxdx   = new double[nbe];
-	double* dvxdy   = new double[nbe];
-	double* dvydx   = new double[nbe];
-	double* dvydy   = new double[nbe];
 	double* KVx     = new double[nbv];
 	double* KVy     = new double[nbv];
+	
 	int     iter;
 	double  iterror;
 	for(iter=1;iter<=niter;iter++){
@@ -671,8 +691,8 @@ int main(){/*{{{*/
 			if(isnan(dVydt[i])){ std::cerr<<"Found NaN in dVydt[i]"; return 1;}
 
 			/*2. Explicit CFL time step for viscous flow, x and y directions*/
-			double dtVx = rho*pow(resolx[i],2)/(4*H[i]*eta_nbv[i]*(1.+eta_b)*4.1);
-			double dtVy = rho*pow(resoly[i],2)/(4*H[i]*eta_nbv[i]*(1.+eta_b)*4.1);
+			double dtVx = rho*pow(resolx[i],2)/(4*max(80.0,H[i])*eta_nbv[i]*(1.+eta_b)*4.1);
+			double dtVy = rho*pow(resoly[i],2)/(4*max(80.0,H[i])*eta_nbv[i]*(1.+eta_b)*4.1);
 
 			/*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
 			vx[i] = vx[i] + dVxdt[i]*dtVx;
@@ -680,11 +700,11 @@ int main(){/*{{{*/
 
 			/*Apply Dirichlet boundary condition,*Residual should also be 0 (for convergence)*/
 			if(!isnan(spcvx[i])){
-				vx[i] = 0.;
+				vx[i] = spcvx[i];
 				dVxdt[i] = 0.;
 			}
 			if(!isnan(spcvy[i])){
-				vy[i] = 0.;
+				vy[i] = spcvy[i];
 				dVydt[i] = 0.;
 			}
 
