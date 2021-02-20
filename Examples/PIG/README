@@ -1,0 +1,55 @@
+Notes:
+
+groundedice_levelset instead of ocean_levelset
+
+	dtVx = rho*resolx.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
+	dtVy = rho*resoly.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
+	
+	Change damp to 0.02
+	relaxation = 0.08
+
+Matlab:	
+iter=1, err=2.797e+00 
+iter=1001, err=4.470e-01 
+iter=2001, err=7.303e-02 
+iter=3001, err=1.564e-02 
+iter=4001, err=4.214e-03 
+iter=5001, err=8.722e-04 
+iter=6001, err=3.884e-04 
+iter=7001, err=1.339e-04 
+iter=8001, err=6.168e-05 
+iter=9001, err=2.496e-05 
+iter=10001, err=9.115e-06 
+iter=11001, err=6.465e-06 
+iter=12001, err=1.835e-06 
+iter=13001, err=1.647e-06 
+iter=14001, err=3.833e-07 
+iter=15001, err=4.133e-07 
+iter=16001, err=1.083e-07 
+iter=17001, err=1.051e-07 
+iter=18001, err=3.048e-08 
+Elapsed time is 85.718195 seconds.
+iter=18427, err=9.878e-09 
+
+C++:
+iter=1, err=2.79525
+iter=1001, err=0.448998
+iter=2001, err=0.0791033
+iter=3001, err=0.0153609
+iter=4001, err=0.00472289
+iter=5001, err=0.00105564
+iter=6001, err=0.000420247
+iter=7001, err=0.000190048
+iter=8001, err=5.30708e-05
+iter=9001, err=3.85066e-05
+iter=10001, err=9.23969e-06
+iter=11001, err=8.66269e-06
+iter=12001, err=2.569e-06
+iter=13001, err=1.95415e-06
+iter=14001, err=8.32078e-07
+iter=15001, err=4.30766e-07
+iter=16001, err=2.37716e-07
+iter=17001, err=9.09179e-08
+iter=18001, err=6.76374e-08
+iter=19001, err=2.13408e-08
+iter=19208, err=9.92887e-09
