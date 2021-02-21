@@ -26,14 +26,15 @@ friction         = md.friction.coefficient;
 
 %Constants 
 n_glen    = 3;
-damp      = 0.02;
+damp = 0.02;
+%damp      = 0.02;
 rele      = 1e-1;
 eta_b     = 0.5;
 eta_0     = 1.e+14/2.;
 niter     = 5e5;
 nout_iter = 1000;
 epsi      = 1e-8;
-relaxation = 0.08; %1 = no relaxation, <1 = under-relaxation (more stable)
+%relaxation = 0.08; %1 = no relaxation, <1 = under-relaxation (more stable)
 
 %Initial guesses (except vx and vy that we already loaded)
 etan   = 1.e+14*ones(nbe,1);
@@ -273,8 +274,12 @@ for iter = 1:niter % Pseudo-Transient cycles
 	if(any(isnan(dVydt))) error('Found NaN in dVydt[i]'); end
 
 	%2. Explicit CFL time step for viscous flow, x and y directions
-	dtVx = rho*resolx.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
-	dtVy = rho*resoly.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
+	dtVx = rho*resolx.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1);
+	dtVy = rho*resoly.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1);
+        
+	%For PIG, change the timestep definition to below%
+	%dtVx = rho*resolx.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
+	%dtVy = rho*resoly.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
 
 	%3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy
 	vx = vx + dVxdt.*dtVx;
