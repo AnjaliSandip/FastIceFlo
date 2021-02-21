@@ -1,6 +1,8 @@
 Notes:
 
-groundedice_levelset instead of ocean_levelset
+Used groundedice_levelset [may need to change to ocean_levelset depending on the ISSM version]
+
+Made the following changes to gpu.m
 
 	dtVx = rho*resolx.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
 	dtVy = rho*resoly.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
@@ -8,6 +10,7 @@ groundedice_levelset instead of ocean_levelset
 	Change damp to 0.02
 	relaxation = 0.08
 
+//RESULTS//
 Matlab:	
 iter=1, err=2.797e+00 
 iter=1001, err=4.470e-01 
