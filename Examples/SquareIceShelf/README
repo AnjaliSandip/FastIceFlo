@@ -1,7 +1,9 @@
-README
 
-groundedice_levelset instead of ocean_levelset
-	
+Notes:
+
+Used groundedice_levelset [may need to change to ocean_levelset depending on the ISSM version]
+
+//RESULTS//
 Matlab:	
 iter=1, err=3.872e-01 
 Elapsed time is 0.660301 seconds.
