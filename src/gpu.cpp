@@ -346,7 +346,7 @@ void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,doubl
 int main(){/*{{{*/
 
 	/*Open input binary file*/
-	const char* inputfile  = "./input.bin";
+	const char* inputfile  = "./SIS.bin";
 	const char* outputfile = "./output.outbin";
 	FILE* fid = fopen(inputfile,"rb");
 	if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
@@ -396,13 +396,14 @@ int main(){/*{{{*/
 	double n_glen    = 3.;
 	double damp      = 2.;
 	//For PIG, change the damp//
-   // double damp = 0.02;
+        // double damp = 0.02;
 	double rele      = 1e-1;
 	double eta_b     = 0.5;
 	double eta_0     = 1.e+14/2.;
 	int    niter     = 5e6;
 	int    nout_iter = 1000;
 	double epsi      = 1e-8;
+	//double relaxation = 0.08;
 
 	/*Initial guesses (except vx and vy that we already loaded)*/
 	double* etan = new double[nbe];
