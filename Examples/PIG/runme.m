@@ -14,7 +14,7 @@ steps=1;
 	md=bamg(model,'domain',domain,'hmax',hinit);
 
 	% Get necessary data to build up the velocity grid
-	nsidc_vel='../Data/Antarctica_ice_velocity.nc'; 	
+	nsidc_vel= issmdir()'..examples/Data/..'; 	
 	xmin    = strsplit(ncreadatt(nsidc_vel,'/','xmin'));      xmin    = str2num(xmin{2});
 	ymax    = strsplit(ncreadatt(nsidc_vel,'/','ymax'));      ymax    = str2num(ymax{2});
 	spacing = strsplit(ncreadatt(nsidc_vel,'/','spacing'));   spacing = str2num(spacing{2});
@@ -46,7 +46,7 @@ steps=1;
 	md = loadmodel('./Models/PIG_Mesh_generation');	
 
 	% Load SeaRISe dataset for Antarctica  http://websrv.cs.umt.edu/isis/index.php/Present_Day_Antarctica
-	searise='../Data/Antarctica_5km_withshelves_v0.75.nc';
+	searise=issmdir()'..examples/Data/..';
 	
 	%read thickness mask from SeaRISE
 	x1=double(ncread(searise,'x1'));
