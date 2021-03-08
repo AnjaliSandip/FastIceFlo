@@ -1,3 +1,22 @@
+function md = gpu(md,damp,relaxation)
+%GPU - solve stress balance using a GPU-like algorithem
+%
+%   Usage:
+%      md = gpu(md,damp,relaxation)
+%
+%   Defaults:
+%      damp  = 0.2;   
+%      relax = 1;     NOTE: 1 = no relaxation, <1 = under-relaxation (more stable)
+
+%Set default arguments
+if nargin<1
+	error('not enough input arguments');
+elseif nargin<2
+	relaxation = 1;
+	damp       = 0.2;
+elseif nargin<3
+	relaxation = 1;
+end
 
 % ======================== LOAD DATA FROM MD ===============================
 
@@ -16,7 +35,7 @@ H                = md.geometry.thickness;
 surface          = md.geometry.surface;
 base             = md.geometry.base;
 ice_levelset     = md.mask.ice_levelset;
-ocean_levelset   = md.mask.groundedice_levelset;
+ocean_levelset   = md.mask.ocean_levelset;
 rheology_B_temp  = md.materials.rheology_B;
 vx               = md.initialization.vx/yts;
 vy               = md.initialization.vy/yts;
@@ -26,15 +45,12 @@ friction         = md.friction.coefficient;
 
 %Constants 
 n_glen    = 3;
-damp = 0.02;
-%damp      = 0.02;
 rele      = 1e-1;
 eta_b     = 0.5;
 eta_0     = 1.e+14/2.;
-niter     = 5e5;
+niter     = 5e6;
 nout_iter = 1000;
 epsi      = 1e-8;
-%relaxation = 0.08; %1 = no relaxation, <1 = under-relaxation (more stable)
 
 %Initial guesses (except vx and vy that we already loaded)
 etan   = 1.e+14*ones(nbe,1);
@@ -52,6 +68,21 @@ weights=Weights(index,areas,nbe,nbv);
 [dsdx dsdy] = derive_xy_elem(surface,index,alpha,beta,nbe);
 Helem       = mean(H(index),2);
 rheology_B  = mean(rheology_B_temp(index),2);
+
+%LAST: Update viscosity
+[dvxdx dvxdy]=derive_xy_elem(vx,index,alpha,beta,nbe);
+[dvydx dvydy]=derive_xy_elem(vy,index,alpha,beta,nbe);
+for i=1:nbe
+	eps_xx = dvxdx(i);
+	eps_yy = dvydy(i);
+	eps_xy = .5*(dvxdy(i)+dvydx(i));
+	EII2 = eps_xx^2 + eps_yy^2 + eps_xy^2 + eps_xx*eps_yy;
+	eta_it = 1.e+14/2.;
+	if(EII2>0.) eta_it = rheology_B(i)/(2*EII2^((n_glen-1.)/(2*n_glen))); end
+
+	etan(i) = min(eta_it,eta_0*1e5);
+	if(isnan(etan(i))) error('Found NaN in etan(i)'); end
+end
 
 %Linear integration points order 3
 wgt3=[0.555555555555556, 0.888888888888889, 0.555555555555556];
@@ -277,13 +308,9 @@ for iter = 1:niter % Pseudo-Transient cycles
 	dtVx = rho*resolx.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1);
 	dtVy = rho*resoly.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1);
         
-	%For PIG, change the timestep definition to below%
-	%dtVx = rho*resolx.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
-	%dtVy = rho*resoly.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
-
 	%3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy
-	vx = vx + dVxdt.*dtVx;
-	vy = vy + dVydt.*dtVy;
+	vx = vx + relaxation*dVxdt.*dtVx;
+	vy = vy + relaxation*dVydt.*dtVy;
 
 	%Apply Dirichlet boundary condition, Residual should also be 0 (for convergence)
 	pos = find(~isnan(spcvx));
@@ -325,10 +352,11 @@ for iter = 1:niter % Pseudo-Transient cycles
 		if(isnan(etan(i))) error('Found NaN in etan(i)'); end
 	end
 end
-toc
 clf
 plotmodel(md,'data',sqrt(vx.^2+vy.^2)*yts);
-fprintf('iter=%d, err=%1.3e \n',iter,iterror)
+fprintf('iter=%d, err=%1.3e --> converged\n',iter,iterror)
+toc
+end
 
 function [areas alpha beta gamma]=NodalCoeffs(index,x,y,nbe)% {{{
 	[alpha beta gamma]=GetNodalFunctionsCoeff(index,x,y);
