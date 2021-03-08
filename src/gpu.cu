@@ -356,7 +356,7 @@ void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,doubl
 }/*}}}*/
 
 /*CUDA Code*/
-__global__ void PseudoTimeStepping(double* KVx, double* KVy, double* KVx_0, double* KVx_1, double* KVx_2, double* KVy_0, double* KVy_1, double* KVy_2, double* vx, double* vy, double* alpha2, double* groundedratio, double* etan, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* Helem, double* areas, double* alpha, double* beta, int* index, int nbv, int nbe, double* eta_nbv, double* eta_nbv_gpu, double* weights, double rho, double* ML,  double* Fvx, double* Fvy, double* dVxdt, double* dVydt,  double* resolx, double* resoly, double* H, double damp, double eta_b, double* spcvx, double* spcvy,  double* rheology_B, bool* isice, double rele, double eta_0, double n_glen){/*{{{*/ 
+__global__ void PT1(double* Eta_nbv, double* kvx, double* kvy,double* KVX, double* KVY,  double* KVx, double* KVy,  double* vx, double* vy, double* alpha2, double* groundedratio, double* etan, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* Helem, double* areas, double* alpha, double* beta, int* index, int nbv, int nbe, double* eta_nbv, double* weights, double rho, double* ML,  double* Fvx, double* Fvy, double* dVxdt, double* dVydt,  double* resolx, double* resoly, double* H, double damp, double eta_b, double* spcvx, double* spcvy,  double* rheology_B, bool* isice, double rele, double eta_0, double n_glen, bool* grounded){/*{{{*/ 	     {/*{{{*/ 
 	
 
 	int ix = blockIdx.x * blockDim.x + threadIdx.x;
@@ -367,24 +367,19 @@ __global__ void PseudoTimeStepping(double* KVx, double* KVy, double* KVx_0, doub
 		dvxdy[ix] = vx[index[ix*3+0]-1]*beta [ix*3+0] + vx[index[ix*3+1]-1]*beta[ ix*3+1] + vx[index[ix*3+2]-1]*beta[ ix*3+2];
 		dvydx[ix] = vy[index[ix*3+0]-1]*alpha[ix*3+0] + vy[index[ix*3+1]-1]*alpha[ix*3+1] + vy[index[ix*3+2]-1]*alpha[ix*3+2];
 		dvydy[ix] = vy[index[ix*3+0]-1]*beta[ ix*3+0] + vy[index[ix*3+1]-1]*beta[ ix*3+1] + vy[index[ix*3+2]-1]*beta[ ix*3+2];
-
-      /*eta_nbv*/
-      eta_nbv_gpu[ix] =  etan[ix]*areas[ix];
    }
 
-	if(ix==0){
-		for(int i=0; i<nbv; i++) eta_nbv[i] = 0.;
+if (ix<nbe*3) {
+    KVX[ix] = 0.;
+    KVY[ix]=  0.;
+ }
+	
+//KV term in equation 22//
+     if(ix<nbv){
+           KVx[ix] = 0.;
+           KVy[ix] = 0.;
+     }
 
-		for(int i=0;i<nbe;i++){
-			for(int j=0; j<3;j++){
-				eta_nbv[index[i*3+j]-1] += eta_nbv_gpu[i];}
-      }
-
-		/*Divide by sum of areas*/
-		for(int i=0;i<nbv;i++) eta_nbv[i] = eta_nbv[i]/weights[i];
-	}
-
-	__syncthreads();
 
 	/*KV*/
 	double eps_xx;
@@ -393,61 +388,94 @@ __global__ void PseudoTimeStepping(double* KVx, double* KVy, double* KVx_0, doub
 	double eta_e;
 
 	if(ix<nbe){
-		eta_e = etan[ix];
-		eps_xx = dvxdx[ix];
-		eps_yy = dvydy[ix];
-		eps_xy = .5 * (dvxdy[ix] + dvydx[ix]);                    
+		
+	/*Skip if no ice*/
+            if (isice[ix]) {
 
-		KVx_0[ix] = 2*Helem[ix]*eta_e*(2*eps_xx + eps_yy)*alpha[ix*3+0]*areas[ix] + 2*Helem[ix]*eta_e*eps_xy*beta[ix*3+0]*areas[ix];
-		KVx_1[ix] = 2*Helem[ix]*eta_e*(2*eps_xx + eps_yy)*alpha[ix*3+1]*areas[ix] + 2*Helem[ix]*eta_e*eps_xy*beta[ix*3+1]*areas[ix];
-		KVx_2[ix] = 2*Helem[ix]*eta_e*(2*eps_xx + eps_yy)*alpha[ix*3+2]*areas[ix] + 2*Helem[ix]*eta_e*eps_xy*beta[ix*3+2]*areas[ix];
-		KVy_0[ix] = 2*Helem[ix]*eta_e*eps_xy*alpha[ix*3+0]*areas[ix] + 2*Helem[ix]*eta_e*(2*eps_yy + eps_xx)*beta[ix*3+0]*areas[ix];
-		KVy_1[ix] = 2*Helem[ix]*eta_e*eps_xy*alpha[ix*3+1]*areas[ix] + 2*Helem[ix]*eta_e*(2*eps_yy + eps_xx)*beta[ix*3+1]*areas[ix];
-		KVy_2[ix] = 2*Helem[ix]*eta_e*eps_xy*alpha[ix*3+2]*areas[ix] + 2*Helem[ix]*eta_e*(2*eps_yy + eps_xx)*beta[ix*3+2]*areas[ix];
-   }
-
-	if(ix==0){
-		for(int i=0; i<nbv; i++) {
-			KVx[i] = 0.;
-			KVy[i] = 0.; 
-      }
-
-		for(int n=0;n<nbe;n++){
-			
-		if(isice[n]) {	
-			KVx[index[n*3+0]-1] += KVx_0[n];
-			KVx[index[n*3+1]-1] += KVx_1[n];
-			KVx[index[n*3+2]-1] += KVx_2[n];
-			KVy[index[n*3+0]-1] += KVy_0[n];
-			KVy[index[n*3+1]-1] += KVy_1[n];
-			KVy[index[n*3+2]-1] += KVy_2[n]; 
-
-			/*Add basal friction*/
-			if(groundedratio[n]>0.){
-				for(int k=0;k<3;k++){
-					for(int i=0;i<3;i++){
-						for(int j=0;j<3;j++){
-							if(i==j && j==k){
-								KVx[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vx[index[n*3+j]-1]*areas[n]/10.;
-								KVy[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vy[index[n*3+j]-1]*areas[n]/10.;
-							}
-							else if((i!=j) && (j!=k) && (k!=i)){
-								KVx[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vx[index[n*3+j]-1]*areas[n]/60.;
-								KVy[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vy[index[n*3+j]-1]*areas[n]/60.;
-							}
-							else{
-								KVx[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vx[index[n*3+j]-1]*areas[n]/30.;
-								KVy[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vy[index[n*3+j]-1]*areas[n]/30.;
-							}
-						}
-					}
-				}
-			}        
-		    }
-		}    
-
+            /*Viscous Deformation*/
+            double eta_e = etan[ix];
+            double eps_xx = dvxdx[ix];
+            double eps_yy = dvydy[ix];
+            double eps_xy = .5 * (dvxdy[ix] + dvydx[ix]);
+            for (int i = 0; i < 3; i++) {
+                kvx[ix * 3 + i] = 2 * Helem[ix] * eta_e * (2 * eps_xx + eps_yy) * alpha[ix * 3 + i] * areas[ix] + \
+                                              2 * Helem[ix] * eta_e * eps_xy * beta[ix * 3 + i] * areas[ix];
+                kvy[ix * 3 + i] = 2 * Helem[ix] * eta_e * eps_xy * alpha[ix * 3 + i] * areas[ix] + \
+                                              2 * Helem[ix] * eta_e * (2 * eps_yy + eps_xx) * beta[ix * 3 + i] * areas[ix];
+            }	
+    
 	}
-	__syncthreads();
+
+}/*}}}*/
+	
+__global__ void PT2(double* Eta_nbv, double* kvx, double* kvy,double* KVX, double* KVY,  double* KVx, double* KVy,  double* vx, double* vy, double* alpha2, double* groundedratio, double* etan, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* Helem, double* areas, double* alpha, double* beta, int* index, int nbv, int nbe, double* eta_nbv, double* weights, double rho, double* ML,  double* Fvx, double* Fvy, double* dVxdt, double* dVydt,  double* resolx, double* resoly, double* H, double damp, double eta_b, double* spcvx, double* spcvy,  double* rheology_B, bool* isice, double rele, double eta_0, double n_glen, bool* grounded, double* NORMx, double* NORMY){/*{{{*/ 	     
+  
+	
+if (ix == 0) {
+	        
+	        for(int n=0;n<nbe;n++){
+
+            /*Skip if no ice*/
+            if(!isice[n]) continue;
+	
+
+	    /*Add basal friction*/
+            if(groundedratio[n]>0.){
+                for(int k=0;k<3;k++){
+                    for(int i=0;i<3;i++){
+                        for(int j=0;j<3;j++){
+                            if(i==j && j==k){
+                                KVx[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vx[index[n*3+j]-1]*areas[n]/10.;
+                                KVy[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vy[index[n*3+j]-1]*areas[n]/10.;
+                            }
+                            else if((i!=j) && (j!=k) && (k!=i)){
+                                KVx[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vx[index[n*3+j]-1]*areas[n]/60.;
+                                KVy[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vy[index[n*3+j]-1]*areas[n]/60.;
+                            }
+                            else{
+                                KVx[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vx[index[n*3+j]-1]*areas[n]/30.;
+                                KVy[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vy[index[n*3+j]-1]*areas[n]/30.;
+                            }
+                        }
+                    }
+                }
+            }
+     }	
+	
+}
+	
+	
+    if(ix<nbv) {
+            for(int i=0;i<nbe;i++) {
+                    for(int j=0;j<3;j++){
+                     if (index[i*3+j]==ix+1) {
+                        KVx[ix] = KVx[ix] + kvx[i*3+j] + KVX[i*3+j];
+                        KVy[ix] = KVy[ix] + kvy[i*3+j] + KVY[i*3+j];
+                    }
+                }
+            }
+        }
+	
+			
+ //Get current viscosity on nodes (Needed for time stepping)//
+    if(ix<nbe) {
+            for (int j = 0; j < 3; j++) {
+               Eta_nbv[ix*3+j] = etan[ix]*areas[ix];
+            }
+        }
+
+        if(ix<nbv){
+            for(int i=0;i<nbe;i++) {
+                for(int j=0;j<3;j++){
+                    if (index[i*3+j]==ix+1) {
+                        eta_nbv[ix] = eta_nbv[ix] + Eta_nbv[i*3+j];
+                    }
+                }
+            }
+        }
+
+        if(ix<nbv) {eta_nbv[ix] =eta_nbv[ix]/weights[ix];}  
+	
 	
 	double ResVx;
 	double ResVy;
@@ -476,19 +504,16 @@ __global__ void PseudoTimeStepping(double* KVx, double* KVy, double* KVx_0, doub
 		/*Apply Dirichlet boundary condition*/
 		if(!isnan(spcvx[ix])){
 			vx[ix]    = spcvx[ix];
-			dVxdt[ix] = 0.;}
+			dVxdt[ix] = 0.;
+		        NORMx[ix] = pow(dVxdt[ix],2)}
 
 		if(!isnan(spcvy[ix])){
 			vy[ix]    = spcvy[ix];
-			dVydt[ix] = 0.;}
+			dVydt[ix] = 0.;
+		        NORMy[ix] = pow(dVxdt[ix],2)}
         }
 	
-if(ix==0){
-          for(int i=0; i<nbv; i++) {
-          normX += pow(dVxdt[i],2);
-          normY += pow(dVydt[i],2);}
-}
-__syncthreads();
+
 	
 	double EII2;
 	double eta_it;
@@ -511,7 +536,7 @@ __syncthreads();
 int main(){/*{{{*/
 
 	/*Open input binary file*/
-	const char* inputfile  = "./input.bin";
+	const char* inputfile  = "./SIS.bin";
 	const char* outputfile = "./output.outbin";
 	FILE* fid = fopen(inputfile,"rb");
 	if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
@@ -856,11 +881,16 @@ int main(){/*{{{*/
 	cudaMalloc(&d_groundedratio, nbe*sizeof(double));
 	cudaMemcpy(d_groundedratio, groundedratio, nbe*sizeof(double), cudaMemcpyHostToDevice);
 	
-    bool *d_isice;
-    cudaMalloc(&d_isice, nbe*sizeof(bool));
-    cudaMemcpy(d_isice, isice, nbe*sizeof(bool), cudaMemcpyHostToDevice);	
+        bool *d_isice;
+        cudaMalloc(&d_isice, nbe*sizeof(bool));
+        cudaMemcpy(d_isice, isice, nbe*sizeof(bool), cudaMemcpyHostToDevice);
+	
+	double *NORMx;
+	cudaMallocManaged(&NORMx, nbv*sizeof(double));
 
-
+        double *NORMy;
+	cudaMallocManaged(&NORMy, nbv*sizeof(double));
+	
    /*------------ allocate relevant vectors on host (GPU)---------------*/
 
 	//double *dvxdx = NULL;
@@ -881,29 +911,24 @@ int main(){/*{{{*/
 	double *KVy = NULL;
 	cudaMalloc(&KVy, nbv*sizeof(double));
 
-	double *KVx_0 = NULL;
-	cudaMalloc(&KVx_0, nbe*sizeof(double));
-
-	double *KVx_1 = NULL;
-	cudaMalloc(&KVx_1, nbe*sizeof(double));
-
-	double *KVx_2 = NULL;
-	cudaMalloc(&KVx_2, nbe*sizeof(double));
-
-	double *KVy_0 = NULL;
-	cudaMalloc(&KVy_0, nbe*sizeof(double));
-
-	double *KVy_1 = NULL;
-	cudaMalloc(&KVy_1, nbe*sizeof(double));
-
-	double *KVy_2 = NULL;
-	cudaMalloc(&KVy_2, nbe*sizeof(double));
-
 	double *eta_nbv = NULL;
         cudaMalloc(&eta_nbv, nbv*sizeof(double));
 
-	double *eta_nbv_gpu = NULL;
-	cudaMalloc(&eta_nbv_gpu, nbe*sizeof(double));
+        double *Eta_nbv = NULL;
+        cudaMalloc(&Eta_nbv, nbe*3*sizeof(double));       
+
+        double *kvx = NULL;
+	cudaMalloc(&kvx, nbe*3*sizeof(double));
+
+	double *kvy = NULL;
+	cudaMalloc(&kvy, nbe*3*sizeof(double));
+
+        double *KVX = NULL;
+        cudaMalloc(&KVX, nbe*3*sizeof(double));
+
+        double *KVY = NULL;
+        cudaMalloc(&KVY, nbe*3*sizeof(double));
+	
 
 	/*Main loop*/
 	int iter;
@@ -913,8 +938,10 @@ int main(){/*{{{*/
 		 normX = 0;
                  normY = 0;
 
-PseudoTimeStepping <<<gridSize,blockSize>>> (KVx, KVy, KVx_0, KVx_1, KVx_2, KVy_0, KVy_1, KVy_2, d_vx, d_vy, d_alpha2, d_groundedratio, d_etan, dvxdx, dvydy, dvxdy, dvydx, d_Helem, d_areas, d_alpha, d_beta, d_index, nbv, nbe, d_eta_nbv, eta_nbv_gpu, d_weights, rho, d_ML, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, damp,eta_b, d_spcvx, d_spcvy, d_rheology_B, d_isice, rele, eta_0, n_glen); cudaDeviceSynchronize();
-  	          
+PT1 <<<gridSize,blockSize>>> (Eta_nbv, kvx, kvy, KVX, KVY, KVx, KVy, d_vx, d_vy, d_alpha2, d_groundedratio, d_etan, dvxdx, dvydy, dvxdy, dvydx, d_Helem, d_areas, d_alpha, d_beta, d_index, nbv, nbe, eta_nbv, d_weights, rho, d_ML, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, damp,eta_b, d_spcvx, d_spcvy, d_rheology_B, d_isice, rele, eta_0, n_glen, d_grounded); cudaDeviceSynchronize();	                 
+   
+PT2 <<<gridSize,blockSize>>> (Eta_nbv, kvx, kvy, KVX, KVY, KVx, KVy, d_vx, d_vy, d_alpha2, d_groundedratio, d_etan, dvxdx, dvydy, dvxdy, dvydx, d_Helem, d_areas, d_alpha, d_beta, d_index, nbv, nbe, eta_nbv, d_weights, rho, d_ML, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, damp,eta_b, d_spcvx, d_spcvy, d_rheology_B, d_isice, rele, eta_0, n_glen, d_grounded, NORMx, NORMy); cudaDeviceSynchronize();	                  
+
 
 		/*Get final error estimate*/
 		normX  = sqrt(normX)/double(nbv);
@@ -987,13 +1014,11 @@ PseudoTimeStepping <<<gridSize,blockSize>>> (KVx, KVy, KVx_0, KVx_1, KVx_2, KVy_
 	cudaFree(dvydy);
 	cudaFree(KVx);
 	cudaFree(KVy);
-	cudaFree(KVx_0);
-	cudaFree(KVx_1);
-	cudaFree(KVx_2);
-	cudaFree(KVy_0);
-	cudaFree(KVy_1);
-	cudaFree(KVy_2);
-	cudaFree(eta_nbv_gpu);
+        cudaFree(kvx);
+        cudaFree(kvy);
+        cudaFree(KVX);
+        cudaFree(KVY);
+	cudaFree(Eta_nbv);
 	cudaFree(eta_nbv);
 	cudaFree(d_etan);
 	cudaFree(d_ML);
