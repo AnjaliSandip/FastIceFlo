@@ -138,10 +138,6 @@ if any(steps==6)  %GPU solver
 
 	load ./Models/PIG_Control_drag
 
-	%md=extract(md,~(min(md.mask.ice_levelset(md.mesh.elements),[],2)>0));
-	%md.mask.ice_levelset=killberg(md);
-	%pos = find(min
-
 	addpath('../../src/');
 	md=gpu(md,0.35,0.28);
 end

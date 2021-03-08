@@ -1,11 +1,13 @@
-steps=[1];
+steps=[4];
 
-%if any(steps==1)
+if any(steps==1)
 	disp('	Step 1: Mesh creation'); 
 	md=triangle(model,'Domain.exp',2000);
+	[lat lon] = xy2ll(md.mesh.x,md.mesh.y,+1,45,70);
+	[x2   y2] = ll2xy(lat,lon,+1,39,71);
 
 	%Get observed velocity field on mesh nodes
-	ncdata= issmdir()'..examples/Data/..';
+	ncdata = [issmdir() 'examples/Data/Greenland_5km_dev1.2.nc'];
 	if ~exist(ncdata,'file'), 
 		error('File not downloaded in Data Directory');
 	end
@@ -13,73 +15,63 @@ steps=[1];
 	y1   = ncread(ncdata,'y1');
 	velx = ncread(ncdata,'surfvelx');
 	vely = ncread(ncdata,'surfvely');
-	vx   = InterpFromGridToMesh(x1,y1,velx',md.mesh.x,md.mesh.y,0);
-	vy   = InterpFromGridToMesh(x1,y1,vely',md.mesh.x,md.mesh.y,0);
+	vx   = InterpFromGridToMesh(x1,y1,velx',x2,y2,0);
+	vy   = InterpFromGridToMesh(x1,y1,vely',x2,y2,0);
 	vel  = sqrt(vx.^2+vy.^2);
 
 	%refine mesh using surface velocities as metric
 	md=bamg(md,'hmin',1200,'hmax',15000,'field',vel,'err',5);
-	[md.mesh.lat,md.mesh.long]  = xy2ll(md.mesh.x,md.mesh.y,+1,39,71);
+	[md.mesh.lat,md.mesh.long]  = xy2ll(md.mesh.x,md.mesh.y,+1,45,70);
 	
 	save JksMesh md
-%end 
-%if any(steps==2)
+end 
+if any(steps==2)
 	disp('	Step 2: Parameterization');
 	md=loadmodel('JksMesh');
 	
 	md=setmask(md,'','');
 	md=parameterize(md,'Jks.par'); 
+	md=setflowequation(md,'SSA','all');
 
 	save JksPar md
-%end 
-%if any(steps==3)
+end 
+if any(steps==3)
 	disp('	Step 3: Control method friction');
 	md=loadmodel('JksPar');
 
-	md=setflowequation(md,'SSA','all');
-
-	%Control general
+	% Control general
+	md.inversion=m1qn3inversion(md.inversion);
 	md.inversion.iscontrol=1;
-	md.inversion.nsteps=20;
-	md.inversion.step_threshold=0.99*ones(md.inversion.nsteps,1);
-	md.inversion.maxiter_per_step=5*ones(md.inversion.nsteps,1);
-	md.verbose=verbose('solution',true,'control',true);
+	md.inversion.maxsteps=40;
+	md.inversion.maxiter=40;
+	md.inversion.dxmin=0.1;
+	md.inversion.gttol=1.0e-6;
+	md.verbose=verbose('control',true);
 
-	%Cost functions
-	md.inversion.cost_functions=[101 103];
-	md.inversion.cost_functions_coefficients=ones(md.mesh.numberofvertices,2);
+	% Cost functions
+	md.inversion.cost_functions=[101 103 501];
+	md.inversion.cost_functions_coefficients=ones(md.mesh.numberofvertices,3);
 	md.inversion.cost_functions_coefficients(:,1)=40;
 	md.inversion.cost_functions_coefficients(:,2)=1;
+	md.inversion.cost_functions_coefficients(:,3)=8e-7;
 
-	%Controls
+	% Controls
 	md.inversion.control_parameters={'FrictionCoefficient'};
-	md.inversion.gradient_scaling(1:md.inversion.nsteps)=30;
 	md.inversion.min_parameters=1*ones(md.mesh.numberofvertices,1);
 	md.inversion.max_parameters=200*ones(md.mesh.numberofvertices,1);
 
-	%Additional parameters
-	md.stressbalance.restol=0.01;
-	md.stressbalance.reltol=0.1;
-	md.stressbalance.abstol=NaN;
-
-	%Go solve
-	md.cluster=generic('name',oshostname,'np',4);
+	% Solve
 	md=solve(md,'Stressbalance');
+
+	% Update model friction fields accordingly
+	md.friction.coefficient=md.results.StressbalanceSolution.FrictionCoefficient;
 	
 	save JksControl md
-%end 
-%if any(steps==4)
-	disp('	Plotting')
-	md=loadmodel('JksControl');
+end 
+if any(steps==4)  %GPU solver
 
-	plotmodel(md,'unit#all','km','axis#all','equal',...
-		'data',md.inversion.vel_obs,'title','Observed velocity',...
-		'data',md.results.StressbalanceSolution.Vel,'title','Modeled Velocity',...
-		'colorbar#1','off','colorbartitle#2','(m/yr)',...
-		'caxis#1-2',[0,7000],...
-		'data',md.geometry.base,'title','Base elevation',...
-		'data',md.results.StressbalanceSolution.FrictionCoefficient,...
-		'title','Friction Coefficient',...
-		'colorbartitle#3','(m)');
-%end
+	load JksControl
 
+	addpath('../../src/');
+	md=gpu(md,1.5,.9);
+end

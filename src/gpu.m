@@ -5,7 +5,7 @@ function md = gpu(md,damp,relaxation)
 %      md = gpu(md,damp,relaxation)
 %
 %   Defaults:
-%      damp  = 0.2;   
+%      damp  = 0.2;   NOTE: 0<damp<20
 %      relax = 1;     NOTE: 1 = no relaxation, <1 = under-relaxation (more stable)
 
 %Set default arguments
