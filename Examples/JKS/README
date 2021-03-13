@@ -1,5 +1,6 @@
 Notes:
-
+damp = 1.5
+relaxation = 0.9
 
 //RESULTS//
 Matlab:	
