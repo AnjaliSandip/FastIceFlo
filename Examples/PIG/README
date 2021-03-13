@@ -3,9 +3,6 @@ Notes:
 
 
 Made the following changes to gpu.m
-
-	dtVx = rho*resolx.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
-	dtVy = rho*resoly.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1)*relaxation;
 	
 	Change damp to 0.15
 	relaxation = 0.05
