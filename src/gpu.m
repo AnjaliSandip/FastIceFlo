@@ -69,20 +69,6 @@ weights=Weights(index,areas,nbe,nbv);
 Helem       = mean(H(index),2);
 rheology_B  = mean(rheology_B_temp(index),2);
 
-%LAST: Update viscosity
-[dvxdx dvxdy]=derive_xy_elem(vx,index,alpha,beta,nbe);
-[dvydx dvydy]=derive_xy_elem(vy,index,alpha,beta,nbe);
-for i=1:nbe
-	eps_xx = dvxdx(i);
-	eps_yy = dvydy(i);
-	eps_xy = .5*(dvxdy(i)+dvydx(i));
-	EII2 = eps_xx^2 + eps_yy^2 + eps_xy^2 + eps_xx*eps_yy;
-	eta_it = 1.e+14/2.;
-	if(EII2>0.) eta_it = rheology_B(i)/(2*EII2^((n_glen-1.)/(2*n_glen))); end
-
-	etan(i) = min(eta_it,eta_0*1e5);
-	if(isnan(etan(i))) error('Found NaN in etan(i)'); end
-end
 
 %Linear integration points order 3
 wgt3=[0.555555555555556, 0.888888888888889, 0.555555555555556];
