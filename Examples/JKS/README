@@ -1,15 +1,11 @@
 Notes:
 
-Used groundedice_levelset [may need to change to ocean_levelset depending on the ISSM version]
 
 //RESULTS//
 Matlab:	
-iter=1, err=1.981e+01 
-iter=1001, err=7.953e-07 
-Elapsed time is 5.752952 seconds.
-iter=1276, err=9.849e-09 
+iter=1, err=2.847e+00 
+iter=479, err=9.828e-09 --> converged
 
 C++:
-iter=1, err=19.8146
-iter=1001, err=7.95292e-07
-iter=1276, err=9.84947e-09
+iter=1, err=21.1211
+iter=488, err=9.90242e-09
