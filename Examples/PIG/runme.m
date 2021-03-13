@@ -139,5 +139,5 @@ if any(steps==6)  %GPU solver
 	load ./Models/PIG_Control_drag
 
 	addpath('../../src/');
-	md=gpu(md,0.35,0.28);
+	md=gpu(md,0.15,0.05);
 end
