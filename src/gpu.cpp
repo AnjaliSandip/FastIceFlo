@@ -616,7 +616,7 @@ int main(){/*{{{*/
         double eta_it = 1.e+14/2.;
         if(EII2>0.) eta_it = rheology_B[i]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
 
-        etan[i] = min(exp(rele*log(eta_it) + (1-rele)*log(etan[i])),eta_0*1e5);
+        etan[i] = min(eta_it,eta_0*1e5);
         if(isnan(etan[i])){ std::cerr<<"Found NaN in etan[i]"; return 1;}
     }
 	
