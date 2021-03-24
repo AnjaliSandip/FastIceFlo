@@ -219,7 +219,7 @@ EII2 = eps_xx^2 + eps_yy^2 + eps_xy^2 + eps_xx*eps_yy;
 eta_it = 1.e+14/2.;
 if(EII2>0.) eta_it = rheology_B(i)/(2*EII2^((n_glen-1.)/(2*n_glen))); end
 
-etan(i) = min(exp(rele*log(eta_it) + (1-rele)*log(etan(i))),eta_0*1e5);
+etan(i) = min(eta_it,eta_0*1e5);
 if(isnan(etan(i))) error('Found NaN in etan(i)'); end
 end
 
