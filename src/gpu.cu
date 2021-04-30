@@ -499,6 +499,79 @@ __global__ void PT6(double* Eta_nbe, double* etan, double* areas, double* eta_nb
 
 }/*}}}*/
 
+__global__ void PT7(double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* eta_nbv, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double eta_b, int nbe, int nbv){/*{{{*/
+
+  int ix = blockIdx.x * blockDim.x + threadIdx.x;
+
+	double ResVx;
+	double ResVy;
+	double dtVx;
+	double dtVy;
+        double relaxation = 1;  
+
+		if(ix<nbv){
+		/*1. Get time derivative based on residual (dV/dt)*/
+		ResVx =  1./(rho*ML[ix])*(-KVx[ix] + Fvx[ix]); //rate of velocity in the x, equation 23
+		ResVy =  1./(rho*ML[ix])*(-KVy[ix] + Fvy[ix]); //rate of velocity in the y, equation 24
+	 
+	 	dVxdt[ix] = dVxdt[ix]*(1.-damp/20.) + ResVx;
+	 	dVydt[ix] = dVydt[ix]*(1.-damp/20.) + ResVy;
+    
+           
+        /*2. Explicit CFL time step for viscous flow, x and y directions*/
+        dtVx = rho*pow(resolx[ix],2)/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
+        dtVy = rho*pow(resoly[ix],2)/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
+
+       //   dtVx = rho*pow(resolx[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;
+       //   dtVy = rho*pow(resoly[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;     
+                
+		/*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
+		vx[ix] = vx[ix] + relaxation*dVxdt[ix]*dtVx;
+		vy[ix] = vy[ix] + relaxation*dVydt[ix]*dtVy;
+
+		/*Apply Dirichlet boundary condition*/
+		if(!isnan(spcvx[ix])){
+			vx[ix]    = spcvx[ix];
+			dVxdt[ix] = 0.;  }
+
+		if(!isnan(spcvy[ix])){
+			vy[ix]    = spcvy[ix];
+			dVydt[ix] = 0.;}
+
+                
+                }
+
+if(ix==0){
+          for(int i=0; i<nbv; i++) {
+          normX += pow(dVxdt[i],2);
+          normY += pow(dVydt[i],2);}
+   }
+
+}/*}}}*/
+
+__global__ void PT8(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* rheology_B, double n_glen, bool* isice, double* etan, double eta_0, double rele, int nbe, int nbv){/*{{{*/
+
+ int ix = blockIdx.x * blockDim.x + threadIdx.x;
+
+	double EII2;
+	double eta_it;
+	double B;
+
+	if(ix < nbe){
+	double	eps_xx = dvxdx[ix];
+	double	eps_yy = dvydy[ix];
+	double	eps_xy = .5*(dvxdy[ix]+dvydx[ix]);
+		B = rheology_B[ix];
+		EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy; 
+		eta_it = 1.e+14/2.;  
+		if(EII2>0.) eta_it = B/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
+
+if(isice[ix])     { etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);} }
+
+
+}/*}}}*/
+
+
 
 /*Main*/
 int main(){/*{{{*/
@@ -934,6 +1007,11 @@ PT5 <<<gridSize,blockSize>>> (kvx, kvy, KVx, KVy, d_NodetoElem, d_Elem, nbe, nbv
 
 PT6 <<<gridSize,blockSize>>> (Eta_nbe, d_etan, d_areas, eta_nbv, d_index, d_NodetoElem, d_weights, nbe, nbv); cudaDeviceSynchronize();
 
+PT7 <<<gridSize,blockSize>>> (d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, eta_nbv, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, eta_b, nbe, nbv); cudaDeviceSynchronize();
+
+PT8 <<<gridSize,blockSize>>> (dvxdx, dvydy, dvxdy, dvxdy, d_rheology_B, n_glen, d_isice, d_etan, eta_0, rele, nbe, nbv); cudaDeviceSynchronize();
+
+		
 		/*Get final error estimate*/
 		normX  = sqrt(normX)/double(nbv);
 		normY  = sqrt(normY)/double(nbv);
