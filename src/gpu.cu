@@ -470,8 +470,8 @@ __global__ void PT5(double* kvx, double* kvy, double* KVx, double* KVy, int* Nod
     if(ix<nbv) {
                 for(int j=0;j<8;j++){
                     if (NodetoElem[(ix * 8 + j)] != 0) {
-                    KVx[ix] =  kvx[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)];
-                  //  KVy[ix] = KVy[ix] + kvy[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)] ;
+                    KVx[ix] =  KVx[ix] + kvx[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)];
+                    KVy[ix] = KVy[ix] + kvy[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)] ;
                     }
                 }
             }
