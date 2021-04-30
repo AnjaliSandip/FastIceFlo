@@ -356,40 +356,38 @@ void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,doubl
 }/*}}}*/
 
 /*CUDA Code*/
-__global__ void PT1(double* Eta_nbv, double* kvx, double* kvy,double* KVX, double* KVY,  double* KVx, double* KVy,  double* vx, double* vy, double* alpha2, double* groundedratio, double* etan, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* Helem, double* areas, double* alpha, double* beta, int* index, int nbv, int nbe, double* eta_nbv, double* weights, double rho, double* ML,  double* Fvx, double* Fvy, double* dVxdt, double* dVydt,  double* resolx, double* resoly, double* H, double damp, double eta_b, double* spcvx, double* spcvy,  double* rheology_B, bool* isice, double rele, double eta_0, double n_glen, bool* grounded){/*{{{*/ 	     {/*{{{*/ 
-	
 
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
+__global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* vx, double* vy, double* alpha, double* beta, int* index, int nbe, int nbv){/*{{{*/
 
-	if(ix<nbe){
+     int ix = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if(ix<nbe){
       /*Calculate velocity derivatives*/
-		dvxdx[ix] = vx[index[ix*3+0]-1]*alpha[ix*3+0] + vx[index[ix*3+1]-1]*alpha[ix*3+1] + vx[index[ix*3+2]-1]*alpha[ix*3+2];
-		dvxdy[ix] = vx[index[ix*3+0]-1]*beta [ix*3+0] + vx[index[ix*3+1]-1]*beta[ ix*3+1] + vx[index[ix*3+2]-1]*beta[ ix*3+2];
-		dvydx[ix] = vy[index[ix*3+0]-1]*alpha[ix*3+0] + vy[index[ix*3+1]-1]*alpha[ix*3+1] + vy[index[ix*3+2]-1]*alpha[ix*3+2];
-		dvydy[ix] = vy[index[ix*3+0]-1]*beta[ ix*3+0] + vy[index[ix*3+1]-1]*beta[ ix*3+1] + vy[index[ix*3+2]-1]*beta[ ix*3+2];
+                dvxdx[ix] = vx[index[ix*3+0]-1]*alpha[ix*3+0] + vx[index[ix*3+1]-1]*alpha[ix*3+1] + vx[index[ix*3+2]-1]*alpha[ix*3+2];
+                dvxdy[ix] = vx[index[ix*3+0]-1]*beta [ix*3+0] + vx[index[ix*3+1]-1]*beta [ix*3+1] + vx[index[ix*3+2]-1]*beta [ix*3+2];
+                dvydx[ix] = vy[index[ix*3+0]-1]*alpha[ix*3+0] + vy[index[ix*3+1]-1]*alpha[ix*3+1] + vy[index[ix*3+2]-1]*alpha[ix*3+2];
+                dvydy[ix] = vy[index[ix*3+0]-1]*beta [ix*3+0] + vy[index[ix*3+1]-1]*beta [ix*3+1] + vy[index[ix*3+2]-1]*beta [ix*3+2];
    }
 
-if (ix<nbe*3) {
-    KVX[ix] = 0.;
-    KVY[ix]=  0.;
- }
-	
-//KV term in equation 22//
+}/*}}}*/
+
+__global__ void PT2(double* KVx, double* KVy, int nbe, int nbv){/*{{{*/
+
+     int ix = blockIdx.x * blockDim.x + threadIdx.x;
+     //KV term in equation 22//
      if(ix<nbv){
            KVx[ix] = 0.;
            KVy[ix] = 0.;
      }
 
+}/*}}}*/
 
-	/*KV*/
-	double eps_xx;
-	double eps_yy;
-	double eps_xy;
-	double eta_e;
+__global__ void PT3(double* kvx, double* kvy, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* etan, double* alpha, double* beta, double* Helem, double* areas, bool* isice, int nbe, int nbv){/*{{{*/
+       int ix = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if(ix<nbe){
-		
-	/*Skip if no ice*/
+  if(ix<nbe) {
+
+ /*Skip if no ice*/
             if (isice[ix]) {
 
             /*Viscous Deformation*/
@@ -398,137 +396,107 @@ if (ix<nbe*3) {
             double eps_yy = dvydy[ix];
             double eps_xy = .5 * (dvxdy[ix] + dvydx[ix]);
             for (int i = 0; i < 3; i++) {
-                kvx[ix * 3 + i] = 2 * Helem[ix] * eta_e * (2 * eps_xx + eps_yy) * alpha[ix * 3 + i] * areas[ix] + \
-                                              2 * Helem[ix] * eta_e * eps_xy * beta[ix * 3 + i] * areas[ix];
-                kvy[ix * 3 + i] = 2 * Helem[ix] * eta_e * eps_xy * alpha[ix * 3 + i] * areas[ix] + \
-                                              2 * Helem[ix] * eta_e * (2 * eps_yy + eps_xx) * beta[ix * 3 + i] * areas[ix];
-            }	
-    
-	}
+                kvx[ix * 3 + i] = 2 * Helem[ix] * eta_e * (2 * eps_xx + eps_yy) * alpha[ix * 3 + i] * areas[ix] + 2 * Helem[ix] * eta_e * eps_xy * beta[ix * 3 + i] * areas[ix];
+                kvy[ix * 3 + i] = 2 * Helem[ix] * eta_e * eps_xy * alpha[ix * 3 + i] * areas[ix] +  2 * Helem[ix] * eta_e * (2 * eps_yy + eps_xx) * beta[ix * 3 + i] * areas[ix];
+            }
+      }   //isice loop
+  }
 
 }/*}}}*/
-	
-__global__ void PT2(double* Eta_nbv, double* kvx, double* kvy,double* KVX, double* KVY,  double* KVx, double* KVy,  double* vx, double* vy, double* alpha2, double* groundedratio, double* etan, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* Helem, double* areas, double* alpha, double* beta, int* index, int nbv, int nbe, double* eta_nbv, double* weights, double rho, double* ML,  double* Fvx, double* Fvy, double* dVxdt, double* dVydt,  double* resolx, double* resoly, double* H, double damp, double eta_b, double* spcvx, double* spcvy,  double* rheology_B, bool* isice, double rele, double eta_0, double n_glen, bool* grounded, double* NORMx, double* NORMY){/*{{{*/ 	     
-  
-	
-if (ix == 0) {
-	        
-	        for(int n=0;n<nbe;n++){
 
-            /*Skip if no ice*/
-            if(!isice[n]) continue;
-	
+__global__ void PT4(double* kvx, double* kvy, double* groundedratio, double* areas, int* index, double* alpha2, double* vx, double* vy, bool* isice,  int nbe, int nbv){/*{{{*/
 
-	    /*Add basal friction*/
-            if(groundedratio[n]>0.){
-                for(int k=0;k<3;k++){
-                    for(int i=0;i<3;i++){
-                        for(int j=0;j<3;j++){
-                            if(i==j && j==k){
-                                KVx[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vx[index[n*3+j]-1]*areas[n]/10.;
-                                KVy[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vy[index[n*3+j]-1]*areas[n]/10.;
-                            }
-                            else if((i!=j) && (j!=k) && (k!=i)){
-                                KVx[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vx[index[n*3+j]-1]*areas[n]/60.;
-                                KVy[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vy[index[n*3+j]-1]*areas[n]/60.;
-                            }
-                            else{
-                                KVx[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vx[index[n*3+j]-1]*areas[n]/30.;
-                                KVy[index[n*3+k]-1] += groundedratio[n]*alpha2[index[n*3+i]-1]*vy[index[n*3+j]-1]*areas[n]/30.;
-                            }
-                        }
-                    }
-                }
-            }
-     }	
-	
-}
-	
-	
+       int ix = blockIdx.x * blockDim.x + threadIdx.x;
+
+/*Add basal friction*/
+  if(ix<nbe) {
+        if (isice[ix]) {
+           if (groundedratio[ix] > 0.) {
+
+       int n3 = ix * 3;
+       float gr_a = groundedratio[ix] * areas[ix];
+
+       for (int k = 0; k < 3; k++) {
+
+              for (int i = 0; i < 3; i++) {
+
+                     int i_index = index[n3 + i] - 1;
+                     float gr_a_alpha2 = gr_a * alpha2[i_index];
+
+                     for (int j = 0; j < 3; j++) {
+
+                           int j_index = index[n3 + j] - 1;
+                           float gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
+                           float gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
+
+//                           printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
+
+                           if (i == j && j == k) {
+                                  kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 10.;
+                                  kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 10.;
+
+                           } else if ((i!=j) && (j!=k) && (k!=i)) {
+
+                                     kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 60.;
+                                     kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 60.;
+
+
+                           } else {
+
+                                  kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 30.;
+                                  kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 30.;
+
+                           }
+
+                     }
+
+              }
+
+       }
+
+    } //groundedratio loop
+
+  } //isice loop
+
+}  //nbe loop 
+
+}/*}}}*/
+
+
+__global__ void PT5(double* kvx, double* kvy, double* KVx, double* KVy, int* NodetoElem, int* Elem, int nbe, int nbv){/*{{{*/
+
+  int ix = blockIdx.x * blockDim.x + threadIdx.x;
+
     if(ix<nbv) {
-            for(int i=0;i<nbe;i++) {
-                    for(int j=0;j<3;j++){
-                     if (index[i*3+j]==ix+1) {
-                        KVx[ix] = KVx[ix] + kvx[i*3+j] + KVX[i*3+j];
-                        KVy[ix] = KVy[ix] + kvy[i*3+j] + KVY[i*3+j];
+                for(int j=0;j<8;j++){
+                    if (NodetoElem[(ix * 8 + j)] != 0) {
+                    KVx[ix] =  kvx[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)];
+                  //  KVy[ix] = KVy[ix] + kvy[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)] ;
                     }
                 }
             }
-        }
-	
-			
- //Get current viscosity on nodes (Needed for time stepping)//
-    if(ix<nbe) {
-            for (int j = 0; j < 3; j++) {
-               Eta_nbv[ix*3+j] = etan[ix]*areas[ix];
-            }
-        }
+}/*}}}*/
 
-        if(ix<nbv){
-            for(int i=0;i<nbe;i++) {
-                for(int j=0;j<3;j++){
-                    if (index[i*3+j]==ix+1) {
-                        eta_nbv[ix] = eta_nbv[ix] + Eta_nbv[i*3+j];
-                    }
+
+__global__ void PT6(double* Eta_nbe, double* etan, double* areas, double* eta_nbv, int* index,int* NodetoElem, double* weights, int nbe, int nbv){/*{{{*/
+
+
+  int ix = blockIdx.x * blockDim.x + threadIdx.x;
+
+      if (ix < nbe){Eta_nbe[ix] = etan[ix]*areas[ix];}
+
+        if (ix<nbv){
+            for (int j = 0; j < 8; j++) {
+                   if (NodetoElem[(ix * 8 + j)] != 0) {
+
+                      eta_nbv[ix] = eta_nbv[ix] + Eta_nbe[NodetoElem[(ix * 8 + j)]-1];
+
                 }
             }
         }
 
-        if(ix<nbv) {eta_nbv[ix] =eta_nbv[ix]/weights[ix];}  
-	
-	
-	double ResVx;
-	double ResVy;
-	double dtVx;
-	double dtVy;
-       //double relaxation =1e-1;
-	if(ix<nbv){
-		/*1. Get time derivative based on residual (dV/dt)*/
-		ResVx =  1./(rho*ML[ix])*(-KVx[ix] + Fvx[ix]); //rate of velocity in the x, equation 23
-		ResVy =  1./(rho*ML[ix])*(-KVy[ix] + Fvy[ix]); //rate of velocity in the y, equation 24
-		dVxdt[ix] = dVxdt[ix]*(1.-damp/20.) + ResVx;
-		dVydt[ix] = dVydt[ix]*(1.-damp/20.) + ResVy;
+        if(ix <nbv) {eta_nbv[ix] =eta_nbv[ix]/weights[ix];}
 
-		/*2. Explicit CFL time step for viscous flow, x and y directions*/
-		dtVx = rho*pow(resolx[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1);
-		dtVy = rho*pow(resoly[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1);
-		
-		//   dtVx = rho*pow(resolx[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;
-                //   dtVy = rho*pow(resoly[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;     
-		
-
-		/*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
-		vx[ix] = vx[ix] + dVxdt[ix]*dtVx;
-		vy[ix] = vy[ix] + dVydt[ix]*dtVy;
-
-		/*Apply Dirichlet boundary condition*/
-		if(!isnan(spcvx[ix])){
-			vx[ix]    = spcvx[ix];
-			dVxdt[ix] = 0.;
-		        NORMx[ix] = pow(dVxdt[ix],2)}
-
-		if(!isnan(spcvy[ix])){
-			vy[ix]    = spcvy[ix];
-			dVydt[ix] = 0.;
-		        NORMy[ix] = pow(dVxdt[ix],2)}
-        }
-	
-
-	
-	double EII2;
-	double eta_it;
-	double B;
-
-	if(ix < nbe){
-		eps_xx = dvxdx[ix];
-		eps_yy = dvydy[ix];
-		eps_xy = .5*(dvxdy[ix]+dvydx[ix]);
-		B = rheology_B[ix];
-		EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy; 
-		eta_it = 1.e+14/2.;  
-		if(EII2>0.) eta_it = B/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
-
- if(isice[ix])     {     etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);} }
 }/*}}}*/
 
 
@@ -787,10 +755,29 @@ int main(){/*{{{*/
         double eta_it = 1.e+14/2.;
         if(EII2>0.) eta_it = rheology_B[i]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
 
-        etan[i] = min(exp(rele*log(eta_it) + (1-rele)*log(etan[i])),eta_0*1e5);
+        etan[i] = min(eta_it,eta_0*1e5);
         if(isnan(etan[i])){ std::cerr<<"Found NaN in etan[i]"; return 1;}
     }
 	
+   int* NodetoElem = new int[nbv*8];
+   int* Elem     =   new int[nbv*8];
+
+
+      for(int n=0;n<nbv;n++) {
+          int k = 0;
+          for (int i = 0; i < nbe; i++) {
+              for (int j = 0; j < 3; j++) {
+                  if (index[(i * 3 + j)] == n+1) {
+                      k = k + 1;
+                      NodetoElem[(n * 8 + k)-1] = i+1;
+                      Elem[(n * 8 + k) - 1] = j + 1;
+
+                  }
+              }
+          }
+
+      }
+
    /*------------ now copy all relevant vectors from host to device ---------------*/
 
 	int *d_index = NULL;
@@ -885,11 +872,14 @@ int main(){/*{{{*/
         cudaMalloc(&d_isice, nbe*sizeof(bool));
         cudaMemcpy(d_isice, isice, nbe*sizeof(bool), cudaMemcpyHostToDevice);
 	
-	double *NORMx;
-	cudaMallocManaged(&NORMx, nbv*sizeof(double));
+        int *d_NodetoElem = NULL;
+        cudaMalloc(&d_NodetoElem, nbv*8*sizeof(int));
+        cudaMemcpy(d_NodetoElem, NodetoElem, nbv*8*sizeof(int), cudaMemcpyHostToDevice);
 
-        double *NORMy;
-	cudaMallocManaged(&NORMy, nbv*sizeof(double));
+        int *d_Elem = NULL;
+        cudaMalloc(&d_Elem, nbv*8*sizeof(int));
+        cudaMemcpy(d_Elem, Elem, nbv*8*sizeof(int), cudaMemcpyHostToDevice);
+
 	
    /*------------ allocate relevant vectors on host (GPU)---------------*/
 
@@ -914,7 +904,7 @@ int main(){/*{{{*/
 	double *eta_nbv = NULL;
         cudaMalloc(&eta_nbv, nbv*sizeof(double));
 
-        double *Eta_nbv = NULL;
+        double *Eta_nbe = NULL;
         cudaMalloc(&Eta_nbv, nbe*3*sizeof(double));       
 
         double *kvx = NULL;
@@ -922,12 +912,6 @@ int main(){/*{{{*/
 
 	double *kvy = NULL;
 	cudaMalloc(&kvy, nbe*3*sizeof(double));
-
-        double *KVX = NULL;
-        cudaMalloc(&KVX, nbe*3*sizeof(double));
-
-        double *KVY = NULL;
-        cudaMalloc(&KVY, nbe*3*sizeof(double));
 	
 
 	/*Main loop*/
@@ -938,10 +922,17 @@ int main(){/*{{{*/
 		 normX = 0;
                  normY = 0;
 
-PT1 <<<gridSize,blockSize>>> (Eta_nbv, kvx, kvy, KVX, KVY, KVx, KVy, d_vx, d_vy, d_alpha2, d_groundedratio, d_etan, dvxdx, dvydy, dvxdy, dvydx, d_Helem, d_areas, d_alpha, d_beta, d_index, nbv, nbe, eta_nbv, d_weights, rho, d_ML, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, damp,eta_b, d_spcvx, d_spcvy, d_rheology_B, d_isice, rele, eta_0, n_glen, d_grounded); cudaDeviceSynchronize();	                 
-   
-PT2 <<<gridSize,blockSize>>> (Eta_nbv, kvx, kvy, KVX, KVY, KVx, KVy, d_vx, d_vy, d_alpha2, d_groundedratio, d_etan, dvxdx, dvydy, dvxdy, dvydx, d_Helem, d_areas, d_alpha, d_beta, d_index, nbv, nbe, eta_nbv, d_weights, rho, d_ML, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, damp,eta_b, d_spcvx, d_spcvy, d_rheology_B, d_isice, rele, eta_0, n_glen, d_grounded, NORMx, NORMy); cudaDeviceSynchronize();	                  
+PT1 <<<gridSize,blockSize>>> (dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, nbe, nbv); cudaDeviceSynchronize();
 
+PT2 <<<gridSize,blockSize>>> (KVx, KVy, nbe, nbv); cudaDeviceSynchronize();
+
+PT3 <<<gridSize,blockSize>>> (kvx, kvy, dvxdx, dvydy, dvxdy, dvydx, d_etan, d_alpha, d_beta, d_Helem, d_areas, d_isice, nbe, nbv); cudaDeviceSynchronize();
+
+PT4 <<<gridSize,blockSize>>> (kvx, kvy, d_groundedratio, d_areas, d_index, d_alpha2, d_vx, d_vy, d_isice, nbe, nbv); cudaDeviceSynchronize();
+
+PT5 <<<gridSize,blockSize>>> (kvx, kvy, KVx, KVy, d_NodetoElem, d_Elem, nbe, nbv); cudaDeviceSynchronize();
+
+PT6 <<<gridSize,blockSize>>> (Eta_nbe, d_etan, d_areas, eta_nbv, d_index, d_NodetoElem, d_weights, nbe, nbv); cudaDeviceSynchronize();
 
 		/*Get final error estimate*/
 		normX  = sqrt(normX)/double(nbv);
@@ -1016,9 +1007,7 @@ PT2 <<<gridSize,blockSize>>> (Eta_nbv, kvx, kvy, KVX, KVY, KVx, KVy, d_vx, d_vy,
 	cudaFree(KVy);
         cudaFree(kvx);
         cudaFree(kvy);
-        cudaFree(KVX);
-        cudaFree(KVY);
-	cudaFree(Eta_nbv);
+	cudaFree(Eta_nbe);
 	cudaFree(eta_nbv);
 	cudaFree(d_etan);
 	cudaFree(d_ML);
@@ -1035,6 +1024,9 @@ PT2 <<<gridSize,blockSize>>> (Eta_nbv, kvx, kvy, KVX, KVY, KVx, KVy, d_vx, d_vy,
 	cudaFree(d_alpha2);
 	cudaFree(d_groundedratio);
 	cudaFree(d_isice);
+	cudaFree(d_NodetoElem);
+        cudaFree(d_Elem);
+
 
 	return 0;
 }/*}}}*/
