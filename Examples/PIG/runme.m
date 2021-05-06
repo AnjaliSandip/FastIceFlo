@@ -136,8 +136,11 @@ end
 
 if any(steps==6)  %GPU solver
 
-	load ./Models/PIG_Control_drag
-
+	load ./Models/PIG_Control_drag %comment this out when increasing the spatial resolution
+        % md = refine(md); Add this when increasing spatial resolution
 	addpath('../../src/');
-	md=gpu(md,0.15,0.05);
+	%md=gpu(md,0.35,.28);
+        damp = 0.35;
+	relaxation = 0.28; 
+	gpu_parallelized  %running it as a script to obtain all the script scalars in the workspace
 end
