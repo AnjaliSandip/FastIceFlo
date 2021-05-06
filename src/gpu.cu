@@ -1,14 +1,18 @@
+#include <cstdio>
 #include <iostream>
 #include <string.h>
 #include <cmath>
 using namespace std;
 
 /*define GPU specific vairables*/
-#define blockSize 1024
-#define gridSize  32
+#define blockSize 512  //this could be further reduced, to 256, to optimize performance
+#define gridSize  48
 
-  __managed__  double normX;   //variable shared between host and device
-  __managed__  double normY;
+
+// Device norm subroutine
+#define blockId            (blockIdx.x)
+#define threadId           (threadIdx.x)
+#define isBlockMaster      (threadIdx.x==0)
 
 /*CPU Code*/
 /*I/O stuff {{{*/
@@ -357,33 +361,21 @@ void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,doubl
 
 /*CUDA Code*/
 
-__global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* vx, double* vy, double* alpha, double* beta, int* index, int nbe, int nbv){/*{{{*/
 
-     int ix = blockIdx.x * blockDim.x + threadIdx.x;
-
-        if(ix<nbe){
+__global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* vx, double* vy, double* alpha, double* beta, int* index, double* kvx, double* kvy, double* etan,  double* Helem, double* areas, bool* isice, double* Eta_nbe, int nbe, int nbv){/*{{{*/   
+ 
+  int ix = blockIdx.x * blockDim.x + threadIdx.x;
+     
+	if(ix<nbe){
       /*Calculate velocity derivatives*/
-                dvxdx[ix] = vx[index[ix*3+0]-1]*alpha[ix*3+0] + vx[index[ix*3+1]-1]*alpha[ix*3+1] + vx[index[ix*3+2]-1]*alpha[ix*3+2];
-                dvxdy[ix] = vx[index[ix*3+0]-1]*beta [ix*3+0] + vx[index[ix*3+1]-1]*beta [ix*3+1] + vx[index[ix*3+2]-1]*beta [ix*3+2];
-                dvydx[ix] = vy[index[ix*3+0]-1]*alpha[ix*3+0] + vy[index[ix*3+1]-1]*alpha[ix*3+1] + vy[index[ix*3+2]-1]*alpha[ix*3+2];
-                dvydy[ix] = vy[index[ix*3+0]-1]*beta [ix*3+0] + vy[index[ix*3+1]-1]*beta [ix*3+1] + vy[index[ix*3+2]-1]*beta [ix*3+2];
+		dvxdx[ix] = vx[index[ix*3+0]-1]*alpha[ix*3+0] + vx[index[ix*3+1]-1]*alpha[ix*3+1] + vx[index[ix*3+2]-1]*alpha[ix*3+2];
+		dvxdy[ix] = vx[index[ix*3+0]-1]*beta [ix*3+0] + vx[index[ix*3+1]-1]*beta [ix*3+1] + vx[index[ix*3+2]-1]*beta [ix*3+2];
+		dvydx[ix] = vy[index[ix*3+0]-1]*alpha[ix*3+0] + vy[index[ix*3+1]-1]*alpha[ix*3+1] + vy[index[ix*3+2]-1]*alpha[ix*3+2];
+		dvydy[ix] = vy[index[ix*3+0]-1]*beta [ix*3+0] + vy[index[ix*3+1]-1]*beta [ix*3+1] + vy[index[ix*3+2]-1]*beta [ix*3+2];
    }
 
-}/*}}}*/
+     if (ix < nbe){Eta_nbe[ix] = etan[ix]*areas[ix];}
 
-__global__ void PT2(double* KVx, double* KVy, int nbe, int nbv){/*{{{*/
-
-     int ix = blockIdx.x * blockDim.x + threadIdx.x;
-     //KV term in equation 22//
-     if(ix<nbv){
-           KVx[ix] = 0.;
-           KVy[ix] = 0.;
-     }
-
-}/*}}}*/
-
-__global__ void PT3(double* kvx, double* kvy, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* etan, double* alpha, double* beta, double* Helem, double* areas, bool* isice, int nbe, int nbv){/*{{{*/
-       int ix = blockIdx.x * blockDim.x + threadIdx.x;
 
   if(ix<nbe) {
 
@@ -402,9 +394,12 @@ __global__ void PT3(double* kvx, double* kvy, double* dvxdx, double* dvydy, doub
       }   //isice loop
   }
 
-}/*}}}*/
 
-__global__ void PT4(double* kvx, double* kvy, double* groundedratio, double* areas, int* index, double* alpha2, double* vx, double* vy, bool* isice,  int nbe, int nbv){/*{{{*/
+}/*}}}*/  
+
+//Moving to the next kernel, as kvx cannot be defined and updated in the same kernel//
+
+__global__ void PT2(double* kvx, double* kvy, double* groundedratio, double* areas, int* index, double* alpha2, double* vx, double* vy, bool* isice,  int nbe, int nbv){/*{{{*/  
 
        int ix = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -412,7 +407,7 @@ __global__ void PT4(double* kvx, double* kvy, double* groundedratio, double* are
   if(ix<nbe) {
         if (isice[ix]) {
            if (groundedratio[ix] > 0.) {
-
+      
        int n3 = ix * 3;
        float gr_a = groundedratio[ix] * areas[ix];
 
@@ -429,9 +424,8 @@ __global__ void PT4(double* kvx, double* kvy, double* groundedratio, double* are
                            float gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
                            float gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
 
-//                           printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
-
                            if (i == j && j == k) {
+
                                   kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 10.;
                                   kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 10.;
 
@@ -439,12 +433,12 @@ __global__ void PT4(double* kvx, double* kvy, double* groundedratio, double* are
 
                                      kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 60.;
                                      kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 60.;
-
+    
 
                            } else {
 
                                   kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 30.;
-                                  kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 30.;
+                                  kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 30.;      
 
                            }
 
@@ -453,42 +447,39 @@ __global__ void PT4(double* kvx, double* kvy, double* groundedratio, double* are
               }
 
        }
-
+  
     } //groundedratio loop
-
+  
   } //isice loop
-
+  
 }  //nbe loop 
 
-}/*}}}*/
+}/*}}}*/ 
 
+//Moving to the next kernel::cannot update kvx and perform indirect access, lines 472 and 473, in the same kernel//
+__global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* etan, double* areas, double* eta_nbv, int* index, int* NodetoElem, int* Elem, double* weights, double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double eta_b, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* rheology_B, double n_glen, bool* isice, double eta_0, double rele, int nbe, int nbv){/*{{{*/
+ 
+ int ix = blockIdx.x * blockDim.x + threadIdx.x;
 
-__global__ void PT5(double* kvx, double* kvy, double* KVx, double* KVy, int* NodetoElem, int* Elem, int nbe, int nbv){/*{{{*/
+  if(ix<nbv){
+           KVx[ix] = 0.;
+           KVy[ix] = 0.;
+     }
 
-  int ix = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if(ix<nbv) {
+   if(ix<nbv) {
                 for(int j=0;j<8;j++){
                     if (NodetoElem[(ix * 8 + j)] != 0) {
-                    KVx[ix] =  KVx[ix] + kvx[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)];
+                    KVx[ix] = KVx[ix] + kvx [((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)] ;
                     KVy[ix] = KVy[ix] + kvy[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)] ;
                     }
                 }
             }
-}/*}}}*/
 
-
-__global__ void PT6(double* Eta_nbe, double* etan, double* areas, double* eta_nbv, int* index,int* NodetoElem, double* weights, int nbe, int nbv){/*{{{*/
-
-
-  int ix = blockIdx.x * blockDim.x + threadIdx.x;
-
-      if (ix < nbe){Eta_nbe[ix] = etan[ix]*areas[ix];}
 
         if (ix<nbv){
             for (int j = 0; j < 8; j++) {
                    if (NodetoElem[(ix * 8 + j)] != 0) {
-
+      
                       eta_nbv[ix] = eta_nbv[ix] + Eta_nbe[NodetoElem[(ix * 8 + j)]-1];
 
                 }
@@ -497,79 +488,94 @@ __global__ void PT6(double* Eta_nbe, double* etan, double* areas, double* eta_nb
 
         if(ix <nbv) {eta_nbv[ix] =eta_nbv[ix]/weights[ix];}
 
-}/*}}}*/
+        double ResVx;
+        double ResVy;
+        double dtVx;
+        double dtVy;
+        double relaxation = 0.9;  //may need to change this depending on the glacier model and the spatial resolution
 
-__global__ void PT7(double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* eta_nbv, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double eta_b, int nbe, int nbv){/*{{{*/
+                if(ix<nbv){
+                /*1. Get time derivative based on residual (dV/dt)*/
+                ResVx =  1./(rho*ML[ix])*(-KVx[ix] + Fvx[ix]); //rate of velocity in the x, equation 23
+                ResVy =  1./(rho*ML[ix])*(-KVy[ix] + Fvy[ix]); //rate of velocity in the y, equation 24
 
-  int ix = blockIdx.x * blockDim.x + threadIdx.x;
+                dVxdt[ix] = dVxdt[ix]*(1.-damp/20.) + ResVx;
+                dVydt[ix] = dVydt[ix]*(1.-damp/20.) + ResVy;
 
-	double ResVx;
-	double ResVy;
-	double dtVx;
-	double dtVy;
-        double relaxation = 1;  
 
-		if(ix<nbv){
-		/*1. Get time derivative based on residual (dV/dt)*/
-		ResVx =  1./(rho*ML[ix])*(-KVx[ix] + Fvx[ix]); //rate of velocity in the x, equation 23
-		ResVy =  1./(rho*ML[ix])*(-KVy[ix] + Fvy[ix]); //rate of velocity in the y, equation 24
-	 
-	 	dVxdt[ix] = dVxdt[ix]*(1.-damp/20.) + ResVx;
-	 	dVydt[ix] = dVydt[ix]*(1.-damp/20.) + ResVy;
-    
-           
         /*2. Explicit CFL time step for viscous flow, x and y directions*/
         dtVx = rho*pow(resolx[ix],2)/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
         dtVy = rho*pow(resoly[ix],2)/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
 
        //   dtVx = rho*pow(resolx[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;
        //   dtVy = rho*pow(resoly[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;     
-                
-		/*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
-		vx[ix] = vx[ix] + relaxation*dVxdt[ix]*dtVx;
-		vy[ix] = vy[ix] + relaxation*dVydt[ix]*dtVy;
 
-		/*Apply Dirichlet boundary condition*/
-		if(!isnan(spcvx[ix])){
-			vx[ix]    = spcvx[ix];
-			dVxdt[ix] = 0.;  }
+                /*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
+                vx[ix] = vx[ix] + relaxation*dVxdt[ix]*dtVx;
+                vy[ix] = vy[ix] + relaxation*dVydt[ix]*dtVy;
 
-		if(!isnan(spcvy[ix])){
-			vy[ix]    = spcvy[ix];
-			dVydt[ix] = 0.;}
+                /*Apply Dirichlet boundary condition*/
+                if(!isnan(spcvx[ix])){
+                        vx[ix]    = spcvx[ix];
+                        dVxdt[ix] = 0.;  }
 
-                
+                if(!isnan(spcvy[ix])){
+                        vy[ix]    = spcvy[ix];
+                        dVydt[ix] = 0.;}
+
+
                 }
 
-if(ix==0){
-          for(int i=0; i<nbv; i++) {
-          normX += pow(dVxdt[i],2);
-          normY += pow(dVydt[i],2);}
-   }
+//This is the only nbe loop in this kernel, and will remain in this kernel -- looking to reduce the number of kernels, the remaining kernels have either nbe or nbv only loops/
 
-}/*}}}*/
+        if(ix < nbe){
+        double  eps_xx = dvxdx[ix];
+        double  eps_yy = dvydy[ix];
+        double  eps_xy = .5*(dvxdy[ix]+dvydx[ix]);
+        double  EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy;
+        double  eta_it = 1.e+14/2.;
 
-__global__ void PT8(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* rheology_B, double n_glen, bool* isice, double* etan, double eta_0, double rele, int nbe, int nbv){/*{{{*/
+        if(EII2>0.) eta_it = rheology_B[ix]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
 
- int ix = blockIdx.x * blockDim.x + threadIdx.x;
 
-	double EII2;
-	double eta_it;
-	double B;
-
-	if(ix < nbe){
-	double	eps_xx = dvxdx[ix];
-	double	eps_yy = dvydy[ix];
-	double	eps_xy = .5*(dvxdy[ix]+dvydx[ix]);
-		B = rheology_B[ix];
-		EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy; 
-		eta_it = 1.e+14/2.;  
-		if(EII2>0.) eta_it = B/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
 
 if(isice[ix])     { etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);} }
-
-
 }/*}}}*/
+
+__shared__ volatile double block_normval;
+
+__global__ void __device_norm_d(double* A, int nbv, double* device_normval){
+   
+    double thread_normval=0.0;
+   
+    int ix  = blockIdx.x*blockDim.x + threadIdx.x; // thread ID, dimension x
+    // find the normval for each block
+    if (ix<nbv){ thread_normval = A[ix]*A[ix]; }
+    if (threadIdx.x==0){ block_normval=0.0; }
+    __syncthreads();
+    for (int i=0; i < (blockSize); i++){
+        if (i==threadIdx.x){ block_normval = block_normval + thread_normval; }
+        __syncthreads();
+    }
+    device_normval[blockIdx.x] = block_normval;
+}
+
+#define __device_normx(dVxdt)    __device_norm_d<<<gridSize, blockSize>>>(d_dVxdt, nbv, d_device_normvalx); \
+                            cudaMemcpy(device_normvalx, d_device_normvalx, nbv*sizeof(double),cudaMemcpyDeviceToHost); \
+                            double device_NORMx = 0.0;                                     \
+                            for (int i=0; i < (gridSize); i++){                            \
+                                device_NORMx = device_NORMx + device_normvalx[i];             \
+                            }                                                              \
+                            device_NORMx = (double)1.0/((double)nbv)*sqrt(device_NORMx);
+
+
+#define __device_normy(dVydt)    __device_norm_d<<<gridSize, blockSize>>>(d_dVydt, nbv, d_device_normvaly); \
+                            cudaMemcpy(device_normvaly, d_device_normvaly, nbv*sizeof(double),cudaMemcpyDeviceToHost); \
+                            double device_NORMy = 0.0;                                     \
+                            for (int i=0; i < (gridSize); i++){                            \
+                                device_NORMy = device_NORMy + device_normvaly[i];             \
+                            }                                                              \
+                            device_NORMy = (double)1.0/((double)nbv)*sqrt(device_NORMy);  
 
 
 
@@ -577,7 +583,7 @@ if(isice[ix])     { etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix]
 int main(){/*{{{*/
 
 	/*Open input binary file*/
-	const char* inputfile  = "./SIS.bin";
+	const char* inputfile  = "./JKS.bin";
 	const char* outputfile = "./output.outbin";
 	FILE* fid = fopen(inputfile,"rb");
 	if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
@@ -625,7 +631,7 @@ int main(){/*{{{*/
 
 	/*Constants*/
 	double n_glen    = 3.;
-	double damp      = 2.;
+	double damp      = 1.5;  //may need to change this depending on the glacier model and the spatial resolution
 	double rele      = 1e-1;
 	double eta_b     = 0.5;
 	double eta_0     = 1.e+14/2.;
@@ -851,6 +857,9 @@ int main(){/*{{{*/
 
       }
 
+  double* device_normvalx = new double[nbv];
+  double* device_normvaly = new double[nbv];
+
    /*------------ now copy all relevant vectors from host to device ---------------*/
 
 	int *d_index = NULL;
@@ -952,7 +961,16 @@ int main(){/*{{{*/
         int *d_Elem = NULL;
         cudaMalloc(&d_Elem, nbv*8*sizeof(int));
         cudaMemcpy(d_Elem, Elem, nbv*8*sizeof(int), cudaMemcpyHostToDevice);
+        
+	
+        double* d_device_normvalx = NULL;
+        cudaMalloc(&d_device_normvalx, nbv*sizeof(double));
+        cudaMemcpy(d_device_normvalx, device_normvalx, nbv*sizeof(double), cudaMemcpyHostToDevice);
 
+
+        double* d_device_normvaly = NULL;
+        cudaMalloc(&d_device_normvaly, nbv*sizeof(double));
+        cudaMemcpy(d_device_normvaly, device_normvaly, nbv*sizeof(double), cudaMemcpyHostToDevice);
 	
    /*------------ allocate relevant vectors on host (GPU)---------------*/
 
@@ -991,33 +1009,18 @@ int main(){/*{{{*/
 	int iter;
 	double iterror;
 	for(iter=1;iter<=niter;iter++){
+PT1 <<<gridSize,blockSize>>> (dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, kvx, kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, nbe, nbv); cudaDeviceSynchronize();	  
+               
+PT2 <<<gridSize,blockSize>>> (kvx, kvy, d_groundedratio, d_areas, d_index, d_alpha2, d_vx, d_vy, d_isice, nbe, nbv); cudaDeviceSynchronize();
 
-		 normX = 0;
-                 normY = 0;
-
-PT1 <<<gridSize,blockSize>>> (dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, nbe, nbv); cudaDeviceSynchronize();
-
-PT2 <<<gridSize,blockSize>>> (KVx, KVy, nbe, nbv); cudaDeviceSynchronize();
-
-PT3 <<<gridSize,blockSize>>> (kvx, kvy, dvxdx, dvydy, dvxdy, dvydx, d_etan, d_alpha, d_beta, d_Helem, d_areas, d_isice, nbe, nbv); cudaDeviceSynchronize();
-
-PT4 <<<gridSize,blockSize>>> (kvx, kvy, d_groundedratio, d_areas, d_index, d_alpha2, d_vx, d_vy, d_isice, nbe, nbv); cudaDeviceSynchronize();
-
-PT5 <<<gridSize,blockSize>>> (kvx, kvy, KVx, KVy, d_NodetoElem, d_Elem, nbe, nbv); cudaDeviceSynchronize();
-
-PT6 <<<gridSize,blockSize>>> (Eta_nbe, d_etan, d_areas, eta_nbv, d_index, d_NodetoElem, d_weights, nbe, nbv); cudaDeviceSynchronize();
-
-PT7 <<<gridSize,blockSize>>> (d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, eta_nbv, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, eta_b, nbe, nbv); cudaDeviceSynchronize();
-
-PT8 <<<gridSize,blockSize>>> (dvxdx, dvydy, dvxdy, dvxdy, d_rheology_B, n_glen, d_isice, d_etan, eta_0, rele, nbe, nbv); cudaDeviceSynchronize();
-
+PT3 <<<gridSize,blockSize>>> (kvx, kvy, Eta_nbe, d_etan, d_areas, eta_nbv, d_index, d_NodetoElem, d_Elem, d_weights, d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, eta_b, dvxdx, dvydy, dvxdy, dvydx, d_rheology_B, n_glen, d_isice, eta_0, rele, nbe, nbv); cudaDeviceSynchronize();
 		
-		/*Get final error estimate*/
-		normX  = sqrt(normX)/double(nbv);
-		normY  = sqrt(normY)/double(nbv);
+		/*Get final error estimate*/        
+                 __device_normx(dVxdt);
+                 __device_normy(dVydt);    	
 
 		/*Check convergence*/
-		iterror = max(normX,normY);
+		iterror = max(device_NORMx,device_NORMy);
 		if((iterror < epsi) && (iter > 2)) break;
 		if ((iter%nout_iter)==1){
 			std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;}
@@ -1104,6 +1107,8 @@ PT8 <<<gridSize,blockSize>>> (dvxdx, dvydy, dvxdy, dvxdy, d_rheology_B, n_glen, 
 	cudaFree(d_isice);
 	cudaFree(d_NodetoElem);
         cudaFree(d_Elem);
+	cudaFree(d_device_normvalx);
+        cudaFree(d_device_normvaly);
 
 
 	return 0;
