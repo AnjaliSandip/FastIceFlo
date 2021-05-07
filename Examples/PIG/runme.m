@@ -5,37 +5,10 @@ if any(steps==1) %Mesh Generation #1
 	%Mesh parameters
 	domain =['./DomainOutline.exp'];
 	hinit=5000;   % element size for the initial mesh
-	hmax=40000;    % maximum element size of the final mesh
-	hmin=4000;     % minimum element size of the final mesh
-	gradation=1.7; % maximum size ratio between two neighboring elements
-	err=8;         % maximum error between interpolated and control field
 
 	% Generate an initial uniform mesh (resolution = hinit m)
 	md=bamg(model,'domain',domain,'hmax',hinit);
-
-	% Get necessary data to build up the velocity grid
-	nsidc_vel= [issmdir() 'examples/Data/Antarctica_ice_velocity.nc'];
-	xmin    = strsplit(ncreadatt(nsidc_vel,'/','xmin'));      xmin    = str2num(xmin{2});
-	ymax    = strsplit(ncreadatt(nsidc_vel,'/','ymax'));      ymax    = str2num(ymax{2});
-	spacing = strsplit(ncreadatt(nsidc_vel,'/','spacing'));   spacing = str2num(spacing{2});
-	nx      = double(ncreadatt(nsidc_vel,'/','nx'));
-	ny      = double(ncreadatt(nsidc_vel,'/','ny'));
-	vx      = double(ncread(nsidc_vel,'vx'));
-	vy      = double(ncread(nsidc_vel,'vy'));
-
-	% Build the coordinates
-	x=xmin+(0:1:nx)'*spacing;
-	y=(ymax-ny*spacing)+(0:1:ny)'*spacing;
 	
-	% Interpolate velocities onto coarse mesh
-	vx_obs=InterpFromGridToMesh(x,y,flipud(vx'),md.mesh.x,md.mesh.y,0);
-	vy_obs=InterpFromGridToMesh(x,y,flipud(vy'),md.mesh.x,md.mesh.y,0);
-	vel_obs=sqrt(vx_obs.^2+vy_obs.^2);
-	clear vx vy x y;
-
-	% Adapt the mesh to minimize error in velocity interpolation
-	md=bamg(md,'hmax',hmax,'hmin',hmin,'gradation',gradation,'field',vel_obs,'err',err);
-
 	%save model
 	save ./Models/PIG_Mesh_generation md;
 end
