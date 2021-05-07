@@ -346,7 +346,7 @@ void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,doubl
 int main(){/*{{{*/
 
 	/*Open input binary file*/
-	const char* inputfile  = "./SIS.bin";
+	const char* inputfile  = "./JKS.bin";
 	const char* outputfile = "./output.outbin";
 	FILE* fid = fopen(inputfile,"rb");
 	if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
@@ -383,7 +383,7 @@ int main(){/*{{{*/
 	FetchData(fid,&surface,&M,&N,"md.geometry.surface");
 	FetchData(fid,&base,&M,&N,"md.geometry.base");
 	FetchData(fid,&ice_levelset,&M,&N,"md.mask.ice_levelset");
-	FetchData(fid,&ocean_levelset,&M,&N,"md.mask.groundedice_levelset");
+	FetchData(fid,&ocean_levelset,&M,&N,"md.mask.ocean_levelset");
 	FetchData(fid,&rheology_B_temp,&M,&N,"md.materials.rheology_B");
 	FetchData(fid,&vx,&M,&N,"md.initialization.vx");
 	FetchData(fid,&vy,&M,&N,"md.initialization.vy");
@@ -394,7 +394,7 @@ int main(){/*{{{*/
 
 	/*Constants*/
 	double n_glen    = 3.;
-	double damp      = 2.;
+	double damp      = 1.5;
 	//For PIG, change the damp//
         // double damp = 0.02;
 	double rele      = 1e-1;
@@ -403,7 +403,7 @@ int main(){/*{{{*/
 	int    niter     = 5e6;
 	int    nout_iter = 1000;
 	double epsi      = 1e-8;
-	//double relaxation = 0.08;
+	double relaxation = 0.9;
 
 	/*Initial guesses (except vx and vy that we already loaded)*/
 	double* etan = new double[nbe];
@@ -702,8 +702,8 @@ int main(){/*{{{*/
            // double dtVy = rho*pow(resoly[i],2)/(4*max(80.0,H[i])*eta_nbv[i]*(1.+eta_b)*4.1)*relaxation;
 
 			/*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
-			vx[i] = vx[i] + dVxdt[i]*dtVx;
-			vy[i] = vy[i] + dVydt[i]*dtVy;
+			vx[i] = vx[i] + relaxation*dVxdt[i]*dtVx;
+			vy[i] = vy[i] + relaxation*dVydt[i]*dtVy;
 
 			/*Apply Dirichlet boundary condition,*Residual should also be 0 (for convergence)*/
 			if(!isnan(spcvx[i])){
