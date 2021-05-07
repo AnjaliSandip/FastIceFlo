@@ -346,8 +346,8 @@ void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,doubl
 int main(){/*{{{*/
 
     /*Open input binary file*/
-    const char* inputfile  = "/home/caelinux2/CLionProjects/bin_files/JKS1300m.bin";
-    const char* outputfile = "/home/caelinux2/CLionProjects/Jakobshavn/output.outbin";
+    const char* inputfile  = "./JKS.bin";
+    const char* outputfile = "./output.outbin";
     FILE* fid = fopen(inputfile,"rb");
     if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
 
@@ -394,16 +394,14 @@ int main(){/*{{{*/
 
     /*Constants*/
     double n_glen    = 3.;
-    double damp      = 1.5;
-    //For PIG, change the damp//
-    //double damp = 0.02;
+    double damp      = 1.5;  //change this according to glacier model and spatial resolution
     double rele      = 1e-1;
     double eta_b     = 0.5;
     double eta_0     = 1.e+14/2.;
     int    niter     = 5e6;
     int    nout_iter = 1000;
     double epsi      = 1e-8;
-    double relaxation = 0.9;
+    double relaxation = 0.9;  //change this according to glacier model and spatial resolution
 
     /*Initial guesses (except vx and vy that we already loaded)*/
     double* etan = new double[nbe];
@@ -644,7 +642,7 @@ int main(){/*{{{*/
     double* eta_nbv = new double[nbv];
     double* KVx     = new double[nbv];
     double* KVy     = new double[nbv];
-    double* Eta_nbv = new double[nbe];
+    double* Eta_nbe = new double[nbe];
     double* kvx     = new double[nbe*3];
     double* kvy     = new double[nbe*3];
 
@@ -696,8 +694,7 @@ int main(){/*{{{*/
                             int j_index = index[n3 + j] - 1;
                             float gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
                             float gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
-
-                            //     printf("%d, %f, %f, %f \n", n, gr_a, gr_a_alpha2, gr_a_alpha2_vx);
+                            
                             if (i == j && j == k) {
                                 kvx[n3 + k] = kvx[n3 + k] + gr_a_alpha2_vx / 10.;
                                 kvy[n3 + k] = kvy[n3 + k] + gr_a_alpha2_vy / 10.;}
@@ -727,17 +724,15 @@ int main(){/*{{{*/
 
 
         /*Get current viscosity on nodes (Needed for time stepping)*/
-       // elem2node(eta_nbv,etan,index,areas,weights,nbe,nbv);
-
         for(int i=1;i<=nbe;i++){
-                Eta_nbv[i] = etan[i]*areas[i];
+                Eta_nbe[i] = etan[i]*areas[i];
             }
 
 
         for(int i=0;i<nbv;i++) {
             for (int j = 0; j < 8; j++) {
                 if (NodetoElem[(i * 8 + j)] != 0) {
-                    eta_nbv[i] = eta_nbv[i] + Eta_nbv[NodetoElem[(i * 8 + j)]-1];
+                    eta_nbv[i] = eta_nbv[i] + Eta_nbe[NodetoElem[(i * 8 + j)]-1];
                 }
             }
         }
@@ -761,10 +756,6 @@ int main(){/*{{{*/
             /*2. Explicit CFL time step for viscous flow, x and y directions*/
             double dtVx = rho*pow(resolx[i],2)/(4*max(80.0,H[i])*eta_nbv[i]*(1.+eta_b)*4.1);
             double dtVy = rho*pow(resoly[i],2)/(4*max(80.0,H[i])*eta_nbv[i]*(1.+eta_b)*4.1);
-
-            //For PIG model, apply relaxation//
-            // double dtVx = rho*pow(resolx[i],2)/(4*max(80.0,H[i])*eta_nbv[i]*(1.+eta_b)*4.1)*relaxation;
-            // double dtVy = rho*pow(resoly[i],2)/(4*max(80.0,H[i])*eta_nbv[i]*(1.+eta_b)*4.1)*relaxation;
 
             /*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
             vx[i] = vx[i] + relaxation*dVxdt[i]*dtVx;
@@ -813,10 +804,6 @@ int main(){/*{{{*/
 
     }
     std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
-    std::cout<<"iter="<<iter<<", nbe="<<nbe<<std::endl;
-    std::cout<<"iter="<<iter<<", nbv="<<nbv<<std::endl;
-
-   // for(int i=0;i<nbv;i++){ std::cout<<"iter="<<iter<<", friction="<<friction[i]<<std::endl;}
 
     /*Cleanup intermediary vectors*/
     delete [] eta_nbv;
