@@ -409,20 +409,20 @@ __global__ void PT2(double* kvx, double* kvy, double* groundedratio, double* are
            if (groundedratio[ix] > 0.) {
       
        int n3 = ix * 3;
-       float gr_a = groundedratio[ix] * areas[ix];
+       double gr_a = groundedratio[ix] * areas[ix];
 
        for (int k = 0; k < 3; k++) {
 
               for (int i = 0; i < 3; i++) {
 
                      int i_index = index[n3 + i] - 1;
-                     float gr_a_alpha2 = gr_a * alpha2[i_index];
+                     double gr_a_alpha2 = gr_a * alpha2[i_index];
 
                      for (int j = 0; j < 3; j++) {
 
                            int j_index = index[n3 + j] - 1;
-                           float gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
-                           float gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
+                           double gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
+                           double gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
 
                            if (i == j && j == k) {
 
@@ -561,7 +561,7 @@ __global__ void __device_norm_d(double* A, int nbv, double* device_normval){
 }
 
 #define __device_normx(dVxdt)    __device_norm_d<<<gridSize, blockSize>>>(d_dVxdt, nbv, d_device_normvalx); \
-                            cudaMemcpy(device_normvalx, d_device_normvalx, nbv*sizeof(double),cudaMemcpyDeviceToHost); \
+                            cudaMemcpy(device_normvalx, d_device_normvalx, gridSize*sizeof(double),cudaMemcpyDeviceToHost); \
                             double device_NORMx = 0.0;                                     \
                             for (int i=0; i < (gridSize); i++){                            \
                                 device_NORMx = device_NORMx + device_normvalx[i];             \
@@ -570,7 +570,7 @@ __global__ void __device_norm_d(double* A, int nbv, double* device_normval){
 
 
 #define __device_normy(dVydt)    __device_norm_d<<<gridSize, blockSize>>>(d_dVydt, nbv, d_device_normvaly); \
-                            cudaMemcpy(device_normvaly, d_device_normvaly, nbv*sizeof(double),cudaMemcpyDeviceToHost); \
+                            cudaMemcpy(device_normvaly, d_device_normvaly, gridSize*sizeof(double),cudaMemcpyDeviceToHost); \
                             double device_NORMy = 0.0;                                     \
                             for (int i=0; i < (gridSize); i++){                            \
                                 device_NORMy = device_NORMy + device_normvaly[i];             \
@@ -857,9 +857,10 @@ int main(){/*{{{*/
 
       }
 
-  double* device_normvalx = new double[nbv];
-  double* device_normvaly = new double[nbv];
-
+  double* device_normvalx = new double[gridSize];
+  double* device_normvaly = new double[gridSize];
+  for(int i=0;i<gridSize;i++) device_normvalx[i] = 0.;
+   for(int i=0;i<gridSize;i++) device_normvaly[i] = 0.;
    /*------------ now copy all relevant vectors from host to device ---------------*/
 
 	int *d_index = NULL;
@@ -964,13 +965,13 @@ int main(){/*{{{*/
         
 	
         double* d_device_normvalx = NULL;
-        cudaMalloc(&d_device_normvalx, nbv*sizeof(double));
-        cudaMemcpy(d_device_normvalx, device_normvalx, nbv*sizeof(double), cudaMemcpyHostToDevice);
+        cudaMalloc(&d_device_normvalx, gridSize*sizeof(double));
+        cudaMemcpy(d_device_normvalx, device_normvalx, gridSize*sizeof(double), cudaMemcpyHostToDevice);
 
 
         double* d_device_normvaly = NULL;
-        cudaMalloc(&d_device_normvaly, nbv*sizeof(double));
-        cudaMemcpy(d_device_normvaly, device_normvaly, nbv*sizeof(double), cudaMemcpyHostToDevice);
+        cudaMalloc(&d_device_normvaly, gridSize*sizeof(double));
+        cudaMemcpy(d_device_normvaly, device_normvaly, gridSize*sizeof(double), cudaMemcpyHostToDevice);
 	
    /*------------ allocate relevant vectors on host (GPU)---------------*/
 
