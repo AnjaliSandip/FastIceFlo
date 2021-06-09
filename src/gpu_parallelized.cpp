@@ -688,12 +688,12 @@ int main(){/*{{{*/
                 for (int k = 0; k < 3; k++) {
                     for (int i = 0; i < 3; i++) {
                         int i_index = index[n3 + i] - 1;
-                        float gr_a_alpha2 = gr_a * alpha2[i_index];
+                        double gr_a_alpha2 = gr_a * alpha2[i_index];
 
                         for (int j = 0; j < 3; j++) {
                             int j_index = index[n3 + j] - 1;
-                            float gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
-                            float gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
+                            double gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
+                            double gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
                             
                             if (i == j && j == k) {
                                 kvx[n3 + k] = kvx[n3 + k] + gr_a_alpha2_vx / 10.;
