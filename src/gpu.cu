@@ -1074,24 +1074,16 @@ PT3 <<<gridSize,blockSize>>> (kvx, kvy, Eta_nbe, d_etan, d_areas, eta_nbv, d_ind
 	delete [] Fvx;
 	delete [] Fvy;
 
+        cudaFree(d_index);
 	cudaFree(d_vx);
 	cudaFree(d_vy);
-	cudaFree(d_index);
 	cudaFree(d_alpha);
 	cudaFree(d_beta);
-	cudaFree(d_weights);
-	cudaFree(d_areas);
-	cudaFree(dvxdx);
-	cudaFree(dvxdy);
-	cudaFree(dvydx);
-	cudaFree(dvydy);
-	cudaFree(KVx);
-	cudaFree(KVy);
-        cudaFree(kvx);
-        cudaFree(kvy);
-	cudaFree(Eta_nbe);
-	cudaFree(eta_nbv);
 	cudaFree(d_etan);
+	cudaFree(d_rheology_B);
+	cudaFree(d_Helem);
+	cudaFree(d_areas);
+	cudaFree(d_weights);
 	cudaFree(d_ML);
 	cudaFree(d_Fvx);
 	cudaFree(d_Fvy);
@@ -1100,16 +1092,26 @@ PT3 <<<gridSize,blockSize>>> (kvx, kvy, Eta_nbe, d_etan, d_areas, eta_nbv, d_ind
 	cudaFree(d_resolx);
 	cudaFree(d_resoly);
 	cudaFree(d_H);
-	cudaFree(d_Helem);
 	cudaFree(d_spcvx);
 	cudaFree(d_spcvy);   
 	cudaFree(d_alpha2);
 	cudaFree(d_groundedratio);
-	cudaFree(d_isice);
-	cudaFree(d_NodetoElem);
-        cudaFree(d_Elem);
-	cudaFree(d_device_normvalx);
+        cudaFree(d_isice);
+        cudaFree(d_NodetoElem);
+        cudaFree(d_Elem);        
+        cudaFree(d_device_normvalx);
         cudaFree(d_device_normvaly);
+        
+	cudaFree(dvxdx);
+	cudaFree(dvxdy);
+	cudaFree(dvydx);
+	cudaFree(dvydy);
+	cudaFree(KVx);
+	cudaFree(KVy);
+	cudaFree(eta_nbv);
+	cudaFree(Eta_nbe);
+	cudaFree(kvx);
+        cudaFree(kvy);
 
 
 	return 0;
