@@ -31,7 +31,7 @@ eta_b     = 0.5;
 eta_0     = 1.e+14/2.;
 niter     = 5e6;
 nout_iter = 1000;
-epsi      = 1e-8;
+epsi      = 3.171e-7;
 
 %Initial guesses (except vx and vy that we already loaded)
 etan   = 1.e+14*ones(nbe,1);
@@ -157,10 +157,10 @@ for n=1:nbe
 
 	%One more thing in this element loop: prepare groundedarea needed later for the calculation of basal friction
 	level = ocean_levelset(index(n,:));
-	if level(1)>0 && level(2)>0 && level(3)>0
+	if level(1)>=0 && level(2)>=0 && level(3)>=0
 		%Completely grounded
 		groundedratio(n)=1.;
-	elseif level(1)<0 && level(2)<0 && level(3)<0
+	elseif level(1)<=0 && level(2)<=0 && level(3)<=0
 		%Completely floating
 		groundedratio(n)=0.;
 	else
@@ -226,7 +226,7 @@ for iter = 1:niter % Pseudo-Transient cycles
 	KVx  = zeros(nbv,1);
 	KVy  = zeros(nbv,1);
 	kvx =  zeros(nbe,3);
-    kvy =  zeros(nbe,3);
+        kvy =  zeros(nbe,3);
 
     for n=1:nbe
 
@@ -239,7 +239,7 @@ for iter = 1:niter % Pseudo-Transient cycles
 		eps_yy = dvydy(n);
 		eps_xy = .5*(dvxdy(n)+dvydx(n));
 		for i=1:3
-			kvx(n,i) = 2*Helem(n)*eta_e*(2*eps_xx+eps_yy)*alpha(n,i)*areas(n) + 2*Helem(n)*eta_e*eps_xy*beta(n,i)*areas(n);
+	    kvx(n,i) = 2*Helem(n)*eta_e*(2*eps_xx+eps_yy)*alpha(n,i)*areas(n) + 2*Helem(n)*eta_e*eps_xy*beta(n,i)*areas(n);
             kvy(n,i) = 2*Helem(n)*eta_e*eps_xy*alpha(n,i)*areas(n) + 2*Helem(n)*eta_e*(2*eps_yy+eps_xx)*beta(n,i)*areas(n);
         end
         
@@ -261,7 +261,7 @@ for iter = 1:niter % Pseudo-Transient cycles
                end
             end
          end
-		end
+     end
 
     
         
@@ -306,8 +306,8 @@ for iter = 1:niter % Pseudo-Transient cycles
 	%1. Get time derivative based on residual (dV/dt)
 	ResVx =  1./(rho*ML).*(-KVx + Fvx); %rate of velocity in the x, equation 23
 	ResVy =  1./(rho*ML).*(-KVy + Fvy); %rate of velocity in the y, equation 24
-	dVxdt = dVxdt*(1.-damp/20.) + ResVx;
-	dVydt = dVydt*(1.-damp/20.) + ResVy;
+	dVxdt = dVxdt*(damp) + ResVx;
+	dVydt = dVydt*(damp) + ResVy;
 	if(any(isnan(dVxdt))) error('Found NaN in dVxdt[i]'); end
 	if(any(isnan(dVydt))) error('Found NaN in dVydt[i]'); end
 
@@ -327,24 +327,7 @@ for iter = 1:niter % Pseudo-Transient cycles
 	vy(pos) = spcvy(pos);
 	dVydt(pos) = 0.;
 
-	%4. Update error
-	normX = normX + sum(dVxdt.^2);
-	normY = normY + sum(dVydt.^2);
-
-	%Get final error estimate
-	normX = sqrt(normX)/nbv;
-	normY = sqrt(normY)/nbv;
-
-	%Check convergence
-	iterror = max(normX,normY);
-	if((iterror < epsi) && (iter > 2)) break; end
-	if (mod(iter,nout_iter)==1)
-		fprintf('iter=%d, err=%1.3e \n',iter,iterror)
-		clf
-		plotmodel(md,'data',sqrt(vx.^2+vy.^2)*yts);
-		drawnow
-	end
-
+	
 	%LAST: Update viscosity
 	for i=1:nbe
 		if ~isice(i) continue; end
@@ -358,6 +341,18 @@ for iter = 1:niter % Pseudo-Transient cycles
 		etan(i) = min(exp(rele*log(eta_it) + (1-rele)*log(etan(i))),eta_0*1e5);
 		if(isnan(etan(i))) error('Found NaN in etan(i)'); end
 	end
+	
+	%Update error
+	iterror = max(max(abs(dVxdt)),max(abs(dVydt)));
+	
+	%Check convergence
+	if((iterror < epsi) && (iter > 2)) break; end
+	if (mod(iter,nout_iter)==1)
+		fprintf('iter=%d, err=%1.3e \n',iter,iterror)
+		clf
+		plotmodel(md,'data',sqrt(vx.^2+vy.^2)*yts); %Multiplication by yts converts m/s to m/yr
+		drawnow
+    end  
 end
 clf
 plotmodel(md,'data',sqrt(vx.^2+vy.^2)*yts);
