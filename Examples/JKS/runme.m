@@ -53,8 +53,9 @@ if any(steps==3)
 end 
 if any(steps==4)  %GPU solver
 
-	load JksControl  %comment this out when increasing the spatial resolution
+	%load JksControl  %comment this out when increasing the spatial resolution
         % md = refine(md); Add this when increasing spatial resolution
+	load JKS2e4
 	addpath('../../src/');
 	%md=gpu(md,1.5,.9);
 	damp = 1.5;
