@@ -109,8 +109,9 @@ end
 
 if any(steps==6)  %GPU solver
 
-	load ./Models/PIG_Control_drag %comment this out when increasing the spatial resolution
+	%load ./Models/PIG_Control_drag %comment this out when increasing the spatial resolution
         % md = refine(md); Add this when increasing spatial resolution
+	load PIG3e4
 	addpath('../../src/');
 	%md=gpu(md,0.35,.28);
         damp = 0.35;
