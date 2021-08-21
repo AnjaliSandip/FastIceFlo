@@ -1,12 +1,1 @@
-Notes:
-damp = 1.5
-relaxation = 0.9
 
-//RESULTS//
-Matlab:	
-iter=1, err=2.847e+00 
-iter=479, err=9.828e-09 --> converged
-
-C++:
-iter=1, err=21.1211
-iter=488, err=9.90242e-09
