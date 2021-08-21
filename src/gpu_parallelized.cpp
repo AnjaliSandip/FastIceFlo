@@ -394,14 +394,14 @@ int main(){/*{{{*/
 
     /*Constants*/
     double n_glen    = 3.;
-    double damp      = 1.5;  //change this according to glacier model and spatial resolution
+    double damp      = 0.95;  //change this according to glacier model and spatial resolution
     double rele      = 1e-1;
     double eta_b     = 0.5;
     double eta_0     = 1.e+14/2.;
     int    niter     = 5e6;
     int    nout_iter = 1000;
-    double epsi      = 1e-8;
-    double relaxation = 0.9;  //change this according to glacier model and spatial resolution
+    double epsi      = 3.171e-7;
+    double relaxation = 0.28;  //change this according to glacier model and spatial resolution
 
     /*Initial guesses (except vx and vy that we already loaded)*/
     double* etan = new double[nbe];
@@ -435,7 +435,28 @@ int main(){/*{{{*/
         rheology_B[i] = 1./3. * (rheology_B_temp[index[i*3+0]-1] + rheology_B_temp[index[i*3+1]-1] + rheology_B_temp[index[i*3+2]-1]);
     }
 
+  //Initial viscosity//
+    double* dvxdx   = new double[nbe];
+    double* dvxdy   = new double[nbe];
+    double* dvydx   = new double[nbe];
+    double* dvydy   = new double[nbe];
 
+    derive_xy_elem(dvxdx,dvxdy,vx,index,alpha,beta,nbe);
+    derive_xy_elem(dvydx,dvydy,vy,index,alpha,beta,nbe);
+
+    for(int i=0;i<nbe;i++){
+        if(!isice[i]) continue;
+        double eps_xx = dvxdx[i];
+        double eps_yy = dvydy[i];
+        double eps_xy = .5*(dvxdy[i]+dvydx[i]);
+        double EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy;
+        double eta_it = 1.e+14/2.;
+        if(EII2>0.) eta_it = rheology_B[i]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
+
+        etan[i] = min(eta_it,eta_0*1e5);
+        if(isnan(etan[i])){ std::cerr<<"Found NaN in etan[i]"; return 1;}
+    }
+    
     /*Linear integration points order 3*/
     double wgt3[] = { 0.555555555555556, 0.888888888888889, 0.555555555555556 };
     double xg3[] = { -0.774596669241483, 0.000000000000000, 0.774596669241483 };
@@ -544,11 +565,11 @@ int main(){/*{{{*/
         level[0] = ocean_levelset[index[n*3+0]-1];
         level[1] = ocean_levelset[index[n*3+1]-1];
         level[2] = ocean_levelset[index[n*3+2]-1];
-        if(level[0]>0. && level[1]>0. && level[2]>0.){
+        if(level[0]>=0. && level[1]>=0. && level[2]>=0.){
             /*Completely grounded*/
             groundedratio[n]=1.;
         }
-        else if(level[0]<0. && level[1]<0. && level[2]<0.){
+        else if(level[0]<=0. && level[1]<=0. && level[2]<=0.){
             /*Completely floating*/
             groundedratio[n]=0.;
         }
@@ -596,28 +617,7 @@ int main(){/*{{{*/
     }
 
 
-    //Initial viscosity//
-    double* dvxdx   = new double[nbe];
-    double* dvxdy   = new double[nbe];
-    double* dvydx   = new double[nbe];
-    double* dvydy   = new double[nbe];
-
-    derive_xy_elem(dvxdx,dvxdy,vx,index,alpha,beta,nbe);
-    derive_xy_elem(dvydx,dvydy,vy,index,alpha,beta,nbe);
-
-    for(int i=0;i<nbe;i++){
-        if(!isice[i]) continue;
-        double eps_xx = dvxdx[i];
-        double eps_yy = dvydy[i];
-        double eps_xy = .5*(dvxdy[i]+dvydx[i]);
-        double EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy;
-        double eta_it = 1.e+14/2.;
-        if(EII2>0.) eta_it = rheology_B[i]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
-
-        etan[i] = min(eta_it,eta_0*1e5);
-        if(isnan(etan[i])){ std::cerr<<"Found NaN in etan[i]"; return 1;}
-    }
-
+ 
     int* NodetoElem = new int[nbv*8];
     int* Elem     =   new int[nbv*8];
 
@@ -748,8 +748,8 @@ int main(){/*{{{*/
             /*1. Get time derivative based on residual (dV/dt)*/
             double ResVx =  1./(rho*ML[i])*(-KVx[i] + Fvx[i]); //rate of velocity in the x, equation 23
             double ResVy =  1./(rho*ML[i])*(-KVy[i] + Fvy[i]); //rate of velocity in the y, equation 24
-            dVxdt[i] = dVxdt[i]*(1.-damp/20.) + ResVx;
-            dVydt[i] = dVydt[i]*(1.-damp/20.) + ResVy;
+            dVxdt[i] = dVxdt[i]*(damp) + ResVx;
+            dVydt[i] = dVydt[i]*(damp) + ResVy;
             if(isnan(dVxdt[i])){ std::cerr<<"Found NaN in dVxdt[i]"; return 1;}
             if(isnan(dVydt[i])){ std::cerr<<"Found NaN in dVydt[i]"; return 1;}
 
@@ -771,22 +771,10 @@ int main(){/*{{{*/
                 dVydt[i] = 0.;
             }
 
-            /*4. Update error*/
-            normX += pow(dVxdt[i],2);
-            normY += pow(dVydt[i],2);
+
         }
 
-        /*Get final error estimate*/
-        normX = sqrt(normX)/double(nbv);
-        normY = sqrt(normY)/double(nbv);
-
-        /*Check convergence*/
-        iterror = max(normX,normY);
-
-        if((iterror < epsi) && (iter > 2)) break;
-        if ((iter%nout_iter)==1){
-            std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
-        }
+ 
 
         /*LAST: Update viscosity*/
         for(int i=0;i<nbe;i++){
@@ -803,6 +791,20 @@ int main(){/*{{{*/
         }
 
     }
+    
+      if ((iter % nout_iter) == 0) {
+            double dVxdt_max=0.0, dVydt_max=0.0;
+            for (int i = 0; i < nbv; i++){
+                dVxdt_max = max(abs(dVxdt[i]), dVxdt_max);
+                dVydt_max = max(abs(dVydt[i]), dVydt_max);
+            }
+            iterror = max(dVxdt_max, dVydt_max);
+
+            std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
+            if ((iterror < epsi) && (iter > 100)) break;
+        }
+    }
+    
     std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
 
     /*Cleanup intermediary vectors*/
