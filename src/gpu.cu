@@ -376,10 +376,10 @@ __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, 
         dvxdy[ix] = vx[index[ix*3+0]-1]*beta [ix*3+0] + vx[index[ix*3+1]-1]*beta [ix*3+1] + vx[index[ix*3+2]-1]*beta [ix*3+2];
         dvydx[ix] = vy[index[ix*3+0]-1]*alpha[ix*3+0] + vy[index[ix*3+1]-1]*alpha[ix*3+1] + vy[index[ix*3+2]-1]*alpha[ix*3+2];
         dvydy[ix] = vy[index[ix*3+0]-1]*beta [ix*3+0] + vy[index[ix*3+1]-1]*beta [ix*3+1] + vy[index[ix*3+2]-1]*beta [ix*3+2];
-    }
-    if (ix < nbe){Eta_nbe[ix] = etan[ix]*areas[ix];}
+    
+    Eta_nbe[ix] = etan[ix]*areas[ix];
 
-    if (ix<nbe){
+    
     /*Skip if no ice*/
         if (isice[ix]){
             /*Viscous Deformation*/
@@ -392,7 +392,7 @@ __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, 
                 kvy[ix * 3 + i] = 2 * Helem[ix] * eta_e * eps_xy * alpha[ix * 3 + i] * areas[ix] +  2 * Helem[ix] * eta_e * (2 * eps_yy + eps_xx) * beta[ix * 3 + i] * areas[ix];
             }
         }//isice loop
-    }
+    }  //ix<nbe loop
 }  
 
 //Moving to the next kernel, as kvx cannot be defined and updated in the same kernel
@@ -437,36 +437,36 @@ __global__ void PT2(double* kvx, double* kvy, double* groundedratio, double* are
 __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, double* eta_nbv, int* index, int* NodetoElem, int* Elem, double* weights, double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double relaxation, double eta_b, int nbv){ 
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
-
+ 
+    double ResVx;
+    double ResVy;
+    double dtVx;
+    double dtVy;
+	
     if (ix<nbv){
         KVx[ix] = 0.;
         KVy[ix] = 0.;
-    }
-    if (ix<nbv){
+    
+    
         for(int j=0;j<8;j++){
             if (NodetoElem[(ix * 8 + j)] != 0){
                 KVx[ix] = KVx[ix] + kvx[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)] ;
                 KVy[ix] = KVy[ix] + kvy[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)] ;
             }
         }
-    }
-    // if (ix < nbe){Eta_nbe[ix] = etan[ix]*areas[ix];}
-    if (ix<nbv){
+    
+ 
+    
         for (int j = 0; j < 8; j++){
             if (NodetoElem[(ix * 8 + j)] != 0){      
                 eta_nbv[ix] = eta_nbv[ix] + Eta_nbe[NodetoElem[(ix * 8 + j)]-1];
             }
         }
-    }
-    if (ix <nbv){eta_nbv[ix] =eta_nbv[ix]/weights[ix];}
+ 
+  eta_nbv[ix] =eta_nbv[ix]/weights[ix];
     
-    double ResVx;
-    double ResVy;
-    double dtVx;
-    double dtVy;
-   // double relaxation = rela; //0.28
-    // double relaxation;
-    if (ix<nbv){
+   
+
         /*1. Get time derivative based on residual (dV/dt)*/
         ResVx =  1./(rho*ML[ix])*(-KVx[ix] + Fvx[ix]); //rate of velocity in the x, equation 23
         ResVy =  1./(rho*ML[ix])*(-KVy[ix] + Fvy[ix]); //rate of velocity in the y, equation 24
@@ -477,8 +477,8 @@ __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, do
         dVydt[ix] = dVydt[ix]*damp + ResVy;
 
         /*2. Explicit CFL time step for viscous flow, x and y directions*/
-        dtVx = rho*pow(resolx[ix],2)/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
-        dtVy = rho*pow(resoly[ix],2)/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
+        dtVx = rho*resolx[ix]*resol[ix]/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
+        dtVy = rho*resoly[ix]*resol[ix]/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
         // dtVx = rho*pow(resolx[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;
         // dtVy = rho*pow(resoly[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;     
 
@@ -507,7 +507,7 @@ __global__ void PT4(double* etan, double* dvxdx, double* dvydy, double* dvxdy, d
         double  eps_xx = dvxdx[ix];
         double  eps_yy = dvydy[ix];
         double  eps_xy = .5*(dvxdy[ix]+dvydx[ix]);
-        double  EII2 = pow(eps_xx,2) + pow(eps_yy,2) + pow(eps_xy,2) + eps_xx*eps_yy;
+        double  EII2 = eps_xx*eps_xx + eps_yy*eps_yy + eps_xy*eps_xy + eps_xx*eps_yy;
         double  eta_it = 1.e+14/2.0;
 
         if (EII2>0.) eta_it = rheology_B[ix]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
