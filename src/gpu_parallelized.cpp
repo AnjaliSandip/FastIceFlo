@@ -394,14 +394,14 @@ int main(){/*{{{*/
 
     /*Constants*/
     double n_glen    = 3.;
-    double damp      = 0.95;  //change this according to glacier model and spatial resolution
+    double damp      = 0.96;  //change this according to glacier model and spatial resolution
     double rele      = 1e-1;
     double eta_b     = 0.5;
     double eta_0     = 1.e+14/2.;
     int    niter     = 5e6;
     int    nout_iter = 1000;
     double epsi      = 3.171e-7;
-    double relaxation = 0.28;  //change this according to glacier model and spatial resolution
+    double relaxation = 0.7;  //change this according to glacier model and spatial resolution
 
     /*Initial guesses (except vx and vy that we already loaded)*/
     double* etan = new double[nbe];
@@ -617,25 +617,61 @@ int main(){/*{{{*/
     }
 
 
- 
-    int* NodetoElem = new int[nbv*8];
-    int* Elem     =   new int[nbv*8];
+        //prepare head and next vectors for chain algorithm, at this point we have not seen any of the elements, so just set the head to -1 (=stop)
+    int* head = new int[nbv];
+    int* next  = new int[3*nbe];
+    for(int i=0;i<nbv;i++) head[i] = -1;
 
+    //Now construct the chain
+    for(int k=0;k<nbe;k++){
+        for(int j=0;j<3;j++){
+            int i;
+            int p = 3*k+j;       //unique linear index of current vertex in index
+            i = index[p];
+            next[p] = head[i - 1];
+            head[i -1] = p + 1;
+         //   std::cout << "i = " << index[p] << "head = " << head[i] <<"next = " << next[p] << std::endl;
+        }
+    }
+  //  for(int i=0;i<nbe*3;i++) { std::cout << "next = " << next[i] << std::endl;}
+    //Note: Index array starts at 0, but the node# starts at 1
 
-      for(int n=0;n<nbv;n++) {
-          int k = 0;
-          for (int i = 0; i < nbe; i++) {
-              for (int j = 0; j < 3; j++) {
-                  if (index[(i * 3 + j)] == n+1) {
-                      k = k + 1;
-                      NodetoElem[(n * 8 + k)-1] = i+1;
-                      Elem[(n * 8 + k) - 1] = j + 1;
+    //Now we can construct the connectivity matrix
+    int MAXCONNECT = 8;
+    int* connectivity = new int[nbv*MAXCONNECT];
+    int* columns = new int[nbv*MAXCONNECT];
 
-                  }
-              }
-          }
+    for(int i=0;i<nbv;i++) {
 
-      }
+        /*Go over all of the elements connected to node I*/
+        int count = 0;
+        int p=head[i];
+
+        //for (int p = head[i]; p != -1; p = next[p]) {
+          while (p!= -1) {
+
+              int k = p / 3 + 1;     //”row" in index
+              int j = (p % 3) - 1;   //"column" in index
+
+              if (j==-1) {
+                  j=2;
+              k= k -1;}
+
+             //  std::cout << "p = " << p<< "k = " << k << ", j = " << j <<", i =" <<i + 1 <<", index =" <<index[p-1] << std::endl;
+
+               //sanity check
+            if (index[p-1] !=i+1) {
+                std::cout << "Error occurred"  << std::endl;;
+            }
+
+            //enter element in connectivity matrix
+            connectivity[i * MAXCONNECT + count] = k;
+            columns[i * MAXCONNECT + count] = j;
+            count++;
+            p = next[p-1];
+        }
+    }
+   
       
 
     /*Main loop, allocate a few vectors needed for the computation*/
@@ -715,9 +751,9 @@ int main(){/*{{{*/
 
         for(int i=0;i<nbv;i++) {
             for (int j = 0; j < 8; j++) {
-                if (NodetoElem[(i * 8 + j)] != 0) {
-                    KVx[i] = KVx[i] + kvx [((NodetoElem[(i * 8 + j)])-1) *3 + ((Elem[(i * 8 + j)])-1)] ;
-                    KVy[i] = KVy[i] + kvy[((NodetoElem[(i * 8 + j)])-1) *3 + ((Elem[(i * 8 + j)])-1)] ;
+                if (connectivity[(i * 8 + j)] != 0) {
+                    KVx[i] = KVx[i] + kvx [((connectivity[(i * 8 + j)])-1) *3 + ((columns[(i * 8 + j)]))] ;
+                    KVy[i] = KVy[i] + kvy[((connectivity[(i * 8 + j)])-1) *3 + ((columns[(i * 8 + j)]))] ;
                 }
             }
         }
@@ -731,8 +767,8 @@ int main(){/*{{{*/
 
         for(int i=0;i<nbv;i++) {
             for (int j = 0; j < 8; j++) {
-                if (NodetoElem[(i * 8 + j)] != 0) {
-                    eta_nbv[i] = eta_nbv[i] + Eta_nbe[NodetoElem[(i * 8 + j)]-1];
+                if (connectivity[(i * 8 + j)] != 0) {
+                    eta_nbv[i] = eta_nbv[i] + Eta_nbe[connectivity[(i * 8 + j)]-1];
                 }
             }
         }
@@ -746,16 +782,16 @@ int main(){/*{{{*/
         for(int i=0;i<nbv;i++){
 
             /*1. Get time derivative based on residual (dV/dt)*/
-            double ResVx =  1./(rho*ML[i])*(-KVx[i] + Fvx[i]); //rate of velocity in the x, equation 23
-            double ResVy =  1./(rho*ML[i])*(-KVy[i] + Fvy[i]); //rate of velocity in the y, equation 24
+            double ResVx =  1./(rho*ML[i]*max(80.0,H[i]))*(-KVx[i] + Fvx[i]); //rate of velocity in the x, equation 23
+            double ResVy =  1./(rho*ML[i]*max(80.0,H[i]))*(-KVy[i] + Fvy[i]); //rate of velocity in the y, equation 24
             dVxdt[i] = dVxdt[i]*(damp) + ResVx;
             dVydt[i] = dVydt[i]*(damp) + ResVy;
             if(isnan(dVxdt[i])){ std::cerr<<"Found NaN in dVxdt[i]"; return 1;}
             if(isnan(dVydt[i])){ std::cerr<<"Found NaN in dVydt[i]"; return 1;}
 
             /*2. Explicit CFL time step for viscous flow, x and y directions*/
-            double dtVx = rho*pow(resolx[i],2)/(4*max(80.0,H[i])*eta_nbv[i]*(1.+eta_b)*4.1);
-            double dtVy = rho*pow(resoly[i],2)/(4*max(80.0,H[i])*eta_nbv[i]*(1.+eta_b)*4.1);
+            double dtVx = rho*pow(resolx[i],2)/(4*eta_nbv[i]*(1.+eta_b)*4.1);
+            double dtVy = rho*pow(resoly[i],2)/(4*eta_nbv[i]*(1.+eta_b)*4.1);
 
             /*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
             vx[i] = vx[i] + relaxation*dVxdt[i]*dtVx;
@@ -858,6 +894,8 @@ int main(){/*{{{*/
     delete [] ML;
     delete [] Fvx;
     delete [] Fvy;
+    delete [] connectivity;
+    delete [] columns;
 
     return 0;
 }/*}}}*/
