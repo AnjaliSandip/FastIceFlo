@@ -200,18 +200,56 @@ for i=1:nbv
    alpha2(i) = friction(i)^2*Neff;
 end
 
-for n = 1:nbv
-    k = 0;
-    for i=1:nbe
-        for j = 1:3
-            if (index(i,j) ==n)
-                k = k + 1;
-                NodetoElem(n,k) = i;
-                Elem(n,k) = j;
-            end
-        end
+head = zeros(nbv,1);
+next = zeros(nbe*3, 1);
+
+
+for i = 1:nbv
+     head(i) = -1;
+end
+
+%Now construct the chain
+for k=1:nbe
+    for j=1:3
+        i = index(k,j);  
+        p = 3*(k-1)+j;
+        next(p) = head(i);
+        head(i) = p;       
+    %    fprintf('i=%d, next=%d, head=%d \n',i, next(p), head(i));
     end
 end
+
+%Now we can construct the connectivity matrix
+MAXCONNECT = 8;
+connectivity = zeros(nbv*MAXCONNECT, 1);
+columns = zeros(nbv*MAXCONNECT, 1);
+for i=1:nbv
+
+   %Go over all of the elements connected to node I%
+   count = 1;
+   p = head(i);
+  while (p~=-1)
+   
+      k = fix(p/3) + 1;     %”row" in index
+      j = rem(p, 3);   %"column" in index
+      
+      if (j==0)
+          j=3;
+          k= k -1;
+      end
+      %sanity check
+      assert(index(k,j)==i);
+      
+       	%fprintf('k=%d, j=%d, i=%d \n',k, j, i);
+      %enter element in connectivity matrix
+      connectivity((i-1)* MAXCONNECT + count) = k;
+       columns((i-1)* MAXCONNECT + count) = j;
+      count = count + 1;
+     p = next(p); 
+   end
+  
+end
+
 
 %Main loop, allocate a few vectors needed for the computation
 
@@ -267,15 +305,15 @@ for iter = 1:niter % Pseudo-Transient cycles
         
    end
 
-        
-    for i = 1:nbv
+          for i = 1:nbv
         for j = 1:8
-            if NodetoElem(i,j) ~=0 
-                   KVx(i) = KVx(i) + kvx((NodetoElem(i,j)), (Elem(i,j)));
-                   KVy(i) = KVy(i) + kvy((NodetoElem(i,j)), (Elem(i,j)));
+            if connectivity((i-1)*8+j) ~=0 
+                   KVx(i) = KVx(i) + kvx((connectivity((i-1)*8+j)), (columns((i-1)*8+j)));
+                   KVy(i) = KVy(i) + kvy((connectivity((i-1)*8+j)), (columns((i-1)*8+j)));
             end
         end
     end
+  
 
 	%Get current viscosity on nodes (Needed for time stepping)
 	%eta_nbv = elem2node(etan,index,areas,weights,nbe,nbv);
@@ -287,10 +325,10 @@ for iter = 1:niter % Pseudo-Transient cycles
     end
     
     
-    for i = 1:nbv
+        for i = 1:nbv
         for j = 1:8
-            if NodetoElem(i,j) ~=0 
-            eta_nbv(i) = eta_nbv(i) + Eta_nbv(NodetoElem(i,j));  
+            if connectivity((i-1)*8+j) ~=0 
+            eta_nbv(i) = eta_nbv(i) + Eta_nbv(connectivity((i-1)*8+j));  
             end
         end
     end
@@ -304,16 +342,18 @@ for iter = 1:niter % Pseudo-Transient cycles
 	normY = 0;
 
 	%1. Get time derivative based on residual (dV/dt)
-	ResVx =  1./(rho*ML).*(-KVx + Fvx); %rate of velocity in the x, equation 23
-	ResVy =  1./(rho*ML).*(-KVy + Fvy); %rate of velocity in the y, equation 24
+        ResVx =  1./(rho*ML.*max(80,H)).*(-KVx + Fvx); %rate of velocity in the x, equation 23
+	ResVy =  1./(rho*ML.*max(80,H)).*(-KVy + Fvy); %rate of velocity in the y, equation 24
+	
 	dVxdt = dVxdt*(damp) + ResVx;
 	dVydt = dVydt*(damp) + ResVy;
+	
 	if(any(isnan(dVxdt))) error('Found NaN in dVxdt[i]'); end
 	if(any(isnan(dVydt))) error('Found NaN in dVydt[i]'); end
 
 	%2. Explicit CFL time step for viscous flow, x and y directions
-	dtVx = rho*resolx.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1);
-	dtVy = rho*resoly.^2./(4*max(80,H).*eta_nbv*(1.+eta_b)*4.1);
+        dtVx = rho*resolx.^2./(4*eta_nbv*(1.+eta_b)*4.1);
+        dtVy = rho*resoly.^2./(4*eta_nbv*(1.+eta_b)*4.1);
         
 	%3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy
 	vx = vx + relaxation*dVxdt.*dtVx;
