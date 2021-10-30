@@ -434,7 +434,7 @@ __global__ void PT2(double* kvx, double* kvy, double* groundedratio, double* are
 }
 
 //Moving to the next kernel::cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
-__global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, double* eta_nbv, int* index, int* NodetoElem, int* Elem, double* weights, double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double relaxation, double eta_b, int nbv){ 
+__global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, double* eta_nbv, int* index, int* connectivity, int* columns, double* weights, double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double relaxation, double eta_b, int nbv){ 
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
  
@@ -449,17 +449,17 @@ __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, do
     
     
         for(int j=0;j<8;j++){
-            if (NodetoElem[(ix * 8 + j)] != 0){
-                KVx[ix] = KVx[ix] + kvx[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)] ;
-                KVy[ix] = KVy[ix] + kvy[((NodetoElem[(ix * 8 + j)])-1) *3 + ((Elem[(ix * 8 + j)])-1)] ;
+            if (connectivity[(ix * 8 + j)] != 0){
+                KVx[ix] = KVx[ix] + kvx[((connectivity[(ix * 8 + j)])-1) *3 + ((columns[(ix * 8 + j)]))] ;
+                KVy[ix] = KVy[ix] + kvy[((connectivity[(ix * 8 + j)])-1) *3 + ((columns[(ix * 8 + j)]))] ;
             }
         }
     
  
     
         for (int j = 0; j < 8; j++){
-            if (NodetoElem[(ix * 8 + j)] != 0){      
-                eta_nbv[ix] = eta_nbv[ix] + Eta_nbe[NodetoElem[(ix * 8 + j)]-1];
+            if (connectivity[(ix * 8 + j)] != 0){      
+                eta_nbv[ix] = eta_nbv[ix] + Eta_nbe[connectivity[(ix * 8 + j)]-1];
             }
         }
  
@@ -468,8 +468,8 @@ __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, do
    
 
         /*1. Get time derivative based on residual (dV/dt)*/
-        ResVx =  1./(rho*ML[ix])*(-KVx[ix] + Fvx[ix]); //rate of velocity in the x, equation 23
-        ResVy =  1./(rho*ML[ix])*(-KVy[ix] + Fvy[ix]); //rate of velocity in the y, equation 24
+        ResVx =  1./(rho*max(80.0,H[ix])*ML[ix])*(-KVx[ix] + Fvx[ix]); //rate of velocity in the x, equation 23
+        ResVy =  1./(rho*max(80.0,H[ix])*ML[ix])*(-KVy[ix] + Fvy[ix]); //rate of velocity in the y, equation 24
         
         // dVxdt[ix] = dVxdt[ix]*(1.-damp/20.) + ResVx;
         // dVydt[ix] = dVydt[ix]*(1.-damp/20.) + ResVy;
@@ -477,8 +477,8 @@ __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, do
         dVydt[ix] = dVydt[ix]*damp + ResVy;
 
         /*2. Explicit CFL time step for viscous flow, x and y directions*/
-        dtVx = rho*resolx[ix]*resol[ix]/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
-        dtVy = rho*resoly[ix]*resol[ix]/(4*max(80.0,H[ix])*eta_nbv[ix]*(1.+eta_b)*4.1);
+        dtVx = rho*resolx[ix]*resol[ix]/(4*eta_nbv[ix]*(1.+eta_b)*4.1);
+        dtVy = rho*resoly[ix]*resol[ix]/(4*eta_nbv[ix]*(1.+eta_b)*4.1);
         // dtVx = rho*pow(resolx[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;
         // dtVy = rho*pow(resoly[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;     
 
@@ -641,14 +641,14 @@ int main(){/*{{{*/
 
 	/*Constants*/
 	double n_glen    = 3.;
-	double damp      = 0.95;  //may need to change this depending on the glacier model and the spatial resolution
+	double damp      = 0.96;  //may need to change this depending on the glacier model and the spatial resolution
 	double rele      = 1e-1;
 	double eta_b     = 0.5;
 	double eta_0     = 1.e+14/2.;
 	int    niter     = 5e6;
 	int    nout_iter = 1000;
         double epsi       = 3.171e-7;
-        double relaxation = 0.38;
+        double relaxation = 0.7;
     
      // Ceiling division to get the close to optimal GRID size
     unsigned int GRID_Xe = 1 + ((nbe - 1) / BLOCK_Xe);
@@ -874,25 +874,60 @@ int main(){/*{{{*/
 	}
 
 	
-   int* NodetoElem = new int[nbv*8];
-   int* Elem     =   new int[nbv*8];
+   //prepare head and next vectors for chain algorithm, at this point we have not seen any of the elements, so just set the head to -1 (=stop)
+    int* head = new int[nbv];
+    int* next  = new int[3*nbe];
+    for(int i=0;i<nbv;i++) head[i] = -1;
 
+    //Now construct the chain
+    for(int k=0;k<nbe;k++){
+        for(int j=0;j<3;j++){
+            int i;
+            int p = 3*k+j;       //unique linear index of current vertex in index
+            i = index[p];
+            next[p] = head[i - 1];
+            head[i -1] = p + 1;
+         //   std::cout << "i = " << index[p] << "head = " << head[i] <<"next = " << next[p] << std::endl;
+        }
+    }
+  //  for(int i=0;i<nbe*3;i++) { std::cout << "next = " << next[i] << std::endl;}
+    //Note: Index array starts at 0, but the node# starts at 1
+    //Now we can construct the connectivity matrix
+    int MAXCONNECT = 8;
+    int* connectivity = new int[nbv*MAXCONNECT];
+    int* columns = new int[nbv*MAXCONNECT];
 
-      for(int n=0;n<nbv;n++) {
-          int k = 0;
-          for (int i = 0; i < nbe; i++) {
-              for (int j = 0; j < 3; j++) {
-                  if (index[(i * 3 + j)] == n+1) {
-                      k = k + 1;
-                      NodetoElem[(n * 8 + k)-1] = i+1;
-                      Elem[(n * 8 + k) - 1] = j + 1;
+    for(int i=0;i<nbv;i++) {
 
-                  }
-              }
-          }
+        /*Go over all of the elements connected to node I*/
+        int count = 0;
+        int p=head[i];
 
-      }
+        //for (int p = head[i]; p != -1; p = next[p]) {
+          while (p!= -1) {
 
+              int k = p / 3 + 1;     //”row" in index
+              int j = (p % 3) - 1;   //"column" in index
+
+              if (j==-1) {
+                  j=2;
+              k= k -1;}
+
+             //  std::cout << "p = " << p<< "k = " << k << ", j = " << j <<", i =" <<i + 1 <<", index =" <<index[p-1] << std::endl;
+
+               //sanity check
+            if (index[p-1] !=i+1) {
+                std::cout << "Error occurred"  << std::endl;;
+            }
+
+            //enter element in connectivity matrix
+            connectivity[i * MAXCONNECT + count] = k;
+            columns[i * MAXCONNECT + count] = j;
+            count++;
+            p = next[p-1];
+        }
+    }
+	
     double* device_normvalx = new double[GRID_Xv];
     double* device_normvaly = new double[GRID_Xv];
     for(int i=0;i<GRID_Xv;i++) device_normvalx[i] = 0.;
@@ -997,14 +1032,14 @@ int main(){/*{{{*/
         bool *d_isice;
         cudaMalloc(&d_isice, nbe*sizeof(bool));
         cudaMemcpy(d_isice, isice, nbe*sizeof(bool), cudaMemcpyHostToDevice);
-	
-        int *d_NodetoElem = NULL;
-        cudaMalloc(&d_NodetoElem, nbv*8*sizeof(int));
-        cudaMemcpy(d_NodetoElem, NodetoElem, nbv*8*sizeof(int), cudaMemcpyHostToDevice);
+    
+    int *d_connectivity = NULL;
+    cudaMalloc(&d_connectivity, nbv*8*sizeof(int));
+    cudaMemcpy(d_connectivity, connectivity, nbv*8*sizeof(int), cudaMemcpyHostToDevice);
 
-        int *d_Elem = NULL;
-        cudaMalloc(&d_Elem, nbv*8*sizeof(int));
-        cudaMemcpy(d_Elem, Elem, nbv*8*sizeof(int), cudaMemcpyHostToDevice);
+    int *d_columns = NULL;
+    cudaMalloc(&d_columns, nbv*8*sizeof(int));
+    cudaMemcpy(d_columns, columns, nbv*8*sizeof(int), cudaMemcpyHostToDevice);
         
 	
         double* d_device_normvalx = NULL;
@@ -1070,7 +1105,7 @@ int main(){/*{{{*/
         PT2<<<gride, blocke>>>(kvx, kvy, d_groundedratio, d_areas, d_index, d_alpha2, d_vx, d_vy, d_isice, nbe);
         cudaDeviceSynchronize();
 
-        PT3<<<gridv, blockv>>>(kvx, kvy, Eta_nbe, d_areas, eta_nbv, d_index, d_NodetoElem, d_Elem, d_weights, d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, relaxation, eta_b, nbv);   
+        PT3<<<gridv, blockv>>>(kvx, kvy, Eta_nbe, d_areas, eta_nbv, d_index, d_connectivity, d_columns, d_weights, d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, relaxation, eta_b, nbv);   
         cudaDeviceSynchronize();
         
         PT4<<<gride, blocke>>>(d_etan, dvxdx, dvydy, dvxdy, dvydx, d_rheology_B, n_glen, d_isice, eta_0, rele, nbe);
@@ -1164,8 +1199,8 @@ int main(){/*{{{*/
 	cudaFree(d_alpha2);
 	cudaFree(d_groundedratio);
         cudaFree(d_isice);
-        cudaFree(d_NodetoElem);
-        cudaFree(d_Elem);        
+        cudaFree(d_connectivity);
+        cudaFree(d_columns);        
         cudaFree(d_device_normvalx);
         cudaFree(d_device_normvaly);
         cudaFree(d_device_maxvalx);
