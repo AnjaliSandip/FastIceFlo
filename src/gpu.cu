@@ -396,7 +396,7 @@ __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, 
 }  
 
 //Moving to the next kernel, as kvx cannot be defined and updated in the same kernel
-__global__ void PT2(double* kvx, double* kvy, double* groundedratio, double* areas, int* index, double* alpha2, double* vx, double* vy, bool* isice,  int nbe){
+__global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* index, double* alpha2, double* vx, bool* isice,  int nbe){
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -413,17 +413,17 @@ __global__ void PT2(double* kvx, double* kvy, double* groundedratio, double* are
                         for (int j = 0; j < 3; j++){
                            int j_index = index[n3 + j] - 1;
                            double gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
-                           double gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
+                   
                            // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
                            if (i == j && j == k){
                                 kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 10.;
-                                kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 10.;
+              
                             } else if ((i!=j) && (j!=k) && (k!=i)){
                                 kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 60.;
-                                kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 60.;
+
                             } else{
                                 kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 30.;
-                                kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 30.;
+ 
                            }
                         }
                     }
@@ -433,6 +433,42 @@ __global__ void PT2(double* kvx, double* kvy, double* groundedratio, double* are
     }//nbe loop 
 }
 
+__global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* index, double* alpha2, double* vy, bool* isice,  int nbe){
+
+    int ix = blockIdx.x * blockDim.x + threadIdx.x;
+
+    /*Add basal friction*/
+    if (ix<nbe){
+        if (isice[ix]){
+            if (groundedratio[ix] > 0.){
+                int n3 = ix * 3;
+                double gr_a = groundedratio[ix] * areas[ix];
+                for (int k = 0; k < 3; k++){
+                    for (int i = 0; i < 3; i++){
+                        int i_index = index[n3 + i] - 1;
+                        double gr_a_alpha2 = gr_a * alpha2[i_index];
+                        for (int j = 0; j < 3; j++){
+                           int j_index = index[n3 + j] - 1;
+        
+                           double gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
+                           // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
+                           if (i == j && j == k){
+                   
+                                kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 10.;
+                            } else if ((i!=j) && (j!=k) && (k!=i)){
+                
+                                kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 60.;
+                            } else{
+                
+                                kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 30.;
+                           }
+                        }
+                    }
+                }
+            }//groundedratio loop
+        }//isice loop
+    }//nbe loop 
+}
 //Moving to the next kernel::cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
 __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, double* eta_nbv, int* index, int* connectivity, int* columns, double* weights, double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double relaxation, double eta_b, int nbv){ 
 
@@ -1091,6 +1127,11 @@ int main(){/*{{{*/
 	double *kvy = NULL;
 	cudaMalloc(&kvy, nbe*3*sizeof(double));
 	
+	
+	  //Creating CUDA streams
+  cudaStream_t stream1, stream2, stream3;
+  cudaStreamCreate(&stream1);
+  cudaStreamCreate(&stream2);
 
 	/*Main loop*/
 	int iter;
@@ -1102,9 +1143,12 @@ int main(){/*{{{*/
         PT1<<<gride, blocke>>>(dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, kvx, kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, nbe);
         cudaDeviceSynchronize();     
 
-        PT2<<<gride, blocke>>>(kvx, kvy, d_groundedratio, d_areas, d_index, d_alpha2, d_vx, d_vy, d_isice, nbe);
+        PT2_x<<<gride, blocke, 0, stream1>>>(kvx, d_groundedratio, d_areas, d_index, d_alpha2, d_vx,  d_isice, nbe);
         cudaDeviceSynchronize();
-
+        
+        PT2_y<<<gride, blocke, 0, stream2>>>(kvy, d_groundedratio, d_areas, d_index, d_alpha2, d_vy, d_isice, nbe);
+        cudaDeviceSynchronize();
+        	
         PT3<<<gridv, blockv>>>(kvx, kvy, Eta_nbe, d_areas, eta_nbv, d_index, d_connectivity, d_columns, d_weights, d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, relaxation, eta_b, nbv);   
         cudaDeviceSynchronize();
         
@@ -1142,6 +1186,7 @@ int main(){/*{{{*/
 	WriteData(fid,vx,nbv,1,"Vx");
 	WriteData(fid,vy,nbv,1,"Vy");
 	if(fclose(fid)!=0) std::cerr<<"could not close file " << outputfile;
+	
 
 	/*Cleanup and return*/
 	delete [] index;
@@ -1216,6 +1261,10 @@ int main(){/*{{{*/
 	cudaFree(Eta_nbe);
 	cudaFree(kvx);
         cudaFree(kvy);
+	
+	//Destroying CUDA streams
+  cudaStreamDestroy(stream1);
+  cudaStreamDestroy(stream2);
 
 
 	return 0;
