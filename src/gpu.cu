@@ -788,6 +788,23 @@ int main(){/*{{{*/
 				 ML[index[n*3+j]-1] += areas[n]/12.;
 			}
 		}
+		
+		/*Is there ice at all in the current element?*/
+        level[0] = ice_levelset[index[n*3+0]-1];
+        level[1] = ice_levelset[index[n*3+1]-1];
+        level[2] = ice_levelset[index[n*3+2]-1];
+        if (level[0]<0 || level[1]<0 || level[2]<0){
+            isice[n] = true;
+        }
+        else{
+            isice[n] = false;
+            for(int i=0;i<3;i++){
+                vx[index[n*3+i]-1] = 0.;
+                vy[index[n*3+i]-1] = 0.;
+            }
+            continue;
+        }
+		
 		/*RHS, 'F ' in equation 22 (Driving Stress)*/
 		for(int i=0;i<3;i++){
 			for(int j=0;j<3;j++){
