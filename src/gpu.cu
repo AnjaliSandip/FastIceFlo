@@ -747,7 +747,6 @@ int main(){/*{{{*/
     derive_xy_elem(dvydx,dvydy,vy,index,alpha,beta,nbe);
 
     for(int i=0;i<nbe;i++){
-        if(!isice[i]) continue;
         double eps_xx = dvxdx[i];
         double eps_yy = dvydy[i];
         double eps_xy = .5*(dvxdy[i]+dvydx[i]);
@@ -770,6 +769,8 @@ int main(){/*{{{*/
 	double* Fvx           = new double[nbv];
 	double* Fvy           = new double[nbv];
 	double* groundedratio = new double[nbe];
+	bool*   isice         = new bool[nbe];     
+        double level[3];    
 	for(int i=0;i<nbv;i++){
 		ML[i]  = 0.;
 		Fvx[i] = 0.;
@@ -802,7 +803,7 @@ int main(){/*{{{*/
 	}
 
 	/*RHS (Water pressure at the ice front)*/
-	double level[3];
+
 	for(int n=0;n<nbe;n++){
 		/*Determine if there is an ice front there*/
 		level[0] = ice_levelset[index[n*3+0]-1];
@@ -835,24 +836,19 @@ int main(){/*{{{*/
 			double nx  = +(y[pairids[1]]-y[pairids[0]])/len;
 			double ny  = -(x[pairids[1]]-x[pairids[0]])/len;
 
-			/*RHS*/
-			for(int i=0;i<2;i++){
-				for(int j=0;j<2;j++){
-					double bibj = base[pairids[i]]*base[pairids[j]];
-					double HiHj = H[pairids[i]]*H[pairids[j]];
-					for(int k=0;k<2;k++){
-						if(i==j && j==k){
-							Fvx[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/4.;
-							Fvy[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/4.;
-						}
-						else{
-							Fvx[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*nx*len/12.;
-							Fvy[pairids[k]] += 1./2.*(-rho_w*g*bibj+rho*g*HiHj)*ny*len/12.;
-						}
-					}
-				}
-			}
-		}
+			 /*RHS*/
+            for(int gg=0;gg<2;gg++){
+                double phi1 = (1.0 -xg3[gg])/2.;
+                double phi2 = (1.0 +xg3[gg])/2.;
+                double bg = base[pairids[0]]*phi1 + base[pairids[1]]*phi2;
+                double Hg = H[pairids[0]]*phi1 + H[pairids[1]]*phi2;
+                bg = min(bg,0.0);
+                Fvx[pairids[0]] = Fvx[pairids[0]] +wgt3[gg]/2*1/2*(-rho_w*g* pow(bg,2)+rho*g*pow(Hg,2))*nx*len*phi1;
+                Fvx[pairids[1]] = Fvx[pairids[1]] +wgt3[gg]/2*1/2*(-rho_w*g*pow(bg,2)+rho*g*pow(Hg,2))*nx*len*phi2;
+                Fvy[pairids[0]] = Fvy[pairids[0]] +wgt3[gg]/2*1/2*(-rho_w*g*pow(bg,2)+rho*g*pow(Hg,2))*ny*len*phi1;
+                Fvy[pairids[1]] = Fvy[pairids[1]] +wgt3[gg]/2*1/2*(-rho_w*g*pow(bg,2)+rho*g*pow(Hg,2))*ny*len*phi2;
+            } 
+        }
 
 		/*One more thing in this element loop: prepare groundedarea needed later for the calculation of basal friction*/
 		level[0] = ocean_levelset[index[n*3+0]-1];
@@ -1079,13 +1075,13 @@ int main(){/*{{{*/
         
 	
         double* d_device_normvalx = NULL;
-        cudaMalloc(&d_device_normvalx, gridSize*sizeof(double));
-        cudaMemcpy(d_device_normvalx, device_normvalx, gridSize*sizeof(double), cudaMemcpyHostToDevice);
+        cudaMalloc(&d_device_normvalx, GRID_Xv*sizeof(double));
+        cudaMemcpy(d_device_normvalx, device_normvalx, GRID_Xv*sizeof(double), cudaMemcpyHostToDevice);
 
 
         double* d_device_normvaly = NULL;
-        cudaMalloc(&d_device_normvaly, gridSize*sizeof(double));
-        cudaMemcpy(d_device_normvaly, device_normvaly, gridSize*sizeof(double), cudaMemcpyHostToDevice);
+        cudaMalloc(&d_device_normvaly, GRID_Xv*sizeof(double));
+        cudaMemcpy(d_device_normvaly, device_normvaly, GRID_Xv*sizeof(double), cudaMemcpyHostToDevice);
 	
 	
     double* d_device_maxvalx = NULL;
@@ -1119,7 +1115,7 @@ int main(){/*{{{*/
         cudaMalloc(&eta_nbv, nbv*sizeof(double));
 
         double *Eta_nbe = NULL;
-        cudaMalloc(&Eta_nbv, nbe*3*sizeof(double));       
+        cudaMalloc(&Eta_nbe, nbe*3*sizeof(double));       
 
         double *kvx = NULL;
 	cudaMalloc(&kvx, nbe*3*sizeof(double));
@@ -1129,9 +1125,14 @@ int main(){/*{{{*/
 	
 	
 	  //Creating CUDA streams
-  cudaStream_t stream1, stream2, stream3;
+  cudaStream_t stream1, stream2;
   cudaStreamCreate(&stream1);
   cudaStreamCreate(&stream2);
+	
+	   // Perf
+    double time_s = 0.0;
+    double mem = (double)1e-9*(double)nbe*sizeof(double);
+    int nIO = 10;
 
 	/*Main loop*/
 	int iter;
