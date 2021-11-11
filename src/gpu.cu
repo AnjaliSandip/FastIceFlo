@@ -474,7 +474,8 @@ __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, do
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
  
-    double ResVx;
+    __shared__ volatile double ResVx;
+    //double ResVx;
     double ResVy;
     double dtVx;
     double dtVy;
