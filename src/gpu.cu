@@ -368,9 +368,9 @@ void  clean_cuda(){
 
 __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* vx, double* vy, double* alpha, double* beta, int* index, double* kvx, double* kvy, double* etan,  double* Helem, double* areas, bool* isice, double* Eta_nbe, int nbe){
  
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
+   for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x) { 
      
-    if (ix<nbe){
+   // if (ix<nbe){
       /*Calculate velocity derivatives*/
         dvxdx[ix] = vx[index[ix*3+0]-1]*alpha[ix*3+0] + vx[index[ix*3+1]-1]*alpha[ix*3+1] + vx[index[ix*3+2]-1]*alpha[ix*3+2];
         dvxdy[ix] = vx[index[ix*3+0]-1]*beta [ix*3+0] + vx[index[ix*3+1]-1]*beta [ix*3+1] + vx[index[ix*3+2]-1]*beta [ix*3+2];
@@ -398,10 +398,10 @@ __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, 
 //Moving to the next kernel, as kvx cannot be defined and updated in the same kernel
 __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* index, double* alpha2, double* vx, bool* isice,  int nbe){
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
+	   for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x) {
 
     /*Add basal friction*/
-    if (ix<nbe){
+//    if (ix<nbe){
         if (isice[ix]){
             if (groundedratio[ix] > 0.){
                 int n3 = ix * 3;
@@ -435,10 +435,10 @@ __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* in
 
 __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* index, double* alpha2, double* vy, bool* isice,  int nbe){
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
+   for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x) {
 
     /*Add basal friction*/
-    if (ix<nbe){
+  //  if (ix<nbe){
         if (isice[ix]){
             if (groundedratio[ix] > 0.){
                 int n3 = ix * 3;
@@ -472,15 +472,18 @@ __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* in
 //Moving to the next kernel::cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
 __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, double* eta_nbv, int* index, int* connectivity, int* columns, double* weights, double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double relaxation, double eta_b, int nbv){ 
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
+  
  
-    __shared__ volatile double ResVx;
-    //double ResVx;
+ 
+    double ResVx;
     double ResVy;
     double dtVx;
     double dtVy;
 	
-    if (ix<nbv){
+	
+	for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbv; ix += blockDim.x * gridDim.x) {
+	
+  //  if (ix<nbv){
         KVx[ix] = 0.;
         KVy[ix] = 0.;
     
@@ -538,9 +541,9 @@ __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, do
 
 __global__ void PT4(double* etan, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* rheology_B, double n_glen, bool* isice, double eta_0, double rele, int nbe){
  
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
+ for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x) {
 
-    if (ix < nbe){
+   // if (ix < nbe){
         double  eps_xx = dvxdx[ix];
         double  eps_yy = dvydy[ix];
         double  eps_xy = .5*(dvxdy[ix]+dvydx[ix]);
@@ -690,6 +693,9 @@ int main(){/*{{{*/
      // Ceiling division to get the close to optimal GRID size
     unsigned int GRID_Xe = 1 + ((nbe - 1) / BLOCK_Xe);
     unsigned int GRID_Xv = 1 + ((nbv - 1) / BLOCK_Xv);
+
+     GRID_Xe = GRID_Xe - GRID_Xe%80;
+     GRID_Xv = GRID_Xv - GRID_Xv%80;
 
     std::cout<<"GRID_Xe="<<GRID_Xe<<std::endl;
     std::cout<<"GRID_Xv="<<GRID_Xv<<std::endl;
