@@ -402,7 +402,7 @@ __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* in
 
     /*Add basal friction*/
 //    if (ix<nbe){
-        if (isice[ix]){
+       // if (isice[ix]){
             if (groundedratio[ix] > 0.){
                 int n3 = ix * 3;
                 double gr_a = groundedratio[ix] * areas[ix];
@@ -416,20 +416,20 @@ __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* in
                    
                            // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
                            if (i == j && j == k){
-                                kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 10.;
+                                kvx[n3 + k] =  isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 10.;
               
                             } else if ((i!=j) && (j!=k) && (k!=i)){
-                                kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 60.;
+                                kvx[n3 + k] =  isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 60.;
 
                             } else{
-                                kvx[n3 + k] =  kvx[n3 + k] + gr_a_alpha2_vx / 30.;
+                                kvx[n3 + k] =  isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 30.;
  
                            }
                         }
                     }
                 }
             }//groundedratio loop
-        }//isice loop
+      //  }//isice loop
     }//nbe loop 
 }
 
@@ -439,7 +439,7 @@ __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* in
 
     /*Add basal friction*/
   //  if (ix<nbe){
-        if (isice[ix]){
+     //   if (isice[ix]){
             if (groundedratio[ix] > 0.){
                 int n3 = ix * 3;
                 double gr_a = groundedratio[ix] * areas[ix];
@@ -454,19 +454,19 @@ __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* in
                            // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
                            if (i == j && j == k){
                    
-                                kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 10.;
+                                kvy[n3 + k] =  isice[ix] * kvy[n3 + k] + gr_a_alpha2_vy / 10.;
                             } else if ((i!=j) && (j!=k) && (k!=i)){
                 
-                                kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 60.;
+                                kvy[n3 + k] =  isice[ix] * kvy[n3 + k] + gr_a_alpha2_vy / 60.;
                             } else{
                 
-                                kvy[n3 + k] =  kvy[n3 + k] + gr_a_alpha2_vy / 30.;
+                                kvy[n3 + k] =  isice[ix] * kvy[n3 + k] + gr_a_alpha2_vy / 30.;
                            }
                         }
                     }
                 }
             }//groundedratio loop
-        }//isice loop
+    //    }//isice loop
     }//nbe loop 
 }
 //Moving to the next kernel::cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
