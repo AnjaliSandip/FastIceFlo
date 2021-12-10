@@ -776,8 +776,7 @@ int main(){/*{{{*/
         for(int i=0;i<nbv;i++) {eta_nbv[i] =eta_nbv[i]/weights[i];}
 
         /*Velocity rate update in the x and y, refer to equation 19 in Rass paper*/
-       double normX = 0.;
-       double normY = 0.;
+
 
         for(int i=0;i<nbv;i++){
 
