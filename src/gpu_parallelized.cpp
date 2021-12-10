@@ -678,10 +678,12 @@ int main(){/*{{{*/
     double* eta_nbv = new double[nbv];
     double* KVx     = new double[nbv];
     double* KVy     = new double[nbv];
-    double* Eta_nbe = new double[nbe];
+    double* Eta_nbv = new double[nbe];
     double* kvx     = new double[nbe*3];
     double* kvy     = new double[nbe*3];
-
+    double *dVxdt_abs = new double[nbv];
+    double *dVydt_abs = new double[nbv];
+    
     int     iter;
     double  iterror;
     for(iter=1;iter<=niter;iter++){
@@ -711,12 +713,8 @@ int main(){/*{{{*/
                 kvy[n * 3 + i] = 2 * Helem[n] * eta_e * eps_xy * alpha[n * 3 + i] * areas[n] +
                                  2 * Helem[n] * eta_e * (2 * eps_yy + eps_xx) * beta[n * 3 + i] * areas[n];
             }
-        }
+        
             /*Add basal friction*/
-        for (int n = 0; n < nbe; n++) {
-            //Skip if no ice//
-            if (!isice[n]) continue;
-
             if (groundedratio[n] > 0.) {
                 int n3 = n * 3;
                 double gr_a = groundedratio[n] * areas[n];
@@ -761,14 +759,14 @@ int main(){/*{{{*/
 
         /*Get current viscosity on nodes (Needed for time stepping)*/
         for(int i=1;i<=nbe;i++){
-                Eta_nbe[i] = etan[i]*areas[i];
+                Eta_nbv[i] = etan[i]*areas[i];
             }
 
 
         for(int i=0;i<nbv;i++) {
             for (int j = 0; j < 8; j++) {
                 if (connectivity[(i * 8 + j)] != 0) {
-                    eta_nbv[i] = eta_nbv[i] + Eta_nbe[connectivity[(i * 8 + j)]-1];
+                    eta_nbv[i] = eta_nbv[i] + Eta_nbv[connectivity[(i * 8 + j)]-1];
                 }
             }
         }
