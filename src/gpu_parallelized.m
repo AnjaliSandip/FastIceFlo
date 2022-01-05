@@ -338,9 +338,7 @@ for iter = 1:niter % Pseudo-Transient cycles
     end
 
 	%Velocity rate update in the x and y, refer to equation 19 in Rass paper
-	normX = 0;
-	normY = 0;
-
+	
 	%1. Get time derivative based on residual (dV/dt)
         ResVx =  1./(rho*ML.*max(80,H)).*(-KVx + Fvx); %rate of velocity in the x, equation 23
 	ResVy =  1./(rho*ML.*max(80,H)).*(-KVy + Fvy); %rate of velocity in the y, equation 24
