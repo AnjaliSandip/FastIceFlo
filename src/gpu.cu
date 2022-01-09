@@ -366,9 +366,19 @@ void  clean_cuda(){
     if(ce != cudaSuccess){ printf("ERROR launching GPU C-CUDA program: %s\n", cudaGetErrorString(ce)); cudaDeviceReset(); }
 }
 
-__global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* vx, double* vy, double* alpha, double* beta, int* index, double* kvx, double* kvy, double* etan,  double* Helem, double* areas, bool* isice, double* Eta_nbe, int nbe){
- 
+__global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* vx, double* vy, double* alpha, double* beta, int* index,  double* kvx, double* kvy, double* etan,  double* Helem, double* areas, bool* isice, double* Eta_nbe, double* rheology_B, double n_glen, double eta_0, double rele,int nbe){ 
+
    for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x) { 
+	   
+	double  eps_xx = dvxdx[ix];
+        double  eps_yy = dvydy[ix];
+        double  eps_xy = .5*(dvxdy[ix]+dvydx[ix]);
+        double  EII2 = eps_xx*eps_xx + eps_yy*eps_yy + eps_xy*eps_xy + eps_xx*eps_yy;
+        double  eta_it = 1.e+14/2.0;
+
+        if (EII2>0.) eta_it = rheology_B[ix]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
+
+        if (isice[ix]) etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);
      
    // if (ix<nbe){
       /*Calculate velocity derivatives*/
@@ -539,22 +549,6 @@ __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, do
     
 }
 
-__global__ void PT4(double* etan, double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* rheology_B, double n_glen, bool* isice, double eta_0, double rele, int nbe){
- 
- for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x) {
-
-   // if (ix < nbe){
-        double  eps_xx = dvxdx[ix];
-        double  eps_yy = dvydy[ix];
-        double  eps_xy = .5*(dvxdy[ix]+dvydx[ix]);
-        double  EII2 = eps_xx*eps_xx + eps_yy*eps_yy + eps_xy*eps_xy + eps_xx*eps_yy;
-        double  eta_it = 1.e+14/2.0;
-
-        if (EII2>0.) eta_it = rheology_B[ix]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
-    
-        if (isice[ix]) etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);
-    }
-}
 
 // Find the norm of an array
 __shared__ volatile double block_normval;
@@ -1165,8 +1159,8 @@ int main(){/*{{{*/
 
 		      if (iter==11) tic();
 
-        PT1<<<gride, blocke>>>(dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, kvx, kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, nbe);
-        cudaDeviceSynchronize();     
+        PT1<<<gride, blocke>>>(dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, kvx,  kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, d_rheology_B, n_glen, eta_0, rele, nbe);        
+	cudaDeviceSynchronize();           
 
         PT2_x<<<gride, blocke, 0, stream1>>>(kvx, d_groundedratio, d_areas, d_index, d_alpha2, d_vx,  d_isice, nbe);
         cudaDeviceSynchronize();
@@ -1177,8 +1171,6 @@ int main(){/*{{{*/
         PT3<<<gridv, blockv>>>(kvx, kvy, Eta_nbe, d_areas, eta_nbv, d_index, d_connectivity, d_columns, d_weights, d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, relaxation, eta_b, nbv);   
         cudaDeviceSynchronize();
         
-        PT4<<<gride, blocke>>>(d_etan, dvxdx, dvydy, dvxdy, dvydx, d_rheology_B, n_glen, d_isice, eta_0, rele, nbe);
-        cudaDeviceSynchronize();
 
         if ((iter % nout_iter) == 0){
             /*Get final error estimate*/
