@@ -442,6 +442,7 @@ __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* in
                     }
                 }
             }//groundedratio loop
+         }
 }
 
 __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* index, double* alpha2, double* vy, bool* isice,  int nbe){
@@ -472,6 +473,7 @@ __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* in
                     }
                 }
             }//groundedratio loop
+        }
 }
 //Moving to the next kernel::cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
 __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, double* eta_nbv, int* index, int* connectivity, int* columns, double* weights, double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double relaxation, double eta_b, int nbv){ 
@@ -1082,7 +1084,7 @@ int main(){
     std::cout<<"Starting PT loop, nbe="<<nbe<<", nbv="<<nbv<<std::endl; 
     int iter;
     double iterror;
-    for(iter=1;iter<=100;iter++){
+    for(iter=1;iter<=niter;iter++){
         
         if (iter==11) tic();
 
