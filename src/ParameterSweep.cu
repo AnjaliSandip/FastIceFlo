@@ -373,9 +373,8 @@ void  clean_cuda(){
 }
 
 __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* vx, double* vy, double* alpha, double* beta, int* index,  double* kvx, double* kvy, double* etan,  double* Helem, double* areas, bool* isice, double* Eta_nbe, double* rheology_B, double n_glen, double eta_0, double rele,int nbe){ 
-
- for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x) {   
-  
+ 
+  for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x) { 
 
         double  eps_xx = dvxdx[ix];
         double  eps_yy = dvydy[ix];
@@ -386,7 +385,7 @@ __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, 
         if (EII2>0.) eta_it = rheology_B[ix]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
 
         if (isice[ix]) etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);
-
+     
   //  if (ix<nbe){
       /*Calculate velocity derivatives*/
         dvxdx[ix] = vx[index[ix*3+0]-1]*alpha[ix*3+0] + vx[index[ix*3+1]-1]*alpha[ix*3+1] + vx[index[ix*3+2]-1]*alpha[ix*3+2];
@@ -400,26 +399,25 @@ __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, 
     /*Skip if no ice*/
         if (isice[ix]){
             /*Viscous Deformation*/
-   double eta_e = etan[ix];
-   double eps_xx = dvxdx[ix];
-   double eps_yy = dvydy[ix];
-   double eps_xy = .5 * (dvxdy[ix] + dvydx[ix]);
+            double eta_e = etan[ix];
+            double eps_xx = dvxdx[ix];
+            double eps_yy = dvydy[ix];
+            double eps_xy = .5 * (dvxdy[ix] + dvydx[ix]);
             for (int i = 0; i < 3; i++){
                 kvx[ix * 3 + i] = 2 * Helem[ix] * eta_e * (2 * eps_xx + eps_yy) * alpha[ix * 3 + i] * areas[ix] + 2 * Helem[ix] * eta_e * eps_xy * beta[ix * 3 + i] * areas[ix];
                 kvy[ix * 3 + i] = 2 * Helem[ix] * eta_e * eps_xy * alpha[ix * 3 + i] * areas[ix] +  2 * Helem[ix] * eta_e * (2 * eps_yy + eps_xx) * beta[ix * 3 + i] * areas[ix];
             }
         }//isice loop
     }
-}    
+}  
 
 //Moving to the next kernel, as kvx cannot be defined and updated in the same kernel
 __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* index, double* alpha2, double* vx, bool* isice,  int nbe){
 
-      for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x) {
+   for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x) {
 
     /*Add basal friction*/
-//    if (ix<nbe){
-//        if (isice[ix]){
+ 
             if (groundedratio[ix] > 0.){
                 int n3 = ix * 3;
                 double gr_a = groundedratio[ix] * areas[ix];
@@ -432,9 +430,9 @@ __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* in
                            double gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
                            // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
                            if (i == j && j == k){
-                                kvx[n3 + k] = isice[ix] *  kvx[n3 + k] + gr_a_alpha2_vx / 10.;
+                                kvx[n3 + k] =  isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 10.;
                             } else if ((i!=j) && (j!=k) && (k!=i)){
-                                kvx[n3 + k] =  isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 60.;
+                                kvx[n3 + k] = isice[ix] *  kvx[n3 + k] + gr_a_alpha2_vx / 60.;
                             } else{
                                 kvx[n3 + k] = isice[ix] *  kvx[n3 + k] + gr_a_alpha2_vx / 30.;
                            }
@@ -442,17 +440,15 @@ __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* in
                     }
                 }
             }//groundedratio loop
-  //      }//isice loop
-    }//nbe loop 
+         }
 }
 
 __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* index, double* alpha2, double* vy, bool* isice,  int nbe){
 
-      for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x) {
-
-    /*Add basal friction*/
-//    if (ix<nbe){
- //       if (isice[ix]){
+    
+   for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x) {
+   
+ /*Add basal friction*/
             if (groundedratio[ix] > 0.){
                 int n3 = ix * 3;
                 double gr_a = groundedratio[ix] * areas[ix];
@@ -465,7 +461,7 @@ __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* in
                            double gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
                            // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
                            if (i == j && j == k){
-                                kvy[n3 + k] = isice[ix] *  kvy[n3 + k] + gr_a_alpha2_vy / 10.;
+                                kvy[n3 + k] = isice[ix] * kvy[n3 + k] + gr_a_alpha2_vy / 10.;
                             } else if ((i!=j) && (j!=k) && (k!=i)){
                                 kvy[n3 + k] = isice[ix] *  kvy[n3 + k] + gr_a_alpha2_vy / 60.;
                             } else{
@@ -475,19 +471,18 @@ __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* in
                     }
                 }
             }//groundedratio loop
- //       }//isice loop
-    }//nbe loop 
+        }
 }
 //Moving to the next kernel::cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
 __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, double* eta_nbv, int* index, int* connectivity, int* columns, double* weights, double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double relaxation, double eta_b, int nbv){ 
     
+
     double ResVx;
     double ResVy;
     double dtVx;
     double dtVy;
 
 for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbv; ix += blockDim.x * gridDim.x) {
- //   if (ix<nbv){
         KVx[ix] = 0.;
         KVy[ix] = 0.;
     
@@ -499,7 +494,6 @@ for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbv; ix += blockDim.x * g
             }
         }
     
-    // if (ix < nbe){Eta_nbe[ix] = etan[ix]*areas[ix];}
     
         for (int j = 0; j < 8; j++){
             if (connectivity[(ix * 8 + j)] != 0){      
@@ -511,19 +505,15 @@ for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbv; ix += blockDim.x * g
     
     
         /*1. Get time derivative based on residual (dV/dt)*/
-        ResVx =  1./(rho*max(80.0,H[ix])*ML[ix])*(-KVx[ix] + Fvx[ix]); //rate of velocity in the x, equation 23
-        ResVy =  1./(rho*max(80.0,H[ix])*ML[ix])*(-KVy[ix] + Fvy[ix]); //rate of velocity in the y, equation 24
+        ResVx =  1./(rho*max(60.0,H[ix])*ML[ix])*(-KVx[ix] + Fvx[ix]); 
+        ResVy =  1./(rho*max(60.0,H[ix])*ML[ix])*(-KVy[ix] + Fvy[ix]);
         
-        // dVxdt[ix] = dVxdt[ix]*(1.-damp/20.) + ResVx;
-        // dVydt[ix] = dVydt[ix]*(1.-damp/20.) + ResVy;
         dVxdt[ix] = dVxdt[ix]*damp + ResVx;
         dVydt[ix] = dVydt[ix]*damp + ResVy;
 
         /*2. Explicit CFL time step for viscous flow, x and y directions*/
         dtVx = rho*resolx[ix]*resolx[ix]/(4*eta_nbv[ix]*(1.+eta_b)*4.1);
-        dtVy = rho*resoly[ix]*resolx[ix]/(4*eta_nbv[ix]*(1.+eta_b)*4.1);
-        // dtVx = rho*pow(resolx[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;
-        // dtVy = rho*pow(resoly[ix],2)/(4*H[ix]*eta_nbv[ix]*(1.+eta_b)*4.1)*relaxation;     
+        dtVy = rho*resoly[ix]*resolx[ix]/(4*eta_nbv[ix]*(1.+eta_b)*4.1);   
 
         /*3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy*/
         vx[ix] = vx[ix] + relaxation*dVxdt[ix]*dtVx;
@@ -541,41 +531,6 @@ for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbv; ix += blockDim.x * g
     }
      
 }
-
-
-// Find the norm of an array
-__shared__ volatile double block_normval;
-__global__ void __device_norm_d(double* A, int nbv, double* device_normval){
-   
-    double thread_normval=0.0;
-   
-    int ix  = blockIdx.x*blockDim.x + threadIdx.x; // thread ID, dimension x
-    // find the normval for each block
-    if (ix<nbv){ thread_normval = A[ix]*A[ix]; }
-    if (threadIdx.x==0){ block_normval=0.0; }
-    __syncthreads();
-    for (int i=0; i < (BLOCK_Xv); i++){
-        if (i==threadIdx.x){ block_normval = block_normval + thread_normval; }
-        __syncthreads();
-    }
-    device_normval[blockIdx.x] = block_normval;
-}
-
-#define __device_normx(dVxdt)   __device_norm_d<<<gridv, blockv>>>(d_dVxdt, nbv, d_device_normvalx); \
-                                cudaMemcpy(device_normvalx, d_device_normvalx, GRID_Xv*sizeof(double), cudaMemcpyDeviceToHost); \
-                                double device_NORMx = 0.0;                                     \
-                                for (int i=0; i < (GRID_Xv); i++){                            \
-                                    device_NORMx = device_NORMx + device_normvalx[i];          \
-                                }                                                              \
-                                device_NORMx = (double)1.0/((double)nbv)*sqrt(device_NORMx);
-
-#define __device_normy(dVydt)   __device_norm_d<<<gridv, blockv>>>(d_dVydt, nbv, d_device_normvaly); \
-                                cudaMemcpy(device_normvaly, d_device_normvaly, GRID_Xv*sizeof(double), cudaMemcpyDeviceToHost); \
-                                double device_NORMy = 0.0;                                     \
-                                for (int i=0; i < (GRID_Xv); i++){                            \
-                                    device_NORMy = device_NORMy + device_normvaly[i];          \
-                                }                                                              \
-                                device_NORMy = (double)1.0/((double)nbv)*sqrt(device_NORMy);
 
 // Find the max of an array
 __shared__ volatile double block_maxval;
@@ -609,6 +564,7 @@ __global__ void __device_max_d(double* A, int nbv, double* device_maxval){
                                     device_MAXy = max(device_MAXy, device_maxvaly[i]);        \
                                 } 
 
+
 // timer
 #include "sys/time.h"
 double timer_start = 0;
@@ -624,15 +580,13 @@ int main(){
     const char* outfile = "./output.txt";
 	
     
-    tic();
     /*Open input binary file*/
-    const char* inputfile  = "./input.bin";
+    const char* inputfile  = "./JKS2e4.bin";
     const char* outputfile = "./output.outbin";
     FILE* fid = fopen(inputfile,"rb");
     if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
     
-    
-    tic();
+
     /*Get All we need from binary file*/
     int    nbe,nbv,M,N;
     double g,rho,rho_w,yts;
@@ -674,29 +628,26 @@ int main(){
     /*Close input file*/
     if(fclose(fid)!=0) std::cerr<<"could not close file " << inputfile;
 
-        double time1_s = 0.0;
-        time1_s = toc();
-        std::cout << "Data Time 1 -- Fetching data: " << time1_s << std::endl;
    
-   tic();
     /*Constants*/
     double n_glen     = 3.;
-    double damp       = dmp; //
-    double rele       = 1e-1;//
+    double damp       = dmp; //0.96
+    double rele       = 1e-1;
     double eta_b      = 0.5;
     double eta_0      = 1.e+14/2.;
-    int    niter      = 5e6;
-    int    nout_iter  = 1000;
-    double epsi       = 3.171e-7;  //3.171e-7
-    double relaxation = rela;//0.7  
+    int    niter      = 700;
+    int    nout_iter  = 100;
+    double epsi       = 3.171e-7;
+    double relaxation = rela;//0.7
     
     // Ceiling division to get the close to optimal GRID size
     unsigned int GRID_Xe = 1 + ((nbe - 1) / BLOCK_Xe);
     unsigned int GRID_Xv = 1 + ((nbv - 1) / BLOCK_Xv);
-
+    
+     
      GRID_Xe = GRID_Xe - GRID_Xe%80;
      GRID_Xv = GRID_Xv - GRID_Xv%80;
-    
+
     std::cout<<"GRID_Xe="<<GRID_Xe<<std::endl;
     std::cout<<"GRID_Xv="<<GRID_Xv<<std::endl;
 
@@ -729,11 +680,6 @@ int main(){
     Weights(&weights,index,areas,nbe,nbv);
 
 
-        double time2_s = 0.0;
-        time2_s = toc();
-        std::cout << "Data Time 2 -- Constants, Initial Guesses, Manage Derivatives for all: " << time2_s << std::endl;
-
-     tic();
     /*MeshSize*/
     double* resolx = new double[nbv];
     double* resoly = new double[nbv];
@@ -772,11 +718,6 @@ int main(){
     }
 
 
-    double time3_s = 0.0;
-    time3_s = toc();
-    std::cout << "Data Time 3 -- Mesh Size, Initial Viscosity, derive_xy_elem: " << time3_s << std::endl;
-
-    tic();
     /*Linear integration points order 3*/
     double wgt3[] = { 0.555555555555556, 0.888888888888889, 0.555555555555556 };
     double xg3[]  = {-0.774596669241483, 0.000000000000000, 0.774596669241483 };
@@ -922,11 +863,7 @@ int main(){
     }
 
 
-        double time4_s = 0.0;
-        time4_s = toc();
-        std::cout << "Data Time 4 -- ML, Force: " << time4_s << std::endl;
 
-        tic();
     /*Finally add calculation of friction coefficient*/
     double* alpha2 = new double[nbv];
     for(int i=0;i<nbv;i++){
@@ -938,12 +875,6 @@ int main(){
         /*Compute alpha2*/
         alpha2[i] = pow(friction[i],2)*Neff;
     }
-
-        double time5_s = 0.0;
-        time5_s = toc();
-        std::cout << "Data Time 5 -- Friction coefficient: " << time5_s << std::endl;
-
-     tic();
 
 
    //prepare head and next vectors for chain algorithm, at this point we have not seen any of the elements, so just set the head to -1 (=stop)
@@ -1000,23 +931,13 @@ int main(){
         }
     }
 
-             double time6_s = 0.0;
-             time6_s = toc();
-             std::cout << "Data Time 6 -- Connectivity matrix: " << time6_s << std::endl;
-
-    double* device_normvalx = new double[GRID_Xv];
-    double* device_normvaly = new double[GRID_Xv];
-    for(int i=0;i<GRID_Xv;i++) device_normvalx[i] = 0.;
-    for(int i=0;i<GRID_Xv;i++) device_normvaly[i] = 0.;
 
     double* device_maxvalx = new double[GRID_Xv];
     double* device_maxvaly = new double[GRID_Xv];
     for(int i=0;i<GRID_Xv;i++) device_maxvalx[i] = 0.;
     for(int i=0;i<GRID_Xv;i++) device_maxvaly[i] = 0.;
 
-        double time7_s = 0.0;
-        time7_s = toc();
-        std::cout << "Data Time 7 " << time7_s << std::endl;
+
 
     /*------------ now copy all relevant vectors from host to device ---------------*/
     int *d_index = NULL;
@@ -1119,15 +1040,6 @@ int main(){
     int *d_columns = NULL;
     cudaMalloc(&d_columns, nbv*8*sizeof(int));
     cudaMemcpy(d_columns, columns, nbv*8*sizeof(int), cudaMemcpyHostToDevice);
-    
-   
-    double* d_device_normvalx = NULL;
-    cudaMalloc(&d_device_normvalx, GRID_Xv*sizeof(double));
-    cudaMemcpy(d_device_normvalx, device_normvalx, GRID_Xv*sizeof(double), cudaMemcpyHostToDevice);
-
-    double* d_device_normvaly = NULL;
-    cudaMalloc(&d_device_normvaly, GRID_Xv*sizeof(double));
-    cudaMemcpy(d_device_normvaly, device_normvaly, GRID_Xv*sizeof(double), cudaMemcpyHostToDevice); 
 
     double* d_device_maxvalx = NULL;
     cudaMalloc(&d_device_maxvalx, GRID_Xv*sizeof(double));
@@ -1177,28 +1089,26 @@ int main(){
     // Perf
     double time_s = 0.0;
     double mem = (double)1e-9*(double)nbe*sizeof(double);
-    int nIO = 10;
+    int nIO = 8;
 
     /*Main loop*/
     std::cout<<"Starting PT loop, nbe="<<nbe<<", nbv="<<nbv<<std::endl; 
     int iter;
     double iterror;
-    for(iter=1;iter<=niter;iter++){
+       for(iter=1;iter<=niter;iter++){
         
-        if (iter==11) tic();   
+        if (iter==11) tic();
 
-        PT1<<<gride, blocke>>>(dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, kvx, kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, d_rheology_B, n_glen, eta_0, rele, nbe);  cudaDeviceSynchronize();
+     
+        PT1<<<gride, blocke>>>(dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, kvx,  kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, d_rheology_B, n_glen, eta_0, rele, nbe);  cudaDeviceSynchronize();     
 
         PT2_x<<<gride, blocke, 0, stream1>>>(kvx, d_groundedratio, d_areas, d_index, d_alpha2, d_vx,  d_isice, nbe);
-        cudaDeviceSynchronize();
+        
         
         PT2_y<<<gride, blocke, 0, stream2>>>(kvy, d_groundedratio, d_areas, d_index, d_alpha2, d_vy, d_isice, nbe);
-        cudaDeviceSynchronize();
+        
 
         PT3<<<gridv, blockv>>>(kvx, kvy, Eta_nbe, d_areas, eta_nbv, d_index, d_connectivity, d_columns, d_weights, d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, relaxation, eta_b, nbv);           cudaDeviceSynchronize();
-        
-//        PT4<<<gride, blocke>>>(d_etan, dvxdx, dvydy, dvxdy, dvydx, d_rheology_B, n_glen, d_isice, eta_0, rele, nbe);
-  //      cudaDeviceSynchronize();
 
         if ((iter % nout_iter) == 0){
             /*Get final error estimate*/
@@ -1232,7 +1142,7 @@ int main(){
           /*output to txt file*/
     if (do_save == true){
         fid = fopen(outfile, "a");
-        fprintf(fid, "damp=%1.3f, relaxation =%1.3f,iters=%d, err=%d \n",  damp, rela, iter, iterror);
+        fprintf(fid, "nbv=%d, nbe=%d, damp=%1.3f, relaxation =%1.3f,iters=%d \n", nbv, nbe, damp, rele, iter);
         fclose(fid);
     }
 
