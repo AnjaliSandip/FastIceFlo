@@ -635,8 +635,8 @@ int main(){
     double rele       = 1e-1;
     double eta_b      = 0.5;
     double eta_0      = 1.e+14/2.;
-    int    niter      = 700;
-    int    nout_iter  = 100;
+    int    niter      = 10000;
+    int    nout_iter  = 1000;
     double epsi       = 3.171e-7;
     double relaxation = rela;//0.7
     
@@ -1211,8 +1211,7 @@ int main(){
     cudaFree(d_isice);
     cudaFree(d_connectivity);
     cudaFree(d_columns);      
-    cudaFree(d_device_normvalx);
-    cudaFree(d_device_normvaly);
+
 
     cudaFree(dvxdx);
     cudaFree(dvxdy);
