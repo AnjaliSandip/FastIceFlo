@@ -15,369 +15,12 @@ using namespace std;
 #define threadId      (threadIdx.x)
 #define isBlockMaster (threadIdx.x==0)
 
-/*CPU Code*/
-/*I/O stuff*/
-FILE* SetFilePointerToData(FILE* fid,int* pcode,int* pvector_type,const char* data_name){
-
-    int found  = 0;
-    const char* mddot = "md.";
-    char* record_name = NULL;
-    int   record_name_size;
-    long long record_length;
-    int record_code;       //1 to 7 number
-    int vector_type   = 0; //nodal or elementary
-
-    if(strncmp(data_name,mddot,3)!=0){
-        std::cerr <<"Cannot fetch \"JKS_SingleRun_rev.cu"<<data_name<<"\" does not start with \""<<mddot<<"\"";
-    }
-
-    /*First set FILE* position to the beginning of the file: */
-    fseek(fid,0,SEEK_SET);
-
-    /*Now march through file looking for the correct data identifier: */
-    for(;;){
-        /*Read size of first string name: */
-        if(fread(&record_name_size,sizeof(int),1,fid)==0){
-            /*we have reached the end of the file. break: */
-            delete record_name;
-            break;
-        }
-        if(record_name_size<3 || record_name_size>80){
-            std::cerr<<"error while looking in binary file. Found a string of size "<<record_name_size;
-        }
-
-        /*Allocate string of correct size: */
-        record_name=new char[record_name_size+1];
-        record_name[record_name_size]='\0';
-
-        /*Read record_name: */
-        if(fread(record_name,record_name_size*sizeof(char),1,fid)==0){
-            /*we have reached the end of the file. break: */
-            found=0;
-            delete [] record_name;
-            break;
-        }
-        if(strncmp(record_name,mddot,3)!=0){
-            std::cerr<<"error while reading binary file: record does not start with \"md.\": "<<record_name;
-        }
-
-        /*Is this the record sought for? : */
-        if(strcmp(record_name,data_name)==0){
-            /*Ok, we have found the correct string. Pass the record length, and read data type code: */
-            fseek(fid,sizeof(long long),SEEK_CUR);
-            if(fread(&record_code,sizeof(int),1,fid)!=1) std::cerr<<"Could not read record_code";
-            /*if record_code points to a vector, get its type (nodal or elementary): */
-            if((5<=record_code && record_code<=7) || record_code==10){
-                if(fread(&vector_type,sizeof(int),1,fid)!=1) std::cerr<<"Could not read vector_type";
-            }
-            found=1;
-            delete [] record_name;
-            break;
-        }
-        else{
-            /*This is not the correct string, read the record length, and use it to skip this record: */
-            if(fread(&record_length,sizeof(long long),1,fid)!=1) std::cerr<<"Could not read record_length";
-            /*skip: */
-            fseek(fid,record_length,SEEK_CUR);
-            delete [] record_name;
-        }
-    }
-    if(!found) std::cerr<<"could not find data with name \"" << data_name << "\" in binary file";
-
-    /*Assign output pointers:*/
-    *pcode=record_code;
-    if(pvector_type) *pvector_type=vector_type;
-
-    return fid;
-}
-
-void  FetchData(FILE* fid,int* pinteger,const char* data_name){
-
-    /*output: */
-    int integer;
-    int code;
-
-    /*Set file pointer to beginning of the data: */
-    fid=SetFilePointerToData(fid,&code,NULL,data_name);
-
-    if(code!=2)std::cerr <<"expecting an integer for \"" << data_name<<"\"";
-
-    /*We have to read a integer from disk. First read the dimensions of the integer, then the integer: */
-    if(fread(&integer,sizeof(int),1,fid)!=1) std::cerr<<"could not read integer ";
-
-    /*Assign output pointers: */
-    *pinteger=integer;
-}
-
-void  FetchData(FILE* fid,int** pmatrix,int* pM,int* pN,const char* data_name){
-
-    /*output: */
-    int M,N;
-    double* matrix=NULL;
-    int* integer_matrix=NULL;
-    int code=0;
-
-    /*Set file pointer to beginning of the data: */
-    fid=SetFilePointerToData(fid,&code,NULL,data_name);
-    if(code!=5 && code!=6 && code!=7)std::cerr<<"expecting a IssmDouble, integer or boolean matrix for \""<<data_name<<"\""<<" (Code is "<<code<<")";
-
-    /*Now fetch: */
-
-    /*We have to read a matrix from disk. First read the dimensions of the matrix, then the whole matrix: */
-    /*numberofelements: */
-    if(fread(&M,sizeof(int),1,fid)!=1) std::cerr<<"could not read number of rows for matrix ";
-    if(fread(&N,sizeof(int),1,fid)!=1) std::cerr<<"could not read number of columns for matrix ";
-
-    /*Now allocate matrix: */
-    if(M*N){
-        matrix=new double[M*N];
-
-        /*Read matrix on node 0, then broadcast: */
-        if(fread(matrix,M*N*sizeof(double),1,fid)!=1) std::cerr<<"could not read matrix ";
-    }
-
-    /*Now cast to integer: */
-    if(M*N){
-        integer_matrix=new int[M*N];
-        for (int i=0;i<M;i++){
-            for (int j=0;j<N;j++){
-                integer_matrix[i*N+j]=(int)matrix[i*N+j];
-            }
-        }
-    }
-    else{
-        integer_matrix=NULL;
-    }
-    /*Free ressources:*/
-    delete [] matrix;
-
-    /*Assign output pointers: */
-    *pmatrix=integer_matrix;
-    if(pM)*pM=M;
-    if(pN)*pN=N;
-}
-
-void  FetchData(FILE* fid,double* pdouble,const char* data_name){
-
-    /*output: */
-    double value;
-    int code;
-
-    /*Set file pointer to beginning of the data: */
-    fid=SetFilePointerToData(fid,&code,NULL,data_name);
-
-    if(code!=3)std::cerr <<"expecting a double for \"" << data_name<<"\"";
-
-    /*We have to read a integer from disk. First read the dimensions of the integer, then the integer: */
-    if(fread(&value,sizeof(double),1,fid)!=1) std::cerr<<"could not read scalar";
-
-    /*Assign output pointers: */
-    *pdouble=value;
-}
-
-void  FetchData(FILE* fid,double** pmatrix,int* pM,int* pN,const char* data_name){
-
-    /*output: */
-    int M,N;
-    double* matrix=NULL;
-    // int* integer_matrix=NULL;
-    int code=0;
-
-    /*Set file pointer to beginning of the data: */
-    fid=SetFilePointerToData(fid,&code,NULL,data_name);
-    if(code!=5 && code!=6 && code!=7)std::cerr<<"expecting a IssmDouble, integer or boolean matrix for \""<<data_name<<"\""<<" (Code is "<<code<<")";
-
-    /*Now fetch: */
-
-    /*We have to read a matrix from disk. First read the dimensions of the matrix, then the whole matrix: */
-    /*numberofelements: */
-    if(fread(&M,sizeof(int),1,fid)!=1) std::cerr<<"could not read number of rows for matrix ";
-    if(fread(&N,sizeof(int),1,fid)!=1) std::cerr<<"could not read number of columns for matrix ";
-
-    /*Now allocate matrix: */
-    if(M*N){
-        matrix=new double[M*N];
-
-        /*Read matrix on node 0, then broadcast: */
-        if(fread(matrix,M*N*sizeof(double),1,fid)!=1) std::cerr<<"could not read matrix ";
-    }
-
-    /*Assign output pointers: */
-    *pmatrix=matrix;
-    if(pM)*pM=M;
-    if(pN)*pN=N;
-}
-
-void  WriteData(FILE* fid,double* matrix,int M,int N,const char* data_name){
-
-    /*First write enum: */
-    int length=(strlen(data_name)+1)*sizeof(char);
-    fwrite(&length,sizeof(int),1,fid);
-    fwrite(data_name,length,1,fid);
-
-    /*Now write time and step: */
-    double time = 0.;
-    int    step = 1;
-    fwrite(&time,sizeof(double),1,fid);
-    fwrite(&step,sizeof(int),1,fid);
-
-    /*writing a IssmDouble array, type is 3:*/
-    int type=3;
-    fwrite(&type,sizeof(int),1,fid);
-    fwrite(&M,sizeof(int),1,fid);
-    fwrite(&N,sizeof(int),1,fid);
-    fwrite(matrix,M*N*sizeof(double),1,fid);
-}
-
-void  WriteData(FILE* fid,const char* string,const char* data_name){
-
-    /*First write enum: */
-    int length=(strlen(data_name)+1)*sizeof(char);
-    fwrite(&length,sizeof(int),1,fid);
-    fwrite(data_name,length,1,fid);
-
-    /*Now write time and step: */
-    double time = 0.;
-    int    step = 1;
-    fwrite(&time,sizeof(double),1,fid);
-    fwrite(&step,sizeof(int),1,fid);
-
-    /*writing a string, type is 2: */
-    int type=2;
-    fwrite(&type,sizeof(int),1,fid);
-
-    length=(strlen(string)+1)*sizeof(char);
-    fwrite(&length,sizeof(int),1,fid);
-    fwrite(string,length,1,fid);
-}
-
-void NodalCoeffs(double** pareas,double** palpha,double** pbeta,int* index,double* x,double* y,int nbe){
-
-    /*Allocate output vectors*/
-    double* areas = new double[nbe];
-    double* alpha = new double[nbe*3];
-    double* beta  = new double[nbe*3];
-
-   /*Loop over all elements and calculate nodal function coefficients and element surface area*/
-    for(int i = 0; i < nbe; i++) {
-        int n1 = index[i*3+0]-1;
-        int n2 = index[i*3+1]-1;
-        int n3 = index[i*3+2]-1;
-
-        double x1 = x[n1];
-        double x2 = x[n2];
-        double x3 = x[n3];
-        double y1 = y[n1];
-        double y2 = y[n2];
-        double y3 = y[n3];
-
-        double invdet = 1./(x1 * (y2 - y3) - x2 * (y1 - y3) + x3 * (y1 - y2));
-
-        alpha[i*3+0] = invdet * (y2 - y3);
-        alpha[i*3+1] = invdet * (y3 - y1);
-        alpha[i*3+2] = invdet * (y1 - y2);
-
-        beta[i*3+0] = invdet * (x3 - x2);
-        beta[i*3+1] = invdet * (x1 - x3);
-        beta[i*3+2] = invdet * (x2 - x1);
-
-        areas[i] = 0.5*((x2-x1)*(y3-y1)-(y2-y1)*(x3-x1));
-    }
-
-    /*Assign output pointers*/
-    *pareas = areas;
-    *palpha = alpha;
-    *pbeta  = beta;
-}
-void Weights(double** pweights,int* index,double* areas,int nbe,int nbv){
-
-    /*Allocate output and initialize as 0*/
-    double* weights = new double[nbv];
-    for(int i = 0; i < nbv; i++) weights[i]=0.;
-
-    /*Loop over elements*/
-    for(int i = 0; i < nbe; i++){
-        for(int j = 0; j < 3; j++){
-            weights[index[i*3+j]-1] += areas[i];
-        }
-    }
-
-    /*Assign output pointer*/
-    *pweights = weights;
-}
-void derive_xy_elem(double* dfdx_e,double* dfdy_e,double* f,int* index,double* alpha,double* beta,int nbe){
-
-    /*WARNING!! Assume that dfdx_e and dfdy_e have been properly allocated*/
-
-    for(int i=0;i<nbe;i++){
-        int n1 = index[i*3+0]-1;
-        int n2 = index[i*3+1]-1;
-        int n3 = index[i*3+2]-1;
-        dfdx_e[i] = f[n1]*alpha[i*3+0] + f[n2]*alpha[i*3+1] + f[n3]*alpha[i*3+2];
-        dfdy_e[i] = f[n1]*beta[ i*3+0] + f[n2]*beta[ i*3+1] + f[n3]*beta[ i*3+2];
-    }
-}
-void elem2node(double* f_v,double* f_e,int* index,double* areas,double* weights,int nbe,int nbv){
-
-    /*WARNING!! Assume that f_v has been properly allocated*/
-
-    /*Reinitialize output*/
-    for(int i=0;i<nbv;i++) f_v[i] = 0.;
-
-    /*Add contributions from all elements connected to vertex i*/
-    for(int i=0;i<nbe;i++){
-        int n1 = index[i*3+0]-1;
-        int n2 = index[i*3+1]-1;
-        int n3 = index[i*3+2]-1;
-        f_v[n1] += f_e[i]*areas[i];
-        f_v[n2] += f_e[i]*areas[i];
-        f_v[n3] += f_e[i]*areas[i];
-    }
-
-    /*Divide by sum of areas*/
-    for(int i=0;i<nbv;i++) f_v[i] = f_v[i]/weights[i];
-
-}
-void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,double* areas,double* weights,int nbe,int nbv){
-
-    /*Get element size along x and y directions*/
-    double  xmin,xmax,ymin,ymax;
-    double* dx_elem = new double[nbe];
-    double* dy_elem = new double[nbe];
-    for(int i=0;i<nbe;i++){
-        int n1 = index[i*3+0]-1;
-        int n2 = index[i*3+1]-1;
-        int n3 = index[i*3+2]-1;
-        xmin = min(min(x[n1],x[n2]),x[n3]);
-        xmax = max(max(x[n1],x[n2]),x[n3]);
-        ymin = min(min(y[n1],y[n2]),y[n3]);
-        ymax = max(max(y[n1],y[n2]),y[n3]);
-        dx_elem[i] = xmax - xmin;
-        dy_elem[i] = ymax - ymin;
-    }
-
-    /*Average over each node*/
-    elem2node(resolx,dx_elem,index,areas,weights,nbe,nbv);
-    elem2node(resoly,dy_elem,index,areas,weights,nbe,nbv);
-
-    /*Cleanup and return*/
-    delete [] dx_elem;
-    delete [] dy_elem;
-}
-
+#include "helpers.h"
 
 /*CUDA Code*/
-void  clean_cuda(){ 
-    cudaError_t ce = cudaGetLastError();
-    if(ce != cudaSuccess){ printf("ERROR launching GPU C-CUDA program: %s\n", cudaGetErrorString(ce)); cudaDeviceReset(); }
-}
-
-//__global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* vx, double* vy, double* alpha, double* beta, int* index, double* kvx, double* kvy, double* etan,  double* Helem, double* areas, bool* isice, double* Eta_nbe, int nbe){
-
 __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, double* vx, double* vy, double* alpha, double* beta, int* index,  double* kvx, double* kvy, double* etan,  double* Helem, double* areas, bool* isice, double* Eta_nbe, double* rheology_B, double n_glen, double eta_0, double rele,int nbe){ 
  
-  for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x) { 
-
+    for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x){ 
         double  eps_xx = dvxdx[ix];
         double  eps_yy = dvydy[ix];
         double  eps_xy = .5*(dvxdy[ix]+dvydx[ix]);
@@ -387,18 +30,17 @@ __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, 
         if (EII2>0.) eta_it = rheology_B[ix]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
 
         if (isice[ix]) etan[ix]  = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);
-     
-  //  if (ix<nbe){
-      /*Calculate velocity derivatives*/
+
+        //  if (ix<nbe){
+        /*Calculate velocity derivatives*/
         dvxdx[ix] = vx[index[ix*3+0]-1]*alpha[ix*3+0] + vx[index[ix*3+1]-1]*alpha[ix*3+1] + vx[index[ix*3+2]-1]*alpha[ix*3+2];
         dvxdy[ix] = vx[index[ix*3+0]-1]*beta [ix*3+0] + vx[index[ix*3+1]-1]*beta [ix*3+1] + vx[index[ix*3+2]-1]*beta [ix*3+2];
         dvydx[ix] = vy[index[ix*3+0]-1]*alpha[ix*3+0] + vy[index[ix*3+1]-1]*alpha[ix*3+1] + vy[index[ix*3+2]-1]*alpha[ix*3+2];
         dvydy[ix] = vy[index[ix*3+0]-1]*beta [ix*3+0] + vy[index[ix*3+1]-1]*beta [ix*3+1] + vy[index[ix*3+2]-1]*beta [ix*3+2];
-    
-    Eta_nbe[ix] = etan[ix]*areas[ix];
 
-   
-    /*Skip if no ice*/
+        Eta_nbe[ix] = etan[ix]*areas[ix];
+
+        /*Skip if no ice*/
         if (isice[ix]){
             /*Viscous Deformation*/
             double eta_e = etan[ix];
@@ -411,105 +53,101 @@ __global__ void PT1(double* dvxdx, double* dvydy, double* dvxdy, double* dvydx, 
             }
         }//isice loop
     }
-}  
+}
 
 //Moving to the next kernel, as kvx cannot be defined and updated in the same kernel
 __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* index, double* alpha2, double* vx, bool* isice,  int nbe){
 
-   for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x) {
+    for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x){
 
-    /*Add basal friction*/
- 
-            if (groundedratio[ix] > 0.){
-                int n3 = ix * 3;
-                double gr_a = groundedratio[ix] * areas[ix];
-                for (int k = 0; k < 3; k++){
-                    for (int i = 0; i < 3; i++){
-                        int i_index = index[n3 + i] - 1;
-                        double gr_a_alpha2 = gr_a * alpha2[i_index];
-                        for (int j = 0; j < 3; j++){
-                           int j_index = index[n3 + j] - 1;
-                           double gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
-                           // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
-                           if (i == j && j == k){
-                                kvx[n3 + k] =  isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 10.;
-                            } else if ((i!=j) && (j!=k) && (k!=i)){
-                                kvx[n3 + k] = isice[ix] *  kvx[n3 + k] + gr_a_alpha2_vx / 60.;
-                            } else{
-                                kvx[n3 + k] = isice[ix] *  kvx[n3 + k] + gr_a_alpha2_vx / 30.;
-                           }
+        /*Add basal friction*/
+        if (groundedratio[ix] > 0.){
+            int n3 = ix * 3;
+            double gr_a = groundedratio[ix] * areas[ix];
+            for (int k = 0; k < 3; k++){
+                for (int i = 0; i < 3; i++){
+                    int i_index = index[n3 + i] - 1;
+                    double gr_a_alpha2 = gr_a * alpha2[i_index];
+                    for (int j = 0; j < 3; j++){
+                        int j_index = index[n3 + j] - 1;
+                        double gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
+                        // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
+                        if (i == j && j == k){
+                            kvx[n3 + k] =  isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 10.;
+                        } else if ((i!=j) && (j!=k) && (k!=i)){
+                            kvx[n3 + k] = isice[ix] *  kvx[n3 + k] + gr_a_alpha2_vx / 60.;
+                        } else{
+                            kvx[n3 + k] = isice[ix] *  kvx[n3 + k] + gr_a_alpha2_vx / 30.;
                         }
                     }
                 }
-            }//groundedratio loop
-         }
+            }
+        }//groundedratio loop
+    }
 }
 
 __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* index, double* alpha2, double* vy, bool* isice,  int nbe){
 
-    
-   for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x) {
-   
- /*Add basal friction*/
-            if (groundedratio[ix] > 0.){
-                int n3 = ix * 3;
-                double gr_a = groundedratio[ix] * areas[ix];
-                for (int k = 0; k < 3; k++){
-                    for (int i = 0; i < 3; i++){
-                        int i_index = index[n3 + i] - 1;
-                        double gr_a_alpha2 = gr_a * alpha2[i_index];
-                        for (int j = 0; j < 3; j++){
-                           int j_index = index[n3 + j] - 1;
-                           double gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
-                           // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
-                           if (i == j && j == k){
-                                kvy[n3 + k] = isice[ix] * kvy[n3 + k] + gr_a_alpha2_vy / 10.;
-                            } else if ((i!=j) && (j!=k) && (k!=i)){
-                                kvy[n3 + k] = isice[ix] *  kvy[n3 + k] + gr_a_alpha2_vy / 60.;
-                            } else{
-                                kvy[n3 + k] = isice[ix] *  kvy[n3 + k] + gr_a_alpha2_vy / 30.;
-                           }
+   for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x){
+
+        /*Add basal friction*/
+        if (groundedratio[ix] > 0.){
+            int n3 = ix * 3;
+            double gr_a = groundedratio[ix] * areas[ix];
+            for (int k = 0; k < 3; k++){
+                for (int i = 0; i < 3; i++){
+                    int i_index = index[n3 + i] - 1;
+                    double gr_a_alpha2 = gr_a * alpha2[i_index];
+                    for (int j = 0; j < 3; j++){
+                        int j_index = index[n3 + j] - 1;
+                        double gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
+                        // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
+                        if (i == j && j == k){
+                            kvy[n3 + k] = isice[ix] * kvy[n3 + k] + gr_a_alpha2_vy / 10.;
+                        } else if ((i!=j) && (j!=k) && (k!=i)){
+                            kvy[n3 + k] = isice[ix] *  kvy[n3 + k] + gr_a_alpha2_vy / 60.;
+                        } else{
+                            kvy[n3 + k] = isice[ix] *  kvy[n3 + k] + gr_a_alpha2_vy / 30.;
                         }
                     }
                 }
-            }//groundedratio loop
-        }
+            }
+        }//groundedratio loop
+    }
 }
-//Moving to the next kernel::cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
+
+//Moving to the next kernel: cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
 __global__ void PT3(double* kvx, double* kvy, double* Eta_nbe, double* areas, double* eta_nbv, int* index, int* connectivity, int* columns, double* weights, double* ML, double* KVx, double* KVy, double* Fvx, double* Fvy, double* dVxdt, double* dVydt, double* resolx, double* resoly, double* H, double* vx, double* vy, double* spcvx, double* spcvy, double rho, double damp, double relaxation, double eta_b, int nbv){ 
-    
 
     double ResVx;
     double ResVy;
     double dtVx;
     double dtVy;
 
-for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbv; ix += blockDim.x * gridDim.x) {
+    for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbv; ix += blockDim.x * gridDim.x){
+        
         KVx[ix] = 0.;
         KVy[ix] = 0.;
-    
-    
+
         for(int j=0;j<8;j++){
             if (connectivity[(ix * 8 + j)] != 0){
-                KVx[ix] = KVx[ix] + kvx[((connectivity[(ix * 8 + j)])-1) *3 + ((columns[(ix * 8 + j)]))] ;
-                KVy[ix] = KVy[ix] + kvy[((connectivity[(ix * 8 + j)])-1) *3 + ((columns[(ix * 8 + j)]))] ;
+                KVx[ix] = KVx[ix] + kvx[((connectivity[(ix * 8 + j)])-1) *3 + ((columns[(ix * 8 + j)]))];
+                KVy[ix] = KVy[ix] + kvy[((connectivity[(ix * 8 + j)])-1) *3 + ((columns[(ix * 8 + j)]))];
             }
         }
-    
-    
+
         for (int j = 0; j < 8; j++){
             if (connectivity[(ix * 8 + j)] != 0){      
                 eta_nbv[ix] = eta_nbv[ix] + Eta_nbe[connectivity[(ix * 8 + j)]-1];
             }
         }
     
-    eta_nbv[ix] =eta_nbv[ix]/weights[ix];
-    
-    
+        eta_nbv[ix] =eta_nbv[ix]/weights[ix];
+
         /*1. Get time derivative based on residual (dV/dt)*/
         ResVx =  1./(rho*max(60.0,H[ix])*ML[ix])*(-KVx[ix] + Fvx[ix]); 
         ResVy =  1./(rho*max(60.0,H[ix])*ML[ix])*(-KVy[ix] + Fvy[ix]);
-        
+
         dVxdt[ix] = dVxdt[ix]*damp + ResVx;
         dVydt[ix] = dVydt[ix]*damp + ResVy;
 
@@ -531,56 +169,14 @@ for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbv; ix += blockDim.x * g
             dVydt[ix] = 0.;
         }
     }
-     
 }
-
-
-// Find the max of an array
-__shared__ volatile double block_maxval;
-__global__ void __device_max_d(double* A, int nbv, double* device_maxval){
-   
-    double thread_maxval=0.0;
-   
-    int ix  = blockIdx.x*blockDim.x + threadIdx.x; // thread ID, dimension x
-    // find the maxval for each block
-    if (ix<nbv){ thread_maxval = abs(A[ix]); }
-    if (threadIdx.x==0){ block_maxval=0.0; }
-    __syncthreads();
-    for (int i=0; i < (BLOCK_Xv); i++){
-        if (i==threadIdx.x){ block_maxval = max(block_maxval, thread_maxval); }
-        __syncthreads();
-    }
-    device_maxval[blockIdx.x] = block_maxval;
-}
-
-#define __device_max_x(dVxdt)   __device_max_d<<<gridv, blockv>>>(d_dVxdt, nbv, d_device_maxvalx); \
-                                cudaMemcpy(device_maxvalx, d_device_maxvalx, GRID_Xv*sizeof(double), cudaMemcpyDeviceToHost); \
-                                double device_MAXx = 0.0;                                     \
-                                for (int i=0; i < (GRID_Xv); i++){                            \
-                                    device_MAXx = max(device_MAXx, device_maxvalx[i]);        \
-                                }
-
-#define __device_max_y(dVydt)   __device_max_d<<<gridv, blockv>>>(d_dVydt, nbv, d_device_maxvaly); \
-                                cudaMemcpy(device_maxvaly, d_device_maxvaly, GRID_Xv*sizeof(double), cudaMemcpyDeviceToHost); \
-                                double device_MAXy = 0.0;                                     \
-                                for (int i=0; i < (GRID_Xv); i++){                            \
-                                    device_MAXy = max(device_MAXy, device_maxvaly[i]);        \
-                                } 
-
-// timer
-#include "sys/time.h"
-double timer_start = 0;
-double cpu_sec(){ struct timeval tp; gettimeofday(&tp,NULL); return tp.tv_sec+1e-6*tp.tv_usec; }
-void   tic(){ timer_start = cpu_sec(); }
-double toc(){ return cpu_sec()-timer_start; }
-void   tim(const char *what, double n){ double s=toc(); printf("%s: %8.3f seconds",what,s);if(n>0)printf(", %8.3f GB/s", n/s); printf("\n"); }
 
 /*Main*/
 int main(){
 
     /*Open input binary file*/
-    const char* inputfile  = "./JKS2e4.bin";
-    const char* outputfile = "./output.outbin";
+    const char* inputfile  = "../inputfiles/JKS2e4.bin";
+    const char* outputfile = "../output/output.outbin";
     FILE* fid = fopen(inputfile,"rb");
     if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
     
@@ -625,7 +221,6 @@ int main(){
     /*Close input file*/
     if(fclose(fid)!=0) std::cerr<<"could not close file " << inputfile;
 
-
     /*Constants*/
     double n_glen     = 3.;
     double damp       = 0.96; //0.96 for JKS2e4, 0.981 for PIG3e4
@@ -641,14 +236,12 @@ int main(){
     unsigned int GRID_Xe = 1 + ((nbe - 1) / BLOCK_Xe);
     unsigned int GRID_Xv = 1 + ((nbv - 1) / BLOCK_Xv);
 
-    
-     GRID_Xe = GRID_Xe - GRID_Xe%80;
-     GRID_Xv = GRID_Xv - GRID_Xv%80;
+    GRID_Xe = GRID_Xe - GRID_Xe%80;
+    GRID_Xv = GRID_Xv - GRID_Xv%80;
 
     std::cout<<"GRID_Xe="<<GRID_Xe<<std::endl;
     std::cout<<"GRID_Xv="<<GRID_Xv<<std::endl;
 
-       
     // Set up GPU
     int gpu_id=-1;
     dim3 gridv, blockv;
@@ -667,7 +260,6 @@ int main(){
     for(int i=0;i<nbv;i++) dVxdt[i] = 0.;
     double* dVydt = new double[nbv];
     for(int i=0;i<nbv;i++) dVydt[i] = 0.;
-
 
     /*Manage derivatives once for all*/
     double* alpha   = NULL;
@@ -870,7 +462,7 @@ int main(){
         alpha2[i] = pow(friction[i],2)*Neff;
     }
 
-   //prepare head and next vectors for chain algorithm, at this point we have not seen any of the elements, so just set the head to -1 (=stop)
+    //prepare head and next vectors for chain algorithm, at this point we have not seen any of the elements, so just set the head to -1 (=stop)
     int* head = new int[nbv];
     int* next  = new int[3*nbe];
     for(int i=0;i<nbv;i++) head[i] = -1;
@@ -892,24 +484,24 @@ int main(){
     int* connectivity = new int[nbv*MAXCONNECT];
     int* columns = new int[nbv*MAXCONNECT];
 
-    for(int i=0;i<nbv;i++) {
+    for(int i=0;i<nbv;i++){
 
         /*Go over all of the elements connected to node I*/
         int count = 0;
         int p=head[i];
 
-        //for (int p = head[i]; p != -1; p = next[p]) {
-          while (p!= -1) {
+        //for (int p = head[i]; p != -1; p = next[p]){
+        while (p!= -1){
 
-              int k = p / 3 + 1;     //”row" in index
-              int j = (p % 3) - 1;   //"column" in index
+            int k = p / 3 + 1;     //”row" in index
+            int j = (p % 3) - 1;   //"column" in index
 
-              if (j==-1) {
-                  j=2;
-              k= k -1;}
+            if (j==-1){
+                j=2;
+                k= k -1;}
 
-              //sanity check
-            if (index[p-1] !=i+1) {
+            //sanity check
+            if (index[p-1] !=i+1){
                 std::cout << "Error occurred"  << std::endl;;
             }
 
@@ -920,8 +512,6 @@ int main(){
             p = next[p-1];
         }
     }
-
-
 
     double* device_maxvalx = new double[GRID_Xv];
     double* device_maxvaly = new double[GRID_Xv];
@@ -1016,12 +606,11 @@ int main(){
     double *d_groundedratio;
     cudaMalloc(&d_groundedratio, nbe*sizeof(double));
     cudaMemcpy(d_groundedratio, groundedratio, nbe*sizeof(double), cudaMemcpyHostToDevice);
-    
+
     bool *d_isice;
     cudaMalloc(&d_isice, nbe*sizeof(bool));
     cudaMemcpy(d_isice, isice, nbe*sizeof(bool), cudaMemcpyHostToDevice);
-    
- 
+
     int *d_connectivity = NULL;
     cudaMalloc(&d_connectivity, nbv*8*sizeof(int));
     cudaMemcpy(d_connectivity, connectivity, nbv*8*sizeof(int), cudaMemcpyHostToDevice);
@@ -1037,7 +626,7 @@ int main(){
     double* d_device_maxvaly = NULL;
     cudaMalloc(&d_device_maxvaly, GRID_Xv*sizeof(double));
     cudaMemcpy(d_device_maxvaly, device_maxvaly, GRID_Xv*sizeof(double), cudaMemcpyHostToDevice); 
-    
+
     /*------------ allocate relevant vectors on host (GPU)---------------*/
     //double *dvxdx = NULL;
     cudaMalloc(&dvxdx,nbe*sizeof(double));
@@ -1069,12 +658,11 @@ int main(){
     double *kvy = NULL;
     cudaMalloc(&kvy, nbe*3*sizeof(double));
     
-  //Creating CUDA streams
-  cudaStream_t stream1, stream2;
-  cudaStreamCreate(&stream1);
-  cudaStreamCreate(&stream2);
+    //Creating CUDA streams
+    cudaStream_t stream1, stream2;
+    cudaStreamCreate(&stream1);
+    cudaStreamCreate(&stream2);
     
-
     // Perf
     double time_s = 0.0;
     double mem = (double)1e-9*(double)nbv*sizeof(double);
@@ -1088,25 +676,22 @@ int main(){
         
         if (iter==11) tic();
 
-     
-        PT1<<<gride, blocke>>>(dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, kvx,  kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, d_rheology_B, n_glen, eta_0, rele, nbe);  cudaDeviceSynchronize();     
+        PT1<<<gride, blocke>>>(dvxdx, dvydy, dvxdy, dvydx, d_vx, d_vy, d_alpha, d_beta, d_index, kvx,  kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, d_rheology_B, n_glen, eta_0, rele, nbe);
+        cudaDeviceSynchronize();
 
         PT2_x<<<gride, blocke, 0, stream1>>>(kvx, d_groundedratio, d_areas, d_index, d_alpha2, d_vx,  d_isice, nbe);
-        
-        
         PT2_y<<<gride, blocke, 0, stream2>>>(kvy, d_groundedratio, d_areas, d_index, d_alpha2, d_vy, d_isice, nbe);
-        
+        // DEBUG: Some stream sync may be missing here
 
-        PT3<<<gridv, blockv>>>(kvx, kvy, Eta_nbe, d_areas, eta_nbv, d_index, d_connectivity, d_columns, d_weights, d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, relaxation, eta_b, nbv);           cudaDeviceSynchronize();
+        PT3<<<gridv, blockv>>>(kvx, kvy, Eta_nbe, d_areas, eta_nbv, d_index, d_connectivity, d_columns, d_weights, d_ML, KVx, KVy, d_Fvx, d_Fvy, d_dVxdt, d_dVydt, d_resolx, d_resoly, d_H, d_vx, d_vy, d_spcvx, d_spcvy, rho, damp, relaxation, eta_b, nbv);
+        cudaDeviceSynchronize();
 
         if ((iter % nout_iter) == 0){
             /*Get final error estimate*/
             __device_max_x(dVxdt); 
             __device_max_y(dVydt); 
             iterror = max(device_MAXx, device_MAXy);
-
             if(!(iterror>0 || iterror==0 || iterror<0)){printf("\n !! ERROR: err_MAX=Nan \n\n");break;} 
-        
             std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
             if ((iterror < epsi) && (iter > 100)) break;
         }
@@ -1118,7 +703,7 @@ int main(){
 
     /*Copy results from Device to host*/
     cudaMemcpy(vx, d_vx, nbv*sizeof(double), cudaMemcpyDeviceToHost );
-    cudaMemcpy(vy, d_vy, nbv*sizeof(double), cudaMemcpyDeviceToHost ); 
+    cudaMemcpy(vy, d_vy, nbv*sizeof(double), cudaMemcpyDeviceToHost );
 
     /*Write output*/
     fid = fopen(outputfile,"wb");
@@ -1162,11 +747,6 @@ int main(){
     delete [] ML;
     delete [] Fvx;
     delete [] Fvy;
-
-
-//Destroying CUDA streams
-  cudaStreamDestroy(stream1);
-  cudaStreamDestroy(stream2);
   
     cudaFree(d_index);
     cudaFree(d_vx);
@@ -1183,8 +763,6 @@ int main(){
     cudaFree(d_Fvy);
     cudaFree(d_dVxdt);
     cudaFree(d_dVydt);
-  
-
     cudaFree(d_resolx);
     cudaFree(d_resoly);
     cudaFree(d_H);
@@ -1194,7 +772,7 @@ int main(){
     cudaFree(d_groundedratio);
     cudaFree(d_isice);
     cudaFree(d_connectivity);
-    cudaFree(d_columns);      
+    cudaFree(d_columns);
     cudaFree(dvxdx);
     cudaFree(dvxdy);
     cudaFree(dvydx);
@@ -1207,6 +785,10 @@ int main(){
     cudaFree(kvy);
     cudaFree(d_device_maxvalx);
     cudaFree(d_device_maxvaly);
+
+    //Destroying CUDA streams
+    cudaStreamDestroy(stream1);
+    cudaStreamDestroy(stream2);
 
     clean_cuda();
     return 0;
