@@ -1,4 +1,4 @@
-steps=[4];
+steps=[1:4];
 
 if any(steps==1)
 	disp('	Step 1: Mesh creation'); 
@@ -52,13 +52,14 @@ if any(steps==3)
 	save JksControl md
 end 
 if any(steps==4)  %GPU solver
-
+        save JKS2e4
+	md=solve(md,'sb','batch','yes')
 	%load JksControl  %comment this out when increasing the spatial resolution
         % md = refine(md); Add this when increasing spatial resolution
-	load JKS2e4
-	addpath('../../src/');
-	%md=gpu(md,1.5,.9);
-	damp = 1.5;
-	relaxation = 0.9%
-	gpu_parallelized  %running it as a script to obtain all the script scalars in the workspace
+%	load JKS2e4
+%	addpath('../../src/');
+%	%md=gpu(md,1.5,.9);
+%	damp = 1.5;
+%	relaxation = 0.9%
+%	gpu_parallelized  %running it as a script to obtain all the script scalars in the workspace
 end
