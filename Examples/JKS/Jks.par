@@ -58,3 +58,10 @@ disp('   Set other boundary conditions');
 md=SetMarineIceSheetBC(md,'./Front.exp');
 md.basalforcings.floatingice_melting_rate=zeros(md.mesh.numberofvertices,1);
 md.basalforcings.groundedice_melting_rate=zeros(md.mesh.numberofvertices,1);
+
+disp('   Single point constraints');
+%Initialize single point constraint arrays
+md.stressbalance.referential=NaN*ones(md.mesh.numberofvertices,6);
+md.stressbalance.spcvx = NaN*ones(md.mesh.numberofvertices,1);
+md.stressbalance.spcvy = NaN*ones(md.mesh.numberofvertices,1);
+md.stressbalance.spcvz = NaN*ones(md.mesh.numberofvertices,1);
