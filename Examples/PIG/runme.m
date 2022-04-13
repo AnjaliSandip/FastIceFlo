@@ -1,14 +1,22 @@
-steps=[6];
+%steps=[1:3 6:7];
+
+
+%steps = [1:5 7];
+steps = [1:5];
+%steps =[1];
 
 if any(steps==1) %Mesh Generation #1
 
 	%Mesh parameters
 	domain =['./DomainOutline.exp'];
-	hinit=5000;   % element size for the initial mesh
+	hinit=8000;   % element size for the initial mesh
 
 	% Generate an initial uniform mesh (resolution = hinit m)
-	md=bamg(model,'domain',domain,'hmax',hinit);
-	
+	%md=bamg(model,'domain',domain,'hmax',hinit);
+    	
+    md=triangle(model,'DomainOutline.exp',hinit);
+
+
 	%save model
 	save ./Models/PIG_Mesh_generation md;
 end
@@ -34,7 +42,7 @@ if any(steps==3)  %Parameterization #3
 	md = loadmodel('./Models/PIG_SetMask');
 	md = setflowequation(md,'SSA','all');
 	md = parameterize(md,'./Pig.par');
-	
+	   
 	save ./Models/PIG_Parameterization md;
 end
 
@@ -66,9 +74,14 @@ if any(steps==4)  %Rheology B inversion
 	md.inversion.max_parameters(pos) = cuffey(200);
 
 	% Additional parameters
-	md.stressbalance.restol=0.01;
-	md.stressbalance.reltol=0.1;
-	md.stressbalance.abstol=NaN;
+	%md.stressbalance.restol=0.01;
+	%md.stressbalance.reltol=0.1;
+	%md.stressbalance.abstol=NaN;
+    md.stressbalance.restol=1000;
+	md.stressbalance.reltol=NaN;
+	md.stressbalance.abstol=10;
+    %% Change
+    md.settings.solver_residue_threshold = 1.e-3;
 
 	% Solve
 	md.cluster=generic('name',oshostname,'np',2);
@@ -77,7 +90,7 @@ if any(steps==4)  %Rheology B inversion
 
 	% Update model rheology_B accordingly
 	md.materials.rheology_B(mds.mesh.extractedvertices)=mds.results.StressbalanceSolution.MaterialsRheologyBbar;
-
+   
 	% Save model
 	save ./Models/PIG_Control_B md;
 end
@@ -99,7 +112,7 @@ if any(steps==5)  %drag inversion
 	md.inversion.max_parameters=200*ones(md.mesh.numberofvertices,1);
 
 	% Solve
-	md=solve(md,'Stressbalance');
+     md=solve(md,'Stressbalance');
 
 	% Update model friction fields accordingly
 	md.friction.coefficient=md.results.StressbalanceSolution.FrictionCoefficient;
@@ -107,14 +120,51 @@ if any(steps==5)  %drag inversion
 	save ./Models/PIG_Control_drag md;
 end
 
-if any(steps==6)  %GPU solver
 
-	%load ./Models/PIG_Control_drag %comment this out when increasing the spatial resolution
-        % md = refine(md); Add this when increasing spatial resolution
-	load PIG3e4
-	addpath('../../src/');
-	%md=gpu(md,0.35,.28);
-        damp = 0.35;
-	relaxation = 0.28; 
-	gpu_parallelized  %running it as a script to obtain all the script scalars in the workspace
+if any(steps==6)  %mesh2mesh interpolation
+    md = loadmodel('./Models/PIG_Parameterization');
+        
+   disp('Interpolating results on new mesh');
+
+%Rheology B
+load('Rheology_inversion_3000.mat');
+md.materials.rheology_B = InterpFromMeshToMesh2d(index,x,y,B,md.mesh.x,md.mesh.y);
+
+%Drag
+load('Drag_inversion_3000.mat');
+md.friction.coefficient = InterpFromMeshToMesh2d(index,x,y,drag,md.mesh.x,md.mesh.y); 
+
+save ./Models/PIG_Control_drag md;
+
 end
+
+
+if any(steps==7)  %GPU solver
+%load ./Models/PIG_Parameterization md;
+%load('Rheology_inversion_5000.mat');
+%load('Drag_inversion_5000.mat');
+
+load ./Models/PIG_Control_drag
+%save PIG3e4
+% load PIG3e4
+   % md = refine(md);
+
+   % nbe              = md.mesh.numberofelements;
+   % nbv              = md.mesh.numberofvertices;
+    	
+ % save PIG5e5 md -v7.3
+ 
+% save PIG3e4
+
+	%addpath('../../src/');
+
+       %addpath('../../src/');
+   %damp = 0.6;
+  %relaxation = 0.6;
+   %gpu_parallelized_NC
+  save PIG;
+   
+end
+
+
+
