@@ -1,12 +1,10 @@
-SIS: Square Ice Shelf
 
 JKS: Jakobshavn glacier model using Bedmachine
 
 PIG: Pine Island glacier model using Bedmachine
 
-ISSM installation is required.  
+QUICK START:
 
-1. Download the files and save it in MATLAB directory
-2. Run runme.m file 
-3. .mat file generated
-4. md=solve(md,'sb','batch','yes') to generate the bin file at the relevant resolution
+CUDA > compile the ICE_GPU_XX.cu routine on a system hosting an Nvidia GPU using the compilation line displayed on the top line of the .cu file. Run it (./a.out) and use the MATLAB visualisation script to plot the output.
+
+
