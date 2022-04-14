@@ -1,3 +1,28 @@
+/* Title ....
+
+Copyright (C) 2022  Anjali Sandip, Ludovic Raess and Mathieu Morlighem
+ 
+XXX is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+ 
+XXX is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License
+along with XXX. If not, see <http://www.gnu.org/licenses/>. */
+
+// -------------------------------------------------------------------------
+// Compile as: nvcc ssa_fem_pt.cu -arch=sm_XX 
+// arch=sm_XX: TITAN Black=sm_35, TITAN X=sm_52, TITAN Xp=sm_61, Tesla V100=sm_70
+// Run as: ./a.out
+// -------------------------------------------------------------------------
+
+
+
 #include <cstdio>
 #include <iostream>
 #include <string.h>
