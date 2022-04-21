@@ -7,8 +7,8 @@ using namespace std;
 /*define GPU specific variables*/
 #define GPU_ID    6
 
-#define BLOCK_Xe  128   //optimal block size for JKS2e4 and PIG3e4
-#define BLOCK_Xv  128 
+#define BLOCK_Xe  1024   //optimal block size for e7s
+#define BLOCK_Xv  1024 
 
 // Device norm subroutine
 #define blockId       (blockIdx.x)
@@ -269,14 +269,14 @@ int main(){
 
     /*Constants*/
     double n_glen     = 3.;
-    double damp       = 0.981; //0.96 for JKS2e4, 0.981 for PIG3e4
-    double rele       = 1e-1;   //1e-1 for JKS2e4, 0.07 for PIG3e4
+    double damp       = 0.3; //0.3 for JKS2e7, 0.6 for PIG3e7
+    double rele       = 1e-1;   
     double eta_b      = 0.5;
     double eta_0      = 1.e+14/2.;
     int    niter      = 2000;//5e6;
     int    nout_iter  = 4000; //change it to 100 for JKS2e4
     double epsi       = 3.171e-7;
-    double relaxation = 0.967; //0.7 for JKS2e4, 0.967 for PIG3e4
+    double relaxation = 0.91; //0.91 for JKS2e7, 0.9 for PIG3e7
         
     // Ceiling division to get the close to optimal GRID size
     unsigned int GRID_Xe = 1 + ((nbe - 1) / BLOCK_Xe);
