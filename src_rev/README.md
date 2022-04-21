@@ -1,6 +1,7 @@
 # PT FEM SSA GPU solver
 
-Performance test on Nvidia A100 SXM4 and V100 SXM2 GPUs
+## Performance test
+Tests done on Nvidia A100 SXM4 and V100 SXM2 GPUs running the `ssa_fem_pt_perf.cu` code.
 
 | Run    | Teff A100 (GB/s) | Teff V100 (GB/s) |
 | ------ | -------- | -------  |
