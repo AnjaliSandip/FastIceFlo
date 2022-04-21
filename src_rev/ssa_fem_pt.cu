@@ -56,24 +56,47 @@ __global__ void PT2_x(double* kvx, double* groundedratio, double* areas, int* in
         if (groundedratio[ix] > 0.){
             int n3 = ix * 3;
             double gr_a = groundedratio[ix] * areas[ix];
+            
+              double myLocalIndex[3][3];
+            for (int i = 0; i < 3; i++){
+                int i_index = index[n3 + i] - 1;
+                double gr_a_alpha2 =  gr_a * alpha2[i_index];
+                for (int j = 0; j < 3; j++){
+                      int j_index = index[n3 + j] - 1;
+                      myLocalIndex[i][j] = gr_a_alpha2 * vx[j_index];
+                }
+            }
+
+
+            double tempOutput[3];
+            for (int k = 0; k < 3; k++){
+                tempOutput[k] = kvx[n3 + k];
+            }
+
             for (int k = 0; k < 3; k++){
                 for (int i = 0; i < 3; i++){
-                    int i_index = index[n3 + i] - 1;
-                    double gr_a_alpha2 = gr_a * alpha2[i_index];
+                 //   int i_index = index[n3 + i] - 1;
+                 //   double gr_a_alpha2 = gr_a * alpha2[i_index];
                     for (int j = 0; j < 3; j++){
-                        int j_index = index[n3 + j] - 1;
-                        double gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
+                     //   int j_index = index[n3 + j] - 1;
+                     //   double gr_a_alpha2_vx = gr_a_alpha2 * vx[j_index];
                         // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
+                             double temp = myLocalIndex[i][j];
                         if (i == j && j == k){
-                            kvx[n3 + k] = isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 10.;
+                            tempOutput[k] = isice[ix] * tempOutput[k] + temp/ 10.;
                         } else if ((i!=j) && (j!=k) && (k!=i)){
-                            kvx[n3 + k] = isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 60.;
+                            tempOutput[k] = isice[ix] * tempOutput[k] + temp / 60.;
                         } else{
-                            kvx[n3 + k] = isice[ix] * kvx[n3 + k] + gr_a_alpha2_vx / 30.;
+                            tempOutput[k] = isice[ix] * tempOutput[k] + temp / 30.;
                         }
                     }
                 }
             }
+            
+              for (int k = 0; k < 3; k++){
+                kvx[n3 + k] = tempOutput[k];
+            }
+
         }//groundedratio loop
     }
 }
@@ -85,24 +108,46 @@ __global__ void PT2_y(double* kvy, double* groundedratio, double* areas, int* in
         if (groundedratio[ix] > 0.){
             int n3 = ix * 3;
             double gr_a = groundedratio[ix] * areas[ix];
+            
+            double myLocalIndex[3][3];
+            for (int i = 0; i < 3; i++){
+                int i_index = index[n3 + i] - 1;
+                double gr_a_alpha2 =  gr_a * alpha2[i_index];
+                for (int j = 0; j < 3; j++){
+                      int j_index = index[n3 + j] - 1;
+                      myLocalIndex[i][j] = gr_a_alpha2 * vy[j_index];
+                }
+            }
+
+            double tempOutput[3];
+            for (int k = 0; k < 3; k++){
+                tempOutput[k] = kvy[n3 + k];
+            }
+
+            
             for (int k = 0; k < 3; k++){
                 for (int i = 0; i < 3; i++){
-                    int i_index = index[n3 + i] - 1;
-                    double gr_a_alpha2 = gr_a * alpha2[i_index];
+                 //   int i_index = index[n3 + i] - 1;
+                  //  double gr_a_alpha2 = gr_a * alpha2[i_index];
                     for (int j = 0; j < 3; j++){
-                        int j_index = index[n3 + j] - 1;
-                        double gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
+                     //   int j_index = index[n3 + j] - 1;
+                     //   double gr_a_alpha2_vy = gr_a_alpha2 * vy[j_index];
                         // printf("%d, %f, %f, %d, %f \n", ix, gr_a, gr_a_alpha2, j_index, gr_a_alpha2_vx);
+                        double temp = myLocalIndex[i][j];
                         if (i == j && j == k){
-                            kvy[n3 + k] = isice[ix] * kvy[n3 + k] + gr_a_alpha2_vy / 10.;
+                            tempOutput[k] = isice[ix] * tempOutput[k] + temp / 10.;
                         } else if ((i!=j) && (j!=k) && (k!=i)){
-                            kvy[n3 + k] = isice[ix] * kvy[n3 + k] + gr_a_alpha2_vy / 60.;
+                            tempOutput[k] = isice[ix] * tempOutput[k] + temp / 60.;
                         } else{
-                            kvy[n3 + k] = isice[ix] * kvy[n3 + k] + gr_a_alpha2_vy / 30.;
+                            tempOutput[k] = isice[ix] * tempOutput[k] + temp / 30.;
                         }
                     }
                 }
             }
+           for (int k = 0; k < 3; k++){
+                kvy[n3 + k] = tempOutput[k];
+            }
+
         }//groundedratio loop
     }
 }
