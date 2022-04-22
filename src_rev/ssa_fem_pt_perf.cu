@@ -269,14 +269,14 @@ int main(){
 
     /*Constants*/
     double n_glen     = 3.;
-    double damp       = 0.3; //0.3 for JKS2e7, 0.6 for PIG3e7
+    double damp       = 0.6; //0.3 for JKS2e7, 0.6 for PIG3e7
     double rele       = 1e-1;   
     double eta_b      = 0.5;
     double eta_0      = 1.e+14/2.;
     int    niter      = 2000;//5e6;
     int    nout_iter  = 4000; //change it to 100 for JKS2e4
     double epsi       = 3.171e-7;
-    double relaxation = 0.91; //0.91 for JKS2e7, 0.9 for PIG3e7
+    double relaxation = 0.9; //0.91 for JKS2e7, 0.9 for PIG3e7
         
     // Ceiling division to get the close to optimal GRID size
     unsigned int GRID_Xe = 1 + ((nbe - 1) / BLOCK_Xe);
