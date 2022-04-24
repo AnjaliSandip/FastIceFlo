@@ -9,7 +9,9 @@ Tests done on Nvidia A100 SXM4 and V100 SXM2 GPUs running the `ssa_fem_pt_perf.c
 | PIG7e4 | 20.1441  |  17.5305 |
 | PIG1e5 | 30.0787  |  17.2659 |
 | PIG2e6 | 49.1774  |  9.47782 |
+| PIG3e7 |          |          |
 | JKS2e4 | 6.85376  |  8.77216 |
 | JKS8e4 | 24.5878  |  19.0041 |
 | JKS3e5 | 40.6681  |  13.8232 |
 | JKS1e6 | 50.4722  |  9.93622 |
+| JKS2e7 | 25.1616  |          |
