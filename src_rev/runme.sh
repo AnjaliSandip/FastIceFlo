@@ -7,9 +7,12 @@
 # compile the code
 #nvcc -arch=sm_70 -O3 ssa_fem_pt.cu
 nvcc -arch=sm_70 -O3 -lineinfo ssa_fem_pt.cu
-#nvcc  SingleRun.cu
 
-# run the code
-#nsys profile -t nvtx  ./a.out
-#nsys profile --stats=true  ./a.out
+# run the code and generate NVTX decorators
+#nsys profile -t nvtx  ./a.out   
+
+#To run the code and generate NSIGHT Systems report
+#nsys profile --stats=true  ./a.out   
+
+#To run the code and generate NSIGHT Compute report
 ncu --set full -o JKS7e5report ./a.out;
