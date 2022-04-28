@@ -8,6 +8,11 @@
 #nvcc -arch=sm_70 -O3 ssa_fem_pt.cu
 nvcc -arch=sm_70 -O3 -lineinfo ssa_fem_pt.cu
 
+#Generic case
+# nvcc -arch=sm_70 -O3 -lineinfo ssa_fem_pt.cu -Ddmp=$damp -Drela=$rele 
+# damp = 0.1;
+# rele = 0.2;
+
 # run the code and generate NVTX decorators
 #nsys profile -t nvtx  ./a.out   
 
@@ -16,3 +21,6 @@ nvcc -arch=sm_70 -O3 -lineinfo ssa_fem_pt.cu
 
 #To run the code and generate NSIGHT Compute report
 ncu --set full -o JKS7e5report ./a.out;
+
+
+               
