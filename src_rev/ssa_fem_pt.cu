@@ -18,7 +18,7 @@ using namespace std;
 #include "helpers.h"
 
 /*CUDA Code*/
-__global__ void PT1(double* vx, double* vy, double* alpha, double* beta, int* index,  double* kvx, double* kvy, double* etan,  double* Helem, double* areas, bool* isice, double* Eta_nbe, double* rheology_B, double n_glen, double eta_0, double rele,int nbe){ 
+__global__ void PT1(double* vx, double* vy, double* Vx, double* Vy, double* alpha, double* beta, int* index,  double* kvx, double* kvy, double* etan,  double* Helem, double* areas, bool* isice, double* Eta_nbe, double* rheology_B, double n_glen, double eta_0, double rele,int nbe){ 
     // int ix = blockIdx.x * blockDim.x + threadIdx.x;
     for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x){ 
 
@@ -30,8 +30,10 @@ __global__ void PT1(double* vx, double* vy, double* alpha, double* beta, int* in
         for(int i=0; i<3; i++){
             Localalpha[i] =  alpha[ix*3+i];
             Localbeta[i] =   beta[ix*3+i];
-            Localvx[i] =  vx[index[ix*3+i]-1];
-            Localvy[i] =  vy[index[ix*3+i]-1];
+	    Localvx[i] = Vx[ix*3 +i];
+	    Localvy[i] = Vy[ix*3 +i];
+            //Localvx[i] =  vx[index[ix*3+i]-1];
+            //Localvy[i] =  vy[index[ix*3+i]-1];
         }
        
         double dvxdx =  Localvx[0]*Localalpha[0] + Localvx[1]*Localalpha[1] + Localvx[2]*Localalpha[2];
@@ -593,7 +595,17 @@ int main(){
             p = next[p-1];
         }
     }
-
+	
+	//velocity modification//
+    double* Vx   = new double[nbe*3];
+    double* Vy   = new double[nbe*3];
+	for(int i=0;i<nbe;i++) {
+		for(int j=0;j<3;j++) {
+	Vx[i*3+j] = vx[index[i*3+j]-1];
+	Vy[i*3+j] = vy[index[i*3+j]-1];
+        }
+}
+/////////////////////////////////////
     double* device_maxvalx = new double[GRID_Xv];
     double* device_maxvaly = new double[GRID_Xv];
     for(int i=0;i<GRID_Xv;i++) device_maxvalx[i] = 0.;
@@ -707,6 +719,14 @@ int main(){
     double* d_device_maxvaly = NULL;
     cudaMalloc(&d_device_maxvaly, GRID_Xv*sizeof(double));
     cudaMemcpy(d_device_maxvaly, device_maxvaly, GRID_Xv*sizeof(double), cudaMemcpyHostToDevice); 
+	
+    double *d_Vx;
+    cudaMalloc(&d_Vx, nbe*3*sizeof(double));
+    cudaMemcpy(d_Vx, Vx, nbe*3*sizeof(double), cudaMemcpyHostToDevice);
+
+    double *d_Vy;
+    cudaMalloc(&d_Vy, nbe*3*sizeof(double));
+    cudaMemcpy(d_Vy, Vy, nbe*3*sizeof(double), cudaMemcpyHostToDevice);  
 
     /*------------ allocate relevant vectors on host (GPU)---------------*/
     //double *dvxdx = NULL;
@@ -757,7 +777,7 @@ int main(){
         
         if (iter==11) tic();
 
-        PT1<<<gride, blocke>>>(d_vx, d_vy, d_alpha, d_beta, d_index, kvx,  kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, d_rheology_B, n_glen, eta_0, rele, nbe);
+        PT1<<<gride, blocke>>>(d_vx, d_vy, d_Vx, d_Vy, d_alpha, d_beta, d_index, kvx,  kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, d_rheology_B, n_glen, eta_0, rele, nbe);
         cudaDeviceSynchronize();
 
         PT2_x<<<gride, blocke, 0, stream1>>>(kvx, d_groundedratio, d_areas, d_index, d_alpha2, d_vx, d_isice, nbe);
@@ -834,6 +854,8 @@ int main(){
     cudaFree(d_index);
     cudaFree(d_vx);
     cudaFree(d_vy);
+    cudaFree(d_Vx);
+    cudaFree(d_Vy);
     cudaFree(d_alpha);
     cudaFree(d_beta);
     cudaFree(d_etan);
