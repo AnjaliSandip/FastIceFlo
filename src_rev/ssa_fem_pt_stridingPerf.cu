@@ -23,7 +23,7 @@ __global__ void PT1(double* vx, double* vy, double* alpha, double* alpha_0, doub
     for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x){ 
           
 	 
-      //  double dvxdx = alpha[ix*3+0] + alpha[ix*3+1] + alpha[ix*3+2];  //column wise
+        double dvxdx = alpha[ix*3+0] + alpha[ix*3+1] + alpha[ix*3+2];  //column wise
      //   double dvxdx = alpha_0[ix] + alpha_1[ix]  +  alpha_2[ix];  //separate arrays
 	//    double dvxdx = alpha[ix] + alpha[ix +nbe*1] + alpha[ix + nbe*2];   //row wise    
 	                     
