@@ -182,7 +182,7 @@ int main(){
     cudaMalloc(&d_alpha, nbe*3*sizeof(double));
     cudaMemcpy(d_alpha, alpha, nbe*3*sizeof(double), cudaMemcpyHostToDevice);
 	
-	double *d_alpha_0;
+    double *d_alpha_0;
     cudaMalloc(&d_alpha_0, nbe*sizeof(double));
     cudaMemcpy(d_alpha_0, alpha_0, nbe*sizeof(double), cudaMemcpyHostToDevice);
 
@@ -197,16 +197,16 @@ int main(){
 
 	
 	    /*------------ allocate relevant vectors on host (GPU)---------------*/
-    //double *dvxdx = NULL;
+    double *dvxdx = NULL;
     cudaMalloc(&dvxdx,nbe*sizeof(double));
 
-    //double *dvxdy = NULL;
+    double *dvxdy = NULL;
     cudaMalloc(&dvxdy, nbe*sizeof(double));
 
-    //double *dvydx = NULL;
+    double *dvydx = NULL;
     cudaMalloc(&dvydx, nbe*sizeof(double));
 
-    //double *dvydy = NULL;
+    double *dvydy = NULL;
     cudaMalloc(&dvydy, nbe*sizeof(double));
 	
 	//Creating CUDA streams
@@ -217,7 +217,7 @@ int main(){
     // Perf
     double time_s = 0.0;
     double mem = (double)1e-9*(double)nbv*sizeof(double);
-    int nIO = 8;
+    int nIO = 3;
 
     /*Main loop*/
     std::cout<<"Starting PT loop, nbe="<<nbe<<", nbv="<<nbv<<std::endl; 
@@ -258,12 +258,12 @@ int main(){
     delete [] spcvy;
     delete [] ice_levelset;
     delete [] ocean_levelset;
-    delete [] rheology_B;
+  //  delete [] rheology_B;
     delete [] rheology_B_temp;
     delete [] vx;
     delete [] vy;
     delete [] friction;
-    delete [] alpha2;
+  //  delete [] alpha2;
     delete [] etan;
     delete [] dVxdt;
     delete [] dVydt;
@@ -271,14 +271,14 @@ int main(){
     delete [] beta;
     delete [] areas;
     delete [] weights;
-    delete [] resolx;
-    delete [] resoly;
-    delete [] dsdx;
-    delete [] dsdy;
-    delete [] Helem;
-    delete [] ML;
-    delete [] Fvx;
-    delete [] Fvy;
+   // delete [] resolx;
+   // delete [] resoly;
+   // delete [] dsdx;
+   // delete [] dsdy;
+   // delete [] Helem;
+  //  delete [] ML;
+  //  delete [] Fvx;
+  //  delete [] Fvy;
 
     cudaFree(d_vx);
     cudaFree(d_vy);
