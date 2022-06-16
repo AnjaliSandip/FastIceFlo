@@ -217,7 +217,7 @@ int main(){
     // Perf
     double time_s = 0.0;
     double mem = (double)1e-9*(double)nbv*sizeof(double);
-    int nIO = 8;
+    int nIO = 3;
 
     /*Main loop*/
     std::cout<<"Starting PT loop, nbe="<<nbe<<", nbv="<<nbv<<std::endl; 
