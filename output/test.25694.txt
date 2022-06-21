@@ -1,0 +1,117 @@
+Currently Loaded Modulefiles:
+ 1) shared                3) gdb/8.3.1   5) nvhpc/21.11  
+ 2) slurm/slurm/20.11.8   4) gcc/9.2.0  
+
+Collecting data...
+GRID_Xe=320
+GRID_Xv=160
+Process uses GPU with id 6.
+Starting PT loop, nbe=87653, nbv=44229
+iter=100, err=6.1298
+iter=200, err=1.89638
+iter=300, err=1.23704
+iter=400, err=0.774768
+iter=500, err=0.125939
+iter=600, err=0.119034
+iter=700, err=0.0260289
+iter=800, err=0.00612584
+iter=900, err=0.00199382
+iter=1000, err=0.000438753
+iter=1100, err=0.00022137
+iter=1200, err=8.00341e-05
+iter=1300, err=1.41267e-05
+iter=1400, err=8.50754e-06
+iter=1500, err=1.26699e-06
+iter=1600, err=6.85748e-07
+iter=1700, err=1.3657e-07
+Perf: 0.226916 sec. (@ 21.0819 GB/s)
+Processing events...
+Saving temporary "/tmp/nsys-report-df09-0864-ba67-8ae8.qdstrm" file to disk...
+
+Creating final output files...
+Processing [0%                                                                 ]Processing [==6%                                                               ]Processing [=====13%                                                           ]Processing [====11%                                                            ]Processing [====9%                                                             ]Processing [===8%                                                              ]Processing [==7%                                                               ]Processing [==6%                                                               ]Processing [=5%                                                                ]Processing [==6%                                                               ]Processing [====9%                                                             ]Processing [===10%                                                             ]Processing [=======15%                                                         ]Processing [=======16%                                                         ]Processing [=========18%                                                       ]Processing [==========20%                                                      ]Processing [=============25%                                                   ]Processing [=================30%                                               ]Processing [=====================36%                                           ]Processing [========================41%                                        ]Processing [============================47%                                    ]Processing [===============================52%                                 ]Processing [===================================57%                             ]Processing [=======================================63%                         ]Processing [==========================================68%                      ]Processing [==============================================74%                  ]Processing [=================================================79%               ]Processing [===============================================================100%]
+Saved report file to "/tmp/nsys-report-df09-0864-ba67-8ae8.nsys-rep"
+Exporting 32331 events: [1%                                                    ]Exporting 32331 events: [2%                                                    ]Exporting 32331 events: [3%                                                    ]Exporting 32331 events: [4%                                                    ]Exporting 32331 events: [5%                                                    ]Exporting 32331 events: [=6%                                                   ]Exporting 32331 events: [=7%                                                   ]Exporting 32331 events: [==8%                                                  ]Exporting 32331 events: [==9%                                                  ]Exporting 32331 events: [==10%                                                 ]Exporting 32331 events: [==11%                                                 ]Exporting 32331 events: [===12%                                                ]Exporting 32331 events: [====13%                                               ]Exporting 32331 events: [====14%                                               ]Exporting 32331 events: [=====15%                                              ]Exporting 32331 events: [=====16%                                              ]Exporting 32331 events: [======17%                                             ]Exporting 32331 events: [======18%                                             ]Exporting 32331 events: [=======19%                                            ]Exporting 32331 events: [=======20%                                            ]Exporting 32331 events: [========21%                                           ]Exporting 32331 events: [========22%                                           ]Exporting 32331 events: [=========23%                                          ]Exporting 32331 events: [=========24%                                          ]Exporting 32331 events: [==========25%                                         ]Exporting 32331 events: [===========26%                                        ]Exporting 32331 events: [===========27%                                        ]Exporting 32331 events: [============28%                                       ]Exporting 32331 events: [============29%                                       ]Exporting 32331 events: [=============30%                                      ]Exporting 32331 events: [=============31%                                      ]Exporting 32331 events: [==============32%                                     ]Exporting 32331 events: [==============33%                                     ]Exporting 32331 events: [===============34%                                    ]Exporting 32331 events: [===============35%                                    ]Exporting 32331 events: [================36%                                   ]Exporting 32331 events: [================37%                                   ]Exporting 32331 events: [=================38%                                  ]Exporting 32331 events: [==================39%                                 ]Exporting 32331 events: [==================40%                                 ]Exporting 32331 events: [===================41%                                ]Exporting 32331 events: [===================42%                                ]Exporting 32331 events: [====================43%                               ]Exporting 32331 events: [====================44%                               ]Exporting 32331 events: [=====================45%                              ]Exporting 32331 events: [=====================46%                              ]Exporting 32331 events: [======================47%                             ]Exporting 32331 events: [======================48%                             ]Exporting 32331 events: [=======================49%                            ]Exporting 32331 events: [========================50%                           ]Exporting 32331 events: [========================51%                           ]Exporting 32331 events: [=========================52%                          ]Exporting 32331 events: [=========================53%                          ]Exporting 32331 events: [==========================54%                         ]Exporting 32331 events: [==========================55%                         ]Exporting 32331 events: [===========================56%                        ]Exporting 32331 events: [===========================57%                        ]Exporting 32331 events: [============================58%                       ]Exporting 32331 events: [============================59%                       ]Exporting 32331 events: [=============================60%                      ]Exporting 32331 events: [=============================61%                      ]Exporting 32331 events: [==============================62%                     ]Exporting 32331 events: [===============================63%                    ]Exporting 32331 events: [===============================64%                    ]Exporting 32331 events: [================================65%                   ]Exporting 32331 events: [================================66%                   ]Exporting 32331 events: [=================================67%                  ]Exporting 32331 events: [=================================68%                  ]Exporting 32331 events: [==================================69%                 ]Exporting 32331 events: [==================================70%                 ]Exporting 32331 events: [===================================71%                ]Exporting 32331 events: [===================================72%                ]Exporting 32331 events: [====================================73%               ]Exporting 32331 events: [====================================74%               ]Exporting 32331 events: [=====================================75%              ]Exporting 32331 events: [======================================76%             ]Exporting 32331 events: [======================================77%             ]Exporting 32331 events: [=======================================78%            ]Exporting 32331 events: [=======================================79%            ]Exporting 32331 events: [========================================80%           ]Exporting 32331 events: [========================================81%           ]Exporting 32331 events: [=========================================82%          ]Exporting 32331 events: [=========================================83%          ]Exporting 32331 events: [==========================================84%         ]Exporting 32331 events: [==========================================85%         ]Exporting 32331 events: [===========================================86%        ]Exporting 32331 events: [===========================================87%        ]Exporting 32331 events: [============================================88%       ]Exporting 32331 events: [=============================================89%      ]Exporting 32331 events: [=============================================90%      ]Exporting 32331 events: [==============================================91%     ]Exporting 32331 events: [==============================================92%     ]Exporting 32331 events: [===============================================93%    ]Exporting 32331 events: [===============================================94%    ]Exporting 32331 events: [================================================95%   ]Exporting 32331 events: [================================================96%   ]Exporting 32331 events: [=================================================97%  ]Exporting 32331 events: [=================================================98%  ]Exporting 32331 events: [==================================================99% ]Exporting 32331 events: [==================================================100%]
+
+Exported successfully to
+/tmp/nsys-report-df09-0864-ba67-8ae8.sqlite
+
+
+Operating System Runtime API Statistics:
+
+ Time(%)  Total Time (ns)  Num Calls   Avg (ns)   Med (ns)   Min (ns)  Max (ns)   StdDev (ns)       Name     
+ -------  ---------------  ---------  ----------  ---------  --------  ---------  -----------  --------------
+    66.5        500923857         19  26364413.5  4476164.0     32192  100202985   38253761.9  poll          
+    25.8        193927819       1656    117106.2    60481.5      1004   33750755     846078.1  ioctl         
+     5.4         40902619         40   1022565.5     6771.5      1278   36850405    5814237.8  fread         
+     0.8          6317155         49    128921.5     2450.0      1184    2464184     503372.7  fopen         
+     0.4          3307417        112     29530.5     7478.0      1354     967035      91258.1  mmap          
+     0.3          2034321          5    406864.2     6723.0      1032    1816654     793048.1  fwrite        
+     0.3          1902932         13    146379.4   101834.0     19867     852720     219024.0  sem_timedwait 
+     0.2          1636485          4    409121.3   496785.0    113285     529630     197838.6  pthread_create
+     0.1           960399        133      7221.0     6033.0      1778     119051      10053.7  open64        
+     0.1           539010         19     28368.9     1415.0      1009     509040     116407.2  fclose        
+     0.0           162423         44      3691.4     3872.5      1073       9124       2353.6  fgetc         
+     0.0           150826          3     50275.3    46111.0     45318      59397       7909.5  fgets         
+     0.0            63644         19      3349.7     2385.0      2037       9921       2141.9  fflush        
+     0.0            47395         14      3385.4     3323.0      1829       6484       1348.9  write         
+     0.0            27803          5      5560.6     4346.0      2451      10879       3326.4  open          
+     0.0            27224          7      3889.1     2797.0      2130       9001       2460.1  munmap        
+     0.0            17238         12      1436.5     1261.5      1147       2698        441.6  read          
+     0.0             8466          1      8466.0     8466.0      8466       8466          0.0  pipe2         
+     0.0             7231          2      3615.5     3615.5      3163       4068        639.9  socket        
+     0.0             5765          1      5765.0     5765.0      5765       5765          0.0  connect       
+     0.0             5178          4      1294.5     1188.5      1019       1782        338.9  fcntl         
+     0.0             2483          1      2483.0     2483.0      2483       2483          0.0  bind          
+     0.0             1052          1      1052.0     1052.0      1052       1052          0.0  listen        
+
+
+
+CUDA API Statistics:
+
+ Time(%)  Total Time (ns)  Num Calls  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)          Name         
+ -------  ---------------  ---------  --------  --------  --------  --------  -----------  ---------------------
+    62.1        148211286       3400   43591.6   46644.5      3004     66539       7409.7  cudaDeviceSynchronize
+    21.2         50591311       3400   14879.8   13963.0      1316     44800      12955.0  cudaStreamSynchronize
+    10.8         25873887       6834    3786.1    3553.0      3107    386903       4761.7  cudaLaunchKernel     
+     2.4          5839082         63   92683.8   35943.0      6794    436469      93143.6  cudaMemcpy           
+     1.8          4239574         37  114583.1    5416.0      2831    408478     137673.4  cudaMalloc           
+     1.5          3553233         37   96033.3    4765.0      3104    387403     113252.6  cudaFree             
+     0.1           212319          2  106159.5  106159.5     17706    194613     125092.1  cudaStreamCreate     
+     0.0            17497          2    8748.5    8748.5      3937     13560       6804.5  cudaStreamDestroy    
+     0.0            14262          1   14262.0   14262.0     14262     14262          0.0  cudaDeviceReset      
+     0.0              818          1     818.0     818.0       818       818          0.0  cuCtxSynchronize     
+
+
+
+CUDA Kernel Statistics:
+
+ Time(%)  Total Time (ns)  Instances  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)                                                  Name                                                
+ -------  ---------------  ---------  --------  --------  --------  --------  -----------  ----------------------------------------------------------------------------------------------------
+    37.4         77622418       1700   45660.2   45792.0     43296     48032        817.8  PT3(double *, double *, double *, double *, double *, int *, int *, int *, double *, double *, doub…
+    26.0         53977159       1700   31751.3   31999.0     27808     39616        969.5  PT1(double *, double *, double *, double *, int *, double *, double *, double *, double *, double *…
+    21.5         44609431       1700   26240.8   26240.0     19840     34144       1317.5  PT2_x(double *, double *, double *, int *, double *, double *, bool *, int)                         
+    14.8         30795000       1700   18114.7   17983.5     15712     23616       1045.7  PT2_y(double *, double *, double *, int *, double *, double *, bool *, int)                         
+     0.4           741688         34   21814.4   21424.0     19552     38944       3137.2  __device_max_d(double *, int, double *)                                                             
+
+
+
+CUDA Memory Operation Statistics (by time):
+
+ Time(%)  Total Time (ns)  Count  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)      Operation     
+ -------  ---------------  -----  --------  --------  --------  --------  -----------  ------------------
+    93.8          1700789     27   62992.2   31808.0      1567    310014      75486.5  [CUDA memcpy HtoD]
+     6.2           111615     36    3100.4    1600.0      1504     28063       6103.7  [CUDA memcpy DtoH]
+
+
+
+CUDA Memory Operation Statistics (by size):
+
+ Total (MB)  Count  Avg (MB)  Med (MB)  Min (MB)  Max (MB)  StdDev (MB)      Operation     
+ ----------  -----  --------  --------  --------  --------  -----------  ------------------
+     16.640     27     0.616     0.354     0.001     2.104        0.552  [CUDA memcpy HtoD]
+      0.751     36     0.021     0.001     0.001     0.354        0.082  [CUDA memcpy DtoH]
+Report file moved to "/home/anjali.sandip/JKS8e4/report5.nsys-rep"
+Report file moved to "/home/anjali.sandip/JKS8e4/report5.sqlite"
+
+
