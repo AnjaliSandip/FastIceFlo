@@ -11,9 +11,17 @@ You should have received a copy of the GNU General Public License along with XXX
 
 Current version can be found:  here??
 
-Citation information:
 
-Quickstart:
+- Aim of the project
+- Citation information
+- Conservation of Momentum Balance equations (+ PT Solver + FEM method)
+- Glacier Model Domains
+- Folder with input files 
+- Generate bin files/steps
+- src
+- Quickstart:
 CUDA > compile the ssa_fem_pt.cu routine on a system hosting an Nvidia GPU using the compilation line displayed on the top line of the .cu file. Run it (./a.out) and use the MATLAB visualisation script to plot the output.
-
-contact: anjali.sandip@und.edu
+- output
+- visu
+- scripts
+- contact: anjali.sandip@und.edu
