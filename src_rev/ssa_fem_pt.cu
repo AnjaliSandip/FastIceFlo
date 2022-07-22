@@ -30,10 +30,10 @@ __global__ void PT1(double* vx, double* vy, double* Vx, double* Vy, double* alph
         for(int i=0; i<3; i++){
             Localalpha[i] =  alpha[ix*3+i];
             Localbeta[i] =   beta[ix*3+i];
-	    Localvx[i] = Vx[ix*3 +i];
-	    Localvy[i] = Vy[ix*3 +i];
-            //Localvx[i] =  vx[index[ix*3+i]-1];
-            //Localvy[i] =  vy[index[ix*3+i]-1];
+	   // Localvx[i] = Vx[ix*3 +i];
+	   // Localvy[i] = Vy[ix*3 +i];
+            Localvx[i] =  vx[index[ix*3+i]-1];
+            Localvy[i] =  vy[index[ix*3+i]-1];
         }
        
         double dvxdx =  Localvx[0]*Localalpha[0] + Localvx[1]*Localalpha[1] + Localvx[2]*Localalpha[2];
