@@ -26,12 +26,14 @@ friction         = md.friction.coefficient;
 
 %Constants 
 n_glen    = 3;
-rele      = 1e-1;
+damp = 0.9;
+rele      = 0.01;
 eta_b     = 0.5;
 eta_0     = 1.e+14/2.;
 niter     = 5e6;
-nout_iter = 1000;
+nout_iter = 100;
 epsi      = 3.171e-7;
+relaxation = 0.1;
 
 %Initial guesses (except vx and vy that we already loaded)
 etan   = 1.e+14*ones(nbe,1);
@@ -39,7 +41,6 @@ dVxdt  = zeros(nbv,1);
 dVydt  = zeros(nbv,1);
 
 %Manage derivatives once for all
-[areas alpha beta gamma]=NodalCoeffs(index,x,y,nbe);
 weights=Weights(index,areas,nbe,nbv);
 
 %Mesh size
@@ -50,19 +51,7 @@ weights=Weights(index,areas,nbe,nbv);
 Helem       = mean(H(index),2);
 rheology_B  = mean(rheology_B_temp(index),2);
 
-%LAST: Update viscosity
-[dvxdx dvxdy]=derive_xy_elem(vx,index,alpha,beta,nbe);
-[dvydx dvydy]=derive_xy_elem(vy,index,alpha,beta,nbe);
-for i=1:nbe
-	eps_xx = dvxdx(i);
-	eps_yy = dvydy(i);
-	eps_xy = .5*(dvxdy(i)+dvydx(i));
-	EII2 = eps_xx^2 + eps_yy^2 + eps_xy^2 + eps_xx*eps_yy;
-	eta_it = 1.e+14/2.;
-	if(EII2>0.) eta_it = rheology_B(i)/(2*EII2^((n_glen-1.)/(2*n_glen))); end
-	etan(i) = min(eta_it,eta_0*1e5);
-	if(isnan(etan(i))) error('Found NaN in etan(i)'); end
-end
+
 
 %Linear integration points order 3
 wgt3=[0.555555555555556, 0.888888888888889, 0.555555555555556];
@@ -74,6 +63,8 @@ Fvx           = zeros(nbv,1);
 Fvy           = zeros(nbv,1);
 groundedratio = zeros(nbe,1);
 isice         = false(nbe,1);
+
+
 for n=1:nbe
 
 	%Lumped mass matrix
@@ -163,7 +154,12 @@ for n=1:nbe
 	elseif level(1)<=0 && level(2)<=0 && level(3)<=0
 		%Completely floating
 		groundedratio(n)=0.;
-	else
+    else
+        %Changes made to make it work for Square ice shelf%
+        pos = find(level==0); 
+        level(pos) = level(pos) + eps;
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
 		%Partially floating,
 		if(level(1)*level(2)>0) %Nodes 0 and 1 are similar, so points must be found on segment 0-2 and 1-2
 			s1=level(3)/(level(3)-level(2));
@@ -174,7 +170,8 @@ for n=1:nbe
 		elseif(level(1)*level(3)>0) %Nodes 0 and 2 are similar, so points must be found on segment 1-0 and 1-2
 			s1=level(2)/(level(2)-level(1));
 			s2=level(2)/(level(2)-level(3));
-		else
+        else
+            
 			error('not supposed to be here...');
 		end
 
@@ -200,6 +197,8 @@ for i=1:nbv
    alpha2(i) = friction(i)^2*Neff;
 end
 
+
+%%Modifications%%
 head = zeros(nbv,1);
 next = zeros(nbe*3, 1);
 
@@ -250,12 +249,28 @@ for i=1:nbv
   
 end
 
+%Update viscosity
+[dvxdx dvxdy]=derive_xy_elem(vx,index,alpha,beta,nbe);
+[dvydx dvydy]=derive_xy_elem(vy,index,alpha,beta,nbe);
+for i=1:nbe
+    	if ~isice(i) continue; end
+	eps_xx = dvxdx(i);
+	eps_yy = dvydy(i);
+	eps_xy = .5*(dvxdy(i)+dvydx(i));
+	EII2 = eps_xx^2 + eps_yy^2 + eps_xy^2 + eps_xx*eps_yy;
+	eta_it = 1.e+14/2.;
+	if(EII2>0.) eta_it = rheology_B(i)/(2*EII2^((n_glen-1.)/(2*n_glen))); end
+	etan(i) = min(eta_it,eta_0*1e5);
+	if(isnan(etan(i))) error('Found NaN in etan(i)'); end
+end
+
+
 
 %Main loop, allocate a few vectors needed for the computation
 
 tic
 for iter = 1:niter % Pseudo-Transient cycles
-
+  
 	%Strain rates
 	[dvxdx dvxdy]=derive_xy_elem(vx,index,alpha,beta,nbe);
 	[dvydx dvydy]=derive_xy_elem(vy,index,alpha,beta,nbe);
@@ -264,7 +279,7 @@ for iter = 1:niter % Pseudo-Transient cycles
 	KVx  = zeros(nbv,1);
 	KVy  = zeros(nbv,1);
 	kvx =  zeros(nbe,3);
-        kvy =  zeros(nbe,3);
+    kvy =  zeros(nbe,3);
 
     for n=1:nbe
 
@@ -277,35 +292,44 @@ for iter = 1:niter % Pseudo-Transient cycles
 		eps_yy = dvydy(n);
 		eps_xy = .5*(dvxdy(n)+dvydx(n));
 		for i=1:3
-	    kvx(n,i) = 2*Helem(n)*eta_e*(2*eps_xx+eps_yy)*alpha(n,i)*areas(n) + 2*Helem(n)*eta_e*eps_xy*beta(n,i)*areas(n);
+			kvx(n,i) = 2*Helem(n)*eta_e*(2*eps_xx+eps_yy)*alpha(n,i)*areas(n) + 2*Helem(n)*eta_e*eps_xy*beta(n,i)*areas(n);
             kvy(n,i) = 2*Helem(n)*eta_e*eps_xy*alpha(n,i)*areas(n) + 2*Helem(n)*eta_e*(2*eps_yy+eps_xx)*beta(n,i)*areas(n);
         end
         
-        	%Add basal friction
+        %Add basal friction
 		if groundedratio(n)>0.
-         for k=1:3
-            for i=1:3
-               for j=1:3
-                  if i==j && j==k
-                    kvx(n,k) =  kvx(n,k) + groundedratio(n)*alpha2(index(n,i))*vx(index(n,j))*areas(n)/10.;
-                    kvy(n,k) =  kvy(n,k) + groundedratio(n)*alpha2(index(n,i))*vy(index(n,j))*areas(n)/10.;
-                  elseif (i~=j) && (j~=k) && (k~=i)
-                     kvx(n,k) = kvx(n,k) + groundedratio(n)*alpha2(index(n,i))*vx(index(n,j))*areas(n)/60.;
-                     kvy(n,k) = kvy(n,k) + groundedratio(n)*alpha2(index(n,i))*vy(index(n,j))*areas(n)/60.;
-                  else
-                     kvx(n,k) = kvx(n,k) + groundedratio(n)*alpha2(index(n,i))*vx(index(n,j))*areas(n)/30.;
-                     kvy(n,k) = kvy(n,k) + groundedratio(n)*alpha2(index(n,i))*vy(index(n,j))*areas(n)/30.;
-                  end
-               end
-            end
-         end
-     end
+         %n3 = n * 3;
+         gr_a = groundedratio(n) * areas(n);
 
+                for k=1:3
+                    for i = 1:3
+                         i_index = index(n,i);
+                         gr_a_alpha2 = gr_a*alpha2(i_index);
+
+                        for j=1:3 
+                            j_index = index(n,j);
+                            gr_a_alpha2_vx = gr_a_alpha2 * vx(j_index);
+                            gr_a_alpha2_vy = gr_a_alpha2 * vy(j_index);
+                            if (i == j && j == k) 
+                                kvx(n, k) = kvx(n, k) + gr_a_alpha2_vx / 10.;
+                                kvy(n, k) = kvy(n, k) + gr_a_alpha2_vy / 10.;
+                            elseif ((i ~= j) && (j ~= k) && (k ~= i)) 
+                                kvx(n, k) = kvx(n, k) + gr_a_alpha2_vx / 60.;
+                                kvy(n, k) = kvy(n, k) + gr_a_alpha2_vy / 60.;
+                            else 
+                                kvx(n, k) = kvx(n, k) + gr_a_alpha2_vx / 30.;
+                                kvy(n, k) = kvy(n, k) + gr_a_alpha2_vy / 30.;
+                                end
+
+                            end
+
+                        end
+                    end
+               end          
+        end
     
-        
-   end
 
-          for i = 1:nbv
+    for i = 1:nbv
         for j = 1:8
             if connectivity((i-1)*8+j) ~=0 
                    KVx(i) = KVx(i) + kvx((connectivity((i-1)*8+j)), (columns((i-1)*8+j)));
@@ -313,10 +337,9 @@ for iter = 1:niter % Pseudo-Transient cycles
             end
         end
     end
-  
-
+   
+    
 	%Get current viscosity on nodes (Needed for time stepping)
-	%eta_nbv = elem2node(etan,index,areas,weights,nbe,nbv);
     eta_nbv = zeros(nbv,1);
     Eta_nbv = zeros(nbe,1);
     
@@ -333,29 +356,31 @@ for iter = 1:niter % Pseudo-Transient cycles
         end
     end
     
+    
     for i=1:nbv
         eta_nbv(i) = eta_nbv(i)/weights(i);
     end
 
 	%Velocity rate update in the x and y, refer to equation 19 in Rass paper
-	
+
 	%1. Get time derivative based on residual (dV/dt)
-        ResVx =  1./(rho*ML.*max(80,H)).*(-KVx + Fvx); %rate of velocity in the x, equation 23
-	ResVy =  1./(rho*ML.*max(80,H)).*(-KVy + Fvy); %rate of velocity in the y, equation 24
+	ResVx =  1./(rho*ML.*max(60,H)).*(-KVx + Fvx); %rate of velocity in the x, equation 23
+	ResVy =  1./(rho*ML.*max(60,H)).*(-KVy + Fvy); %rate of velocity in the y, equation 24
 	
-	dVxdt = dVxdt*(damp) + ResVx;
-	dVydt = dVydt*(damp) + ResVy;
-	
+    dVxdt = dVxdt*damp + ResVx;
+	dVydt = dVydt*damp + ResVy;
+    
 	if(any(isnan(dVxdt))) error('Found NaN in dVxdt[i]'); end
 	if(any(isnan(dVydt))) error('Found NaN in dVydt[i]'); end
 
-	%2. Explicit CFL time step for viscous flow, x and y directions
-        dtVx = rho*resolx.^2./(4*eta_nbv*(1.+eta_b)*4.1);
-        dtVy = rho*resoly.^2./(4*eta_nbv*(1.+eta_b)*4.1);
-        
+	%2. Explicit CFL time step for viscous flow, x and y directions 
+    dtVx = rho*resolx.^2./(4*eta_nbv*(1.+eta_b)*4.1);
+    dtVy = rho*resoly.^2./(4*eta_nbv*(1.+eta_b)*4.1);
+    
 	%3. velocity update, vx(new) = vx(old) + change in vx, Similarly for vy
 	vx = vx + relaxation*dVxdt.*dtVx;
 	vy = vy + relaxation*dVydt.*dtVy;
+    Vel = sqrt(vx.^2+vy.^2)*yts;
 
 	%Apply Dirichlet boundary condition, Residual should also be 0 (for convergence)
 	pos = find(~isnan(spcvx));
@@ -365,7 +390,6 @@ for iter = 1:niter % Pseudo-Transient cycles
 	vy(pos) = spcvy(pos);
 	dVydt(pos) = 0.;
 
-	
 	%LAST: Update viscosity
 	for i=1:nbe
 		if ~isice(i) continue; end
@@ -378,30 +402,61 @@ for iter = 1:niter % Pseudo-Transient cycles
 
 		etan(i) = min(exp(rele*log(eta_it) + (1-rele)*log(etan(i))),eta_0*1e5);
 		if(isnan(etan(i))) error('Found NaN in etan(i)'); end
-	end
-	
-	%Update error
-	iterror = max(max(abs(dVxdt)),max(abs(dVydt)));
-	
-	%Check convergence
+    end
+       % plotmodel(md,'data',sqrt(vx.^2+vy.^2)*yts,'data', dtVx, 'data', dVxdt, 'data', KVx);
+       % pause(3)
+       % fprintf('iter=%d, err=%1.3e \n',iter,iterror)
+        iterror = max(max(abs(dVxdt)),max(abs(dVydt)));
+   
 	if((iterror < epsi) && (iter > 2)) break; end
-	if (mod(iter,nout_iter)==1)
+	if (mod(iter,nout_iter)==0)
 		fprintf('iter=%d, err=%1.3e \n',iter,iterror)
-		clf
-		plotmodel(md,'data',sqrt(vx.^2+vy.^2)*yts); %Multiplication by yts converts m/s to m/yr
+		fprintf('iter=%d, err=%1.3e \n',iter,iterror)
+        figure(1),clf
+        subplot(221)
+        title('Ice Velocity, meters/year')
+        patch( 'Faces',index, 'Vertices',[x y],'FaceVertexCData',sqrt(vx.^2+vy.^2)*yts,'FaceColor','interp','EdgeColor','None');
+        colorbar
+        subplot(222)
+         title('Error residual')
+        patch( 'Faces',index, 'Vertices',[x y],'FaceVertexCData',full(dVxdt),'FaceColor','interp','EdgeColor','None');
+        colorbar
+         subplot(223)
+        title('Time step')
+        patch( 'Faces',index, 'Vertices',[x y],'FaceVertexCData',full(KVx),'FaceColor','interp','EdgeColor','None');
+        colorbar
+            subplot(224)
+        title('Ice stiffness')
+        patch( 'Faces',index, 'Vertices',[x y],'FaceVertexCData',full(eta_nbv),'FaceColor','interp','EdgeColor','None');
+        colorbar
 		drawnow
-    end  
+    end   
 end
-clf
-plotmodel(md,'data',sqrt(vx.^2+vy.^2)*yts);
+        patch( 'Faces',index, 'Vertices',[x y],'FaceVertexCData',sqrt(vx.^2+vy.^2)*yts,'FaceColor','interp','EdgeColor','None');
+        fprintf('iter=%d, err=%1.3e \n',iter,iterror)
+        
+      %  figure(1),clf
+      %  subplot(221)
+       % title('Ice Velocity, meters/year')
+       % patch( 'Faces',index, 'Vertices',[x y],'FaceVertexCData',sqrt(vx.^2+vy.^2)*yts,'FaceColor','interp','EdgeColor','None');
+       % colorbar
+      %  subplot(222)
+      %   title('Error residual')
+      %  patch( 'Faces',index, 'Vertices',[x y],'FaceVertexCData',full(dVxdt),'FaceColor','interp','EdgeColor','None');
+       % colorbar
+       %  subplot(223)
+       % title('Time step')
+      %  patch( 'Faces',index, 'Vertices',[x y],'FaceVertexCData',full(KVx),'FaceColor','interp','EdgeColor','None');
+      %  colorbar
+      %      subplot(224)
+      %  title('Ice stiffness')
+      %  patch( 'Faces',index, 'Vertices',[x y],'FaceVertexCData',full(eta_nbv),'FaceColor','interp','EdgeColor','None');
+      %  colorbar
+
 fprintf('iter=%d, err=%1.3e --> converged\n',iter,iterror)
 toc
 
-
-function [areas alpha beta gamma]=NodalCoeffs(index,x,y,nbe)% {{{
-	[alpha beta gamma]=GetNodalFunctionsCoeff(index,x,y);
-	areas=GetAreas(index,x,y);
-end % }}}
+ 
 function weights=Weights(index,areas,nbe,nbv)% {{{
 	weights = sparse(index(:),ones(3*nbe,1),repmat(areas,3,1),nbv,1);
 end % }}}
