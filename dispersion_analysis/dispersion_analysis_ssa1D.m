@@ -1,18 +1,18 @@
 clear
-print_fig = 0; % print paper Figure 1
+print_fig = 1; % print paper Figure 1
 %% symbolic functions and variables
 syms V(tau,x) tauxx(tau,x)
-syms Lx theta_r rho alpha Hmu4 Re Da V0 k positive
+syms Lx theta_r rho alpha eta H Re Da V0 k positive
 syms lambda_k
 %% governing equations
-eq1         =     rho*diff(V(tau,x),tau)     + diff(tauxx(tau,x),x) + alpha^2*V(tau,x);  % momentum balance
-eq2         = theta_r*diff(tauxx(tau,x),tau) + tauxx(tau,x) + Hmu4*diff(V(tau,x),x);     % viscous stress
+eq1         =   rho*H*diff(V(tau,x),tau)     + diff(tauxx(tau,x),x) + alpha^2*V(tau,x);  % momentum balance
+eq2         = theta_r*diff(tauxx(tau,x),tau) + tauxx(tau,x) + 4*H*eta*diff(V(tau,x),x);  % viscous stress
 %% equation for H
 eq_V        = expand(diff(eq1,tau)*theta_r - diff(eq2,x) + eq1);
 %% scales and nondimensional variables
-V_p         = sqrt(Hmu4/rho/theta_r);                                             % velocity scale - wave velocity
-rho         = solve(Re == rho*V_p*Lx/Hmu4,rho);                                   % density from Reynolds number Re
-alpha       = solve(Da == Lx^2*alpha^2/Hmu4,alpha);
+V_p         = sqrt(4*H*eta/(rho*H)/theta_r);                                             % velocity scale - wave velocity
+rho         = solve(Re == (rho*H)*V_p*Lx/(4*H*eta),rho);                                 % density from Reynolds number Re
+alpha       = solve(Da == Lx^2*alpha^2/(4*H*eta),alpha);
 %% dispersion relation
 V(tau,x)    = V0*exp(-lambda_k*V_p*tau/Lx)*sin(pi*k*x/Lx);                        % Fourier expansion term
 disp_rel    = expand(subs(subs(eq_V/V(tau,x))));
@@ -28,8 +28,8 @@ Re_opt      = solve(subs(discrim,k,1),Re);Re_opt=Re_opt(1);
 %% evaluate the solution numerically
 fun_cfs     = matlabFunction(fliplr(subs(cfs,k,1)));
 fun_Re_opt  = matlabFunction(Re_opt);
-Da1         = linspace(1e-6,2000,601);                                             % create 1D grid of Da values
-Re1         = linspace(pi/2,16*pi,601);                                            % create 1D grid of Re values
+Da1         = linspace(1e-6,100,601);                                             % create 1D grid of Da values
+Re1         = linspace(pi/2,5*pi,601);                                            % create 1D grid of Re values
 [Re2,Da2]   = ndgrid(Re1,Da1);                                                    % create 2D grid of Re and Da values
 num_lam     = arrayfun(@(Re,Da)(min(real(roots(fun_cfs(Da,Re))))),Re2,Da2);       % compute minimum of real part of roots
 num_Re_opt  = fun_Re_opt(Da1);
@@ -45,10 +45,8 @@ hold off
 ax = gca;
 xlabel('$Re$','Interpreter','latex')
 ylabel('$Da$','Interpreter','latex')
-% xticks([pi/2 pi 2*pi 3*pi 4*pi 5*pi])
-% xticklabels({'$\pi/2$','$\pi$','$2\pi$','$3\pi$','$4\pi$','$5\pi$'})
-xticks([pi 5*pi 10*pi 15*pi])
-xticklabels({'$\pi$','$5\pi$','$10\pi$','$15\pi$'})
+xticks([pi/2 pi 2*pi 3*pi 4*pi 5*pi])
+xticklabels({'$\pi/2$','$\pi$','$2\pi$','$3\pi$','$4\pi$','$5\pi$'})
 cb.Label.Interpreter          = 'latex';
 cb.Label.String               = '$\mathrm{min}\{\Re(\lambda_k)\}$';
 ax.XAxis.TickLabelInterpreter = 'latex';
@@ -63,7 +61,7 @@ if print_fig==1
     fs = 12;
     num_iter = 1./num_lam;
     axes('Units','normalized','Position',[0.17 0.21 0.6 0.7]);
-    contourf(Re2,Da2,num_iter,logspace(log10(0.02),log10(0.7),25),'LineWidth',0.5);axis square;
+    contourf(Re2,Da2,num_iter,logspace(log10(0.09),log10(1.5),25),'LineWidth',0.5);axis square;
 %     contourf(Re2,Da2,num_iter,'LineWidth',0.5);axis square;
     cb = colorbar;cb.Position(1) = cb.Position(1)+0.13;cb.Position([2 4])=[0.29 0.55]; cb.Position(3)=0.02;
     cb.Label.String='\bfn_{iter}/nx';
@@ -78,10 +76,8 @@ if print_fig==1
     hold off
     ax = gca;
     xl=xlabel('\bfRe','Units','normalized');ylabel('\bfDa')
-%     xticks([pi/2 2*pi 3*pi 4*pi 5*pi])
-%     xticklabels({'$\pi/2$','$2\pi$','$3\pi$','$4\pi$','$5\pi$'})
-    xticks([pi 5*pi 10*pi 15*pi])
-    xticklabels({'$\pi$','$5\pi$','$10\pi$','$15\pi$'})
+    xticks([pi/2 2*pi 3*pi 4*pi 5*pi])
+    xticklabels({'$\pi/2$','$2\pi$','$3\pi$','$4\pi$','$5\pi$'})
     ax.XAxis.TickLabelInterpreter = 'latex';
     set(gca,'FontSize',fs,'FontName','Courier')
 %     print(gcf,'-dpng','../docs/fig_niter_optimal.png','-r300')
