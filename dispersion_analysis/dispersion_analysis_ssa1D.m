@@ -66,8 +66,8 @@ if print_fig==1
     cb = colorbar;cb.Position(1) = cb.Position(1)+0.13;cb.Position([2 4])=[0.29 0.55]; cb.Position(3)=0.02;
     cb.Label.String='\bfn_{iter}/nx';
     cb.Label.FontSize=fs;
-    set(cb,'Ticks',[0.03 0.09 0.2 0.6]);
-    set(cb,'TickLabels',{'0.03','0.09','0.2','0.6'});
+    set(cb,'Ticks',[0.1 0.2 0.4,0.8,1.5]);
+    set(cb,'TickLabels',{'0.1','0.2','0.4','0.8','1.5'});
     set(gca,'ColorScale','log')
     Re_f = matlabFunction(Re_opt(1));
     hold on
@@ -80,5 +80,5 @@ if print_fig==1
     xticklabels({'$\pi/2$','$2\pi$','$3\pi$','$4\pi$','$5\pi$'})
     ax.XAxis.TickLabelInterpreter = 'latex';
     set(gca,'FontSize',fs,'FontName','Courier')
-%     print(gcf,'-dpng','../docs/fig_niter_optimal.png','-r300')
+%     print(gcf,'-dpng','fig_niter_optimal.png','-r300')
 end
