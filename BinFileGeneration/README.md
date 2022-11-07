@@ -1,6 +1,6 @@
 
 
-Average element size or spatial resolution (in meters) corresponding to DoFs for the glacier model configurations listed below.
+Average element size or spatial resolution "resol" corresponding to DoFs for the glacier model configurations listed below.
 
 Jakobshavn Isbrae:
 | DoFs |  resol (m) | 
