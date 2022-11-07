@@ -3,9 +3,10 @@
 
 
 
-| Ice model |  Data Type Used | Performance | Iterations |
+| DoFs |  Damping | Velocity relaxation| Non-linear viscosity relaxation scalar |
 | :----: | :----: | :----: | :----: |
-| JKS1e6 | float | 0.000508523 sec. (@ 42.0184 GB/s) | 200,000 |
-| JKS1e6 | double | 0.000762873 sec. (@ 56.0181 GB/s) | 5,000 |
-| PIG2e6 | float | 0.000751139 sec. (@ 47.3182 GB/s) | 200,000 |
-| PIG2e6 | double | 0.0012336 sec. (@ 57.6241 GB/s) | 20,600 |
+| 8e4 | 0.98 |  | 3e-2 |
+| 3e5 | 0.99 | 0.9 | 3e-2 |
+| 7e5 | 0.99 | 0.99 | 1e-1 |
+| 1e6 | 0.992 | 0.999 | 1e-1 |
+| 2e7 | 0.992 | 0.999 | 1e-1 |
