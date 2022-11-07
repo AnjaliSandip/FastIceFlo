@@ -1,5 +1,4 @@
-// memcopy
-// nvcc -arch=sm_70 -O3 memcopy_v3.cu
+
 #include <stdio.h>
 #include "sys/time.h"
 
