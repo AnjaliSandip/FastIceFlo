@@ -4,7 +4,7 @@
 
 
 Jakobshavn Isbrae:
-| DoFs |   {\bf T}_\mathrm{eff} GB/s | 
+| DoFs |   {\bf T}_{eff} GB/s | 
 | :----: | :----: | 
 | 8e4 | 34 | 
 | 3e5 | 47 | 
