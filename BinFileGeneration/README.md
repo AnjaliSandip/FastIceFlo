@@ -1,6 +1,6 @@
 
 
-Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
+Average element size or spatial resolution (in meters) corresponding to DoFs for the glacier model configurations listed below.
 
 Jakobshavn Isbrae:
 | DoFs |  resol (m) | 
@@ -13,7 +13,7 @@ Jakobshavn Isbrae:
 
 
 Pine Island Glacier:
-| DoFs |  hinit (m)| 
+| DoFs |  resol (m)| 
 | :----: | :----: | 
 | 3e4 | 2500 | 
 | 7e4 | 1750 | 
