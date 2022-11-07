@@ -1,8 +1,8 @@
 
 
+Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
 
-
-Jakobshavn Isbrae
+Jakobshavn Isbrae:
 | DoFs |  Damping | Velocity relaxation| Non-linear viscosity relaxation scalar |
 | :----: | :----: | :----: | :----: |
 | 8e4 | 0.98 | 0.99 | 3e-2 |
@@ -12,7 +12,7 @@ Jakobshavn Isbrae
 | 2e7 | 0.992 | 0.999 | 1e-1 |
 
 
-Pine Island Glacier
+Pine Island Glacier:
 | DoFs |  Damping | Velocity relaxation| Non-linear viscosity relaxation scalar |
 | :----: | :----: | :----: | :----: |
 | 3e4 | 0.981 | 0.967 | 7e-2 |
