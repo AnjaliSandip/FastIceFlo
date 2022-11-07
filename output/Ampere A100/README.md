@@ -1,6 +1,6 @@
 
 
-
+In order to assess the performance of the memory-bound PT algorithm, we employ the effective memory throughput metric  ${\bf T}_{eff}$ 
 
 
 Jakobshavn Isbrae:
