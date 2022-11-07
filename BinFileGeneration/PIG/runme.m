@@ -9,12 +9,8 @@ if any(steps==1) %Mesh Generation #1
 
 	%Mesh parameters
 	domain =['./DomainOutline.exp'];
-	hinit=8000;   % element size for the initial mesh
-
-	% Generate an initial uniform mesh (resolution = hinit m)
-	%md=bamg(model,'domain',domain,'hmax',hinit);
-    	
-    md=triangle(model,'DomainOutline.exp',hinit);
+	resol=8000;   % average element size 
+	md=triangle(model,'DomainOutline.exp',resol);
 
 
 	%save model
