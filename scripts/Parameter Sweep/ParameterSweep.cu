@@ -23,7 +23,7 @@ using namespace std;
 
 /*CUDA Code*/
 __global__ void PT1(int* reorderd, ftype* vx, ftype* vy, ftype* alpha, ftype* beta, int* index,  ftype* kvx, ftype* kvy, ftype* etan,  ftype* Helem, ftype* areas, bool* isice, ftype* Eta_nbe, ftype* rheology_B, ftype n_glen, ftype eta_0, ftype rele,int nbe){ 
-    // int ix = blockIdx.x * blockDim.x + threadIdx.x;
+ 
     for(int ixt = blockIdx.x * blockDim.x + threadIdx.x; ixt<nbe; ixt += blockDim.x * gridDim.x){ 
         int ix = reorderd[ixt];
 
@@ -39,8 +39,6 @@ __global__ void PT1(int* reorderd, ftype* vx, ftype* vy, ftype* alpha, ftype* be
             Localbeta[i] =   beta[ix*3+i];
             Localvx[i] =  vx[index[ix*3+i]-1];
             Localvy[i] =  vy[index[ix*3+i]-1];
-        //  Localvx[i] = 1.1;
-        //  Localvy[i] = 2;
             }
         
             ftype dvxdx =  Localvx[0]*Localalpha[0] + Localvx[1]*Localalpha[1] + Localvx[2]*Localalpha[2];
@@ -54,18 +52,17 @@ __global__ void PT1(int* reorderd, ftype* vx, ftype* vy, ftype* alpha, ftype* be
             ftype  EII2   = eps_xx*eps_xx + eps_yy*eps_yy + eps_xy*eps_xy + eps_xx*eps_yy;
             ftype  eta_it = 5e+13;
 
-        // if (EII2>0.) eta_it = rheology_B[ix]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
         if (EII2>0.) eta_it = rheology_B[ix]/(2*__powf(EII2,(n_glen-1.)/(2*n_glen)));
 
         
-                etan[ix] = min(__expf(rele*__logf(eta_it) + (1.0-rele)*__logf(etan[ix])),eta_0*1e5);
-            //     etan[ix] = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);
+             etan[ix] = min(__expf(rele*__logf(eta_it) + (1.0-rele)*__logf(etan[ix])),eta_0*1e5);
+          
                 //Viscous Deformation//
                 ftype tmp_2hele_etan_areas = 2 * Helem[ix] * etan[ix] *areas[ix];
                 for (int i = 0; i < 3; i++){
                         kvx[ix*3+i] = tmp_2hele_etan_areas * ((2 * eps_xx + eps_yy) * Localalpha[i]   +  eps_xy *  Localbeta[i] );
                         kvy[ix*3+i] = tmp_2hele_etan_areas * ((2 * eps_yy + eps_xx) * Localbeta[i]    +  eps_xy * Localalpha[i] );            
-            }//isice loop 
+            }
         }
 
    
@@ -74,13 +71,12 @@ __global__ void PT1(int* reorderd, ftype* vx, ftype* vy, ftype* alpha, ftype* be
 
 }
 
-//Moving to the next kernel, as kvx cannot be defined and updated in the same kernel
+
 __global__ void PT2_x(ftype* kvx, ftype* groundedratio, ftype* areas, int* index, ftype* alpha2, ftype* vx, ftype* gr_a_alpha2, bool* isice,  int nbe){
 
     for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x){
         /*Add basal friction*/
         if (groundedratio[ix] > 0.){
-             //   if(groundedratio[ix] > 0. && isice[ix]){
             int n3 = ix * 3;
 
        ftype myLocalIndex[3][3];
@@ -253,7 +249,7 @@ int main(){
     const char* outfile = "./output.txt";
 
       /*Open input binary file*/
-    const char* inputfile  = "./PIG3e7.bin";
+    const char* inputfile  = "./PIG2e6.bin";
     const char* outputfile = "./output.outbin";
     FILE* fid = fopen(inputfile,"rb");
     if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
@@ -302,22 +298,18 @@ int main(){
 
     /*Constants*/
     ftype n_glen     = 3.;
-    ftype damp       = dmp; //change to 0.992 for JKS1e6 and 0.998 for PIG2e6
+    ftype damp       = dmp; 
     ftype rele       = 0.01;   
     ftype eta_b      = 0.5;
     ftype eta_0      = 1.e+14/2.;
-    int    niter     = 100000; //5e6
+    int    niter     = 5e6; //5e6
     int    nout_iter  = 1000; //100
     ftype epsi       = 3.171e-7;
-    ftype relaxation = rela; //change to 0.999 for JKS1e6 and 0.991 for PIG2e6
-    //ftype constant = 4*(1.+eta_b)*4.1;
+    ftype relaxation = rela; 
         
     // Ceiling division to get the close to optimal GRID size
     unsigned int GRID_Xe = 1 + ((nbe - 1) / BLOCK_Xe);
     unsigned int GRID_Xv = 1 + ((nbv - 1) / BLOCK_Xv);
-
-   // GRID_Xe = GRID_Xe - GRID_Xe%80;
-   // GRID_Xv = GRID_Xv - GRID_Xv%80;
 
     std::cout<<"GRID_Xe="<<GRID_Xe<<std::endl;
     std::cout<<"GRID_Xv="<<GRID_Xv<<std::endl;
@@ -464,7 +456,6 @@ int main(){
 
 
     /*RHS (Water pressure at the ice front)*/
-    //  ftype level[3];
     for(int n=0;n<nbe;n++){
         /*Determine if there is an ice front there*/
         level[0] = ice_levelset[index[n*3+0]-1];
@@ -612,12 +603,6 @@ int main(){
         }
     }
   
- //   int counter = 0;
-  //   for(int i=0;i<nbv;i++){
-  //       for(int j=0;j<8;j++){
-    //        if (connectivity[(i * 8  + 2)]!=0) {counter+=1;}
-   //  }
-  //   printf("Number of nodes that area connected to six elements %d.\n", counter);
 
     ftype* device_maxvalx = new ftype[GRID_Xv];
     ftype* device_maxvaly = new ftype[GRID_Xv];
@@ -807,9 +792,9 @@ int main(){
     ftype mem = (ftype)1e-9*(ftype)nbv*sizeof(ftype);
     int nIO = 8;
 
-cudaEvent_t start, stop;
-cudaEventCreate(&start);
-cudaEventCreate(&stop);
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
 
     /*Main loop*/
