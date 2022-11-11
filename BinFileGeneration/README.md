@@ -1,6 +1,9 @@
 
 
-Average element size or spatial resolution "resol" corresponding to DoFs for the glacier model configurations listed below.
+To generate the the glacier model configurations and the corresponding DoFs implemented to assess PT method's performance,
+
+Step 1: Install ISSM <br>
+Step 2: Modify the average element size or spatial resolution "resol" corresponding to DoFs for the glacier model configurations <br>
 
 Jakobshavn Isbrae:
 | DoFs |  resol (m) | 
@@ -20,3 +23,4 @@ Pine Island Glacier:
 | 1e5 | 1250 |
 | 2e6 | 300 | 
 
+Step 3: Run runme script (located in PIG and JKS folders)
