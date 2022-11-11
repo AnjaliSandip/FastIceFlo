@@ -39,8 +39,6 @@ __global__ void PT1(int* reorderd, ftype* vx, ftype* vy, ftype* alpha, ftype* be
             Localbeta[i] =   beta[ix*3+i];
             Localvx[i] =  vx[index[ix*3+i]-1];
             Localvy[i] =  vy[index[ix*3+i]-1];
-        //  Localvx[i] = 1.1;
-        //  Localvy[i] = 2;
             }
         
             ftype dvxdx =  Localvx[0]*Localalpha[0] + Localvx[1]*Localalpha[1] + Localvx[2]*Localalpha[2];
@@ -54,12 +52,11 @@ __global__ void PT1(int* reorderd, ftype* vx, ftype* vy, ftype* alpha, ftype* be
             ftype  EII2   = eps_xx*eps_xx + eps_yy*eps_yy + eps_xy*eps_xy + eps_xx*eps_yy;
             ftype  eta_it = 5e+13;
 
-        // if (EII2>0.) eta_it = rheology_B[ix]/(2*pow(EII2,(n_glen-1.)/(2*n_glen)));
-        if (EII2>0.) eta_it = rheology_B[ix]/(2*__powf(EII2,(n_glen-1.)/(2*n_glen)));
+         if (EII2>0.) eta_it = rheology_B[ix]/(2*__powf(EII2,(n_glen-1.)/(2*n_glen)));
 
         
                 etan[ix] = min(__expf(rele*__logf(eta_it) + (1.0-rele)*__logf(etan[ix])),eta_0*1e5);
-            //     etan[ix] = min(exp(rele*log(eta_it) + (1-rele)*log(etan[ix])),eta_0*1e5);
+
                 //Viscous Deformation//
                 ftype tmp_2hele_etan_areas = 2 * Helem[ix] * etan[ix] *areas[ix];
                 for (int i = 0; i < 3; i++){
@@ -74,7 +71,7 @@ __global__ void PT1(int* reorderd, ftype* vx, ftype* vy, ftype* alpha, ftype* be
 
 }
 
-//Moving to the next kernel, as kvx cannot be defined and updated in the same kernel
+
 __global__ void PT2_x(ftype* kvx, ftype* groundedratio, ftype* areas, int* index, ftype* alpha2, ftype* vx, ftype* gr_a_alpha2, bool* isice,  int nbe){
 
     for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x){
@@ -248,7 +245,7 @@ __global__ void PT3(ftype* kvx, ftype* kvy, ftype* Eta_nbe,  ftype* eta_nbv,  in
 int main(){
 
       /*Open input binary file*/
-    const char* inputfile  = "./JKS2e7.bin";
+    const char* inputfile  = "./JKS8e4.bin";
     const char* outputfile = "./output.outbin";
     FILE* fid = fopen(inputfile,"rb");
     if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
@@ -297,8 +294,8 @@ int main(){
 
     /*Constants*/
     ftype n_glen     = 3.;
-    ftype damp       = 0.992; //change to 0.992 for JKS1e6 and 0.998 for PIG2e6
-    ftype rele       = 0.01;   
+    ftype damp       = 0.98; //change to 0.992 for JKS1e6 and 0.998 for PIG2e6
+    ftype rele       = 0.03;   
     ftype eta_b      = 0.5;
     ftype eta_0      = 1.e+14/2.;
     int    niter     = 5e6; //5e6
@@ -310,9 +307,6 @@ int main(){
     // Ceiling division to get the close to optimal GRID size
     unsigned int GRID_Xe = 1 + ((nbe - 1) / BLOCK_Xe);
     unsigned int GRID_Xv = 1 + ((nbv - 1) / BLOCK_Xv);
-
-   // GRID_Xe = GRID_Xe - GRID_Xe%80;
-   // GRID_Xv = GRID_Xv - GRID_Xv%80;
 
     std::cout<<"GRID_Xe="<<GRID_Xe<<std::endl;
     std::cout<<"GRID_Xv="<<GRID_Xv<<std::endl;
@@ -403,7 +397,6 @@ int main(){
         /*Lumped mass matrix*/
         for(int i=0;i<3;i++){
             for(int j=0;j<3;j++){
-                // \int_E phi_i * phi_i dE = A/6 and % \int_E phi_i * phi_j dE = A/12
                 if (i==j)
                  ML[index[n*3+j]-1] += areas[n]/6.;
                 else
@@ -607,12 +600,6 @@ int main(){
         }
     }
   
- //   int counter = 0;
-  //   for(int i=0;i<nbv;i++){
-  //       for(int j=0;j<8;j++){
-    //        if (connectivity[(i * 8  + 2)]!=0) {counter+=1;}
-   //  }
-  //   printf("Number of nodes that area connected to six elements %d.\n", counter);
 
     ftype* device_maxvalx = new ftype[GRID_Xv];
     ftype* device_maxvaly = new ftype[GRID_Xv];
@@ -762,16 +749,12 @@ int main(){
 
 
     /*------------ allocate relevant vectors on host (GPU)---------------*/
-    //ftype *dvxdx = NULL;
     cudaMalloc(&dvxdx,nbe*sizeof(ftype));
 
-    //ftype *dvxdy = NULL;
     cudaMalloc(&dvxdy, nbe*sizeof(ftype));
 
-    //ftype *dvydx = NULL;
     cudaMalloc(&dvydx, nbe*sizeof(ftype));
 
-    //ftype *dvydy = NULL;
     cudaMalloc(&dvydy, nbe*sizeof(ftype));
 
     ftype *KVx = NULL;
@@ -802,9 +785,9 @@ int main(){
     ftype mem = (ftype)1e-9*(ftype)nbv*sizeof(ftype);
     int nIO = 8;
 
-cudaEvent_t start, stop;
-cudaEventCreate(&start);
-cudaEventCreate(&stop);
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
 
     /*Main loop*/
@@ -834,7 +817,6 @@ cudaEventCreate(&stop);
             if (isnan(device_MAXx) || isnan(device_MAXy)) {break;}
             else {
             iterror = max(device_MAXx, device_MAXy);
-        //    if(!(iterror>0 || iterror==0 || iterror<0)){printf("\n !! ERROR: err_MAX=Nan \n\n");break;} 
             std::cout<<"iter="<<iter<<", err="<<iterror<<std::endl;
             if ((iterror < epsi) && (iter > 100)) break;
        } 
@@ -848,8 +830,6 @@ cudaEventCreate(&stop);
     seconds = seconds/1000.0;
 
     time_s = seconds; ftype gbs = mem/time_s;
-
-   // std::cout<<"\n Perf: "<<time_s/(iter-10)<<" sec. (@ "<<gbs*(iter-10)*nIO<<" GB/s)"<<std::endl;
     std::cout<<"\n Perf: "<<time_s<<" sec. (@ "<<gbs*(iter-10)*nIO<<" GB/s)"<<std::endl;
 
     /*Copy results from Device to host*/
@@ -862,7 +842,6 @@ cudaEventCreate(&stop);
     WriteData(fid, "PTsolution", "SolutionType");
     WriteData(fid, vx, nbv, 1, "Vx");
     WriteData(fid, vy, nbv, 1, "Vy");
-  //  WriteData(fid, sqrt(vx*vx+vy*vy)*yts, nbv, 1, "Vel");
     if (fclose(fid)!=0) std::cerr<<"could not close file " << outputfile;
 
     /*Cleanup and return*/
