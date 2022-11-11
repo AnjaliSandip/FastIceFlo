@@ -1,21 +1,22 @@
 
+
 steps = [1:5];
 
 if any(steps==1) %Mesh Generation #1
 
 	%Mesh parameters
 	domain =['./DomainOutline.exp'];
-	resol=8000;   % average element size 
+	resol=2500;   % average element size 
 	md=triangle(model,'DomainOutline.exp',resol);
 
 
 	%save model
-	save ./Models/PIG_Mesh_generation md;
+	save ./PIG_Mesh_generation md;
 end
 
 if any(steps==2)  %Masks #2
 
-	md = loadmodel('./Models/PIG_Mesh_generation');	
+	md = loadmodel('./PIG_Mesh_generation');	
 
 	disp('   -- Interpolating from BedMachine');
 	md.mask.ice_levelset				= -1*ones(md.mesh.numberofvertices,1); % set 'presence of ice' everywhere
@@ -26,21 +27,21 @@ if any(steps==2)  %Masks #2
 	pos = find(mask==0 | mask==3); 
 	md.mask.ocean_levelset(pos)=-1; % set 'floating ice' on the ocean part and on the ice shelves
 
-	save ./Models/PIG_SetMask md;
+	save ./PIG_SetMask md;
 end
 
 if any(steps==3)  %Parameterization #3
 
-	md = loadmodel('./Models/PIG_SetMask');
+	md = loadmodel('./PIG_SetMask');
 	md = setflowequation(md,'SSA','all');
 	md = parameterize(md,'./Pig.par');
 	   
-	save ./Models/PIG_Parameterization md;
+	save ./PIG_Parameterization md;
 end
 
 if any(steps==4)  %Rheology B inversion
 
-	md = loadmodel('./Models/PIG_Parameterization');
+	md = loadmodel('./PIG_Parameterization');
 
 	% Control general
 	md.inversion.iscontrol=1;
@@ -83,12 +84,12 @@ if any(steps==4)  %Rheology B inversion
 	md.materials.rheology_B(mds.mesh.extractedvertices)=mds.results.StressbalanceSolution.MaterialsRheologyBbar;
    
 	% Save model
-	save ./Models/PIG_Control_B md;
+	save ./PIG_Control_B md;
 end
 
 if any(steps==5)  %drag inversion
 
-	md = loadmodel('./Models/PIG_Control_B');
+	md = loadmodel('./PIG_Control_B');
 
 	% Cost functions
 	md.inversion.cost_functions=[101 103 501];
@@ -108,9 +109,8 @@ if any(steps==5)  %drag inversion
 	% Update model friction fields accordingly
 	md.friction.coefficient=md.results.StressbalanceSolution.FrictionCoefficient;
 
-	save ./Models/PIG3e4 md;
+	save ./PIG3e4 md;
 end
-
 
 
 
