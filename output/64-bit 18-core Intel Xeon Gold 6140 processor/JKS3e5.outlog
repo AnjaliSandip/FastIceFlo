@@ -83,7 +83,7 @@ call computational core:
    number of unstable constraints: 0
 
    total number of iterations: 13
-write lock file:
+   write lock file:
 
    FemModel initialization elapsed time:   0.897311
    Total Core solution elapsed time:       4.9599 
