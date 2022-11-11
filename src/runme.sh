@@ -2,13 +2,13 @@
   
 # -> to make it executable: chmod +x runme.sh or chmod 755 runme.sh
 
-#Optimal PT solver parameter values for the glacier model configuration and the corresponding DoF
-damp=0.99;  
-relaxation=0.03;
-stability=0.9;
+#Optimal PT solver parameter values for the glacier model configuration and the corresponding DoFs. in this case for JKS8e4
+damp=0.98;
+visc_rela=0.03;
+vel_rela=0.99;
 
-# compile the code
-nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu   -Ddmp=$damp -Dstab=$stability -Drela=$relaxation 
+# compile the code on a Tesla V100 
+nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela
 
 # run the code
 ./a.out
