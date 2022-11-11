@@ -294,14 +294,14 @@ int main(){
 
     /*Constants*/
     ftype n_glen     = 3.;
-    ftype damp       = 0.98; //change to 0.992 for JKS1e6 and 0.998 for PIG2e6
-    ftype rele       = 0.03;   
+    ftype damp       = dmp; //change to 0.992 for JKS1e6 and 0.998 for PIG2e6
+    ftype rele       = rela;   
     ftype eta_b      = 0.5;
     ftype eta_0      = 1.e+14/2.;
     int    niter     = 5e6; //5e6
     int    nout_iter  = 100; //100
     ftype epsi       = 3.171e-7;
-    ftype relaxation = 0.99; //change to 0.999 for JKS1e6 and 0.991 for PIG2e6
+    ftype relaxation = stability; //change to 0.999 for JKS1e6 and 0.991 for PIG2e6
     //ftype constant = 4*(1.+eta_b)*4.1;
         
     // Ceiling division to get the close to optimal GRID size
