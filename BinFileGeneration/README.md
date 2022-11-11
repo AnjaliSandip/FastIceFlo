@@ -24,3 +24,5 @@ Pine Island Glacier:
 | 2e6 | 300 | 
 
 Step 3: Run runme script (located in PIG and JKS folders)
+Step 4: Generate the bin file, in the MATLAB command window type
+md=solve(md,'Stressbalance')
