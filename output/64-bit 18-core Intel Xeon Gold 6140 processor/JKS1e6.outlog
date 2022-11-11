@@ -86,7 +86,7 @@ solver residue too high!: norm(KU-F)/norm(F)=0.000119725 > 0.0001 (md.settings.s
    number of unstable constraints: 0
 
    total number of iterations: 13
-write lock file:
+   write lock file:
 
    FemModel initialization elapsed time:   4.11058
    Total Core solution elapsed time:       82.6289
