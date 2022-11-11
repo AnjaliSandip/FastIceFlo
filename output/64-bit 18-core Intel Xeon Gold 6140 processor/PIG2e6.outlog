@@ -5,7 +5,7 @@ Ice Sheet System Model (ISSM) version  4.19
 call computational core:
 
    solver residue: norm(KU-F)/norm(F)=0.000341917
-solver residue too high!: norm(KU-F)/norm(F)=0.000341917 > 0.0001 (md.settings.solver_residue_threshold)WARNING: Solver failed, Trying Recovery Mode
+   solver residue too high!: norm(KU-F)/norm(F)=0.000341917 > 0.0001 (md.settings.solver_residue_threshold)WARNING: Solver failed, Trying Recovery Mode
 
    solver residue: norm(KU-F)/norm(F)=2.21745e-14
    mechanical equilibrium convergence criterion   7.9161 < 100000 %
@@ -68,7 +68,7 @@ solver residue too high!: norm(KU-F)/norm(F)=0.000341917 > 0.0001 (md.settings.s
    number of unstable constraints: 0
 
    total number of iterations: 10
-write lock file:
+   write lock file:
 
    FemModel initialization elapsed time:   7.18337
    Total Core solution elapsed time:       113.33 
