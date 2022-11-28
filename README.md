@@ -29,7 +29,7 @@ CUDA > compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia GPU usi
 
 # Glacier Model Configurations
 
-(https://github.com/AnjaliSandip/GPU_Computing/files/10108431/fig_gmd.pdf)
+![Screenshot from 2022-11-28 17-56-03](https://user-images.githubusercontent.com/60862184/204405397-9e0cff47-4c23-43d1-b645-e1ad6c16c1e2.png)
 
 To generate the the glacier model configurations and the corresponding DoFs implemented to assess PT method's performance,
 
@@ -37,7 +37,7 @@ Step 1: Install ISSM <br>
 Step 2: Modify the average element size or spatial resolution "resol" corresponding to DoFs for the glacier model configurations <br>
 
 Jakobshavn Isbrae:
-| DoFs |  resol (m) | 
+| DoFs |  resol (m) |         
 | :----: | :----: | 
 | 8e4 | 600 | 
 | 3e5 | 310 | 
@@ -54,6 +54,6 @@ Pine Island Glacier:
 | 1e5 | 1250 |
 | 2e6 | 300 | 
 
-Step 3: Run runme script (located in PIG and JKS folders)
+Step 3: Run runme script (located in PIG and JKS folders) <br>
 Step 4: Generate the bin file, in the MATLAB command window type
 md=solve(md,'Stressbalance')
