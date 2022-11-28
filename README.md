@@ -15,13 +15,45 @@ Current version can be found:  here??
 - Aim of the project
 - Citation information
 - Conservation of Momentum Balance equations (+ PT Solver + FEM method)
-- Glacier Model Domains
-- Folder with input files 
+- Glacier Model Domains/figures
 - Generate bin files/steps
 - src
-- Quickstart:
-CUDA > compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia GPU using the compilation line displayed on the top line of the `.cu` file. Run it (`./a.out`) and use the MATLAB visualisation script to plot the output.
+ Quickstart:
+CUDA > compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia GPU using the compilation line displayed on the top line of the `.cu` file. Run it (`./a.out`) and use the MATLAB visualisation script to plot
+ the output.
 - output
 - visu
-- scripts
+- Additional scripts?
+- other related documents
 - contact: anjali.sandip@und.edu
+
+#Glacier Model Configurations#
+
+[fig_gmd.pdf](https://github.com/AnjaliSandip/GPU_Computing/files/10108431/fig_gmd.pdf)
+
+To generate the the glacier model configurations and the corresponding DoFs implemented to assess PT method's performance,
+
+Step 1: Install ISSM <br>
+Step 2: Modify the average element size or spatial resolution "resol" corresponding to DoFs for the glacier model configurations <br>
+
+Jakobshavn Isbrae:
+| DoFs |  resol (m) | 
+| :----: | :----: | 
+| 8e4 | 600 | 
+| 3e5 | 310 | 
+| 7e5 | 200 | 
+| 1e6 | 170 | 
+| 2e7 | ?? | 
+
+
+Pine Island Glacier:
+| DoFs |  resol (m)| 
+| :----: | :----: | 
+| 3e4 | 2500 | 
+| 7e4 | 1750 | 
+| 1e5 | 1250 |
+| 2e6 | 300 | 
+
+Step 3: Run runme script (located in PIG and JKS folders)
+Step 4: Generate the bin file, in the MATLAB command window type
+md=solve(md,'Stressbalance')
