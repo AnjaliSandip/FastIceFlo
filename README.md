@@ -28,8 +28,10 @@ CUDA > compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia GPU usi
 - contact: anjali.sandip@und.edu
 
 # Glacier Model Configurations
+![fig_gmd_PIG](https://user-images.githubusercontent.com/60862184/204405662-61d2d760-e792-4e74-acdb-df0f8afc91b3.png)
 
-![Screenshot from 2022-11-28 17-56-03](https://user-images.githubusercontent.com/60862184/204405397-9e0cff47-4c23-43d1-b645-e1ad6c16c1e2.png)
+![fig_gmd_JKS](https://user-images.githubusercontent.com/60862184/204405632-75b24a4a-d7a7-4000-8851-7f260bfd4c7e.png)
+
 
 To generate the the glacier model configurations and the corresponding DoFs implemented to assess PT method's performance,
 
