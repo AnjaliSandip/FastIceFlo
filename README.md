@@ -27,7 +27,7 @@ CUDA > compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia GPU usi
 - other related documents
 - contact: anjali.sandip@und.edu
 
-#Glacier Model Configurations
+# Glacier Model Configurations
 
 (https://github.com/AnjaliSandip/GPU_Computing/files/10108431/fig_gmd.pdf)
 
