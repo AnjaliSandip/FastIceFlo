@@ -32,7 +32,7 @@ CUDA > compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia GPU usi
 
 ![gmd_domain](https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png)
 
-Figure 1. Glacier model configurations; observed surface velocities interpolated on a uniform mesh. Panels $\textbf{(a)}$ and $\textbf{(b)}$  correspond to Jakobshavn $Isbr{\ae}$ and Pine Island Glacier respectively.
+Figure 1. Glacier model configurations; observed surface velocities interpolated on a uniform mesh. Panels $\textbf{(a)}$ and $\textbf{(b)}$  correspond to Jakobshavn Isbrae and Pine Island Glacier respectively.
 
 
 To generate the the glacier model configurations and the corresponding DoFs implemented to assess PT method's performance,
