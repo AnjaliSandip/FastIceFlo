@@ -50,7 +50,7 @@ Step 4: To generate the bin file, in the MATLAB command window type
 `md=solve(md,'Stressbalance')`
 
 # Running scripts
-To perform the numerical experiments described in the pre-print, 
+To perform the numerical experiments described in the pre-print,  <br>
 Step 1: clone or download this repository.  <br>
 Step 2: compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
 Step 3: Run it (`./a.out`)  <br>
