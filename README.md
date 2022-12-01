@@ -37,8 +37,8 @@ Figure 1. Glacier model configurations; observed surface velocities interpolated
 
 To generate the the glacier model configurations and the corresponding DoFs, steps listed below:
 
-Step 1: Install ISSM <br>
-Step 2: Modify the average element size or spatial resolution "resol" corresponding to DoFs for the glacier model configurations <br>
+Step 1: Install [ISSM] (https://issm.jpl.nasa.gov/download/) <br>
+Step 2: Modify the average element size or spatial resolution "resol"  <br>
 
  
 | DoFs |  Jakobshavn Isbrae resol (m) | DoFs | Pine Island Glacier resol (m)|       
@@ -49,15 +49,6 @@ Step 2: Modify the average element size or spatial resolution "resol" correspond
 | 1e6 | 170 | 2e6 |  300 |
 | 2e7 | ?? | 
 
-
-
-| DoFs |  resol (m)| 
-| :----: | :----: | 
-| 3e4 | 2500 | 
-| 7e4 | 1750 | 
-| 1e5 | 1250 |
-| 2e6 | 300 | 
-
-Step 3: Run runme script (located in PIG and JKS folders) <br>
+Step 3: Run "runme.m" script (located in PIG and JKS folders) <br>
 Step 4: Generate the bin file, in the MATLAB command window type
 md=solve(md,'Stressbalance')
