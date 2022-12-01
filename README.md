@@ -18,9 +18,7 @@ Current version can be found:  here??
 - Glacier Model Domains/figures
 - Generate bin files/steps
 - src
- Quickstart:
-CUDA > compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia GPU using the compilation line displayed on the top line of the `.cu` file. Run it (`./a.out`) and use the MATLAB visualisation script to plot
- the output.
+
 - output
 - visu
 - Additional scripts?
@@ -48,5 +46,11 @@ Step 2: Modify the average element size or spatial resolution "resol"  <br>
 | 2e7 | ?? | 
 
 Step 3: Run "runme.m" script (located in PIG and JKS folders) <br>
-Step 4: Generate the bin file, in the MATLAB command window type
+Step 4: To generate the bin file, in the MATLAB command window type
 `md=solve(md,'Stressbalance')`
+
+# Running scripts
+To perform the numerical experiments described in the pre-print, 
+Step 1: clone or download this repository.
+Step 2: compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`
+Step 3: Run it (`./a.out`) 
