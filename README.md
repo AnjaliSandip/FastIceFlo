@@ -37,7 +37,7 @@ Figure 1. Glacier model configurations; observed surface velocities interpolated
 
 To generate the the glacier model configurations and the corresponding DoFs, steps listed below:
 
-Step 1: Install [ISSM] (https://issm.jpl.nasa.gov/download/) <br>
+Step 1: Install [ISSM](https://issm.jpl.nasa.gov/download/) <br>
 Step 2: Modify the average element size or spatial resolution "resol"  <br>
 
  
