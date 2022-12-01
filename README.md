@@ -51,4 +51,4 @@ Step 2: Modify the average element size or spatial resolution "resol"  <br>
 
 Step 3: Run "runme.m" script (located in PIG and JKS folders) <br>
 Step 4: Generate the bin file, in the MATLAB command window type
-md=solve(md,'Stressbalance')
+`md=solve(md,'Stressbalance')`
