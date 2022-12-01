@@ -41,7 +41,8 @@ Step 1: Install ISSM <br>
 Step 2: Modify the average element size or spatial resolution "resol" corresponding to DoFs for the glacier model configurations <br>
 
 
-| Jakobshavn Isbrae | Pine Island Glacier|    
+| Jakobshavn Isbrae | Pine Island Glacier| 
+| DoFs |  resol (m) | DoFs |  resol (m)|       
 | DoFs |  resol (m) | DoFs |  resol (m)|       
 | :----: | :----: | :----: | :----: | 
 | 8e4 | 600 | 3e4 | 2500 | 
