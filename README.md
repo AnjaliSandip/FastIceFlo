@@ -29,13 +29,11 @@ CUDA > compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia GPU usi
 
 # Glacier Model Configurations
 
+To generate the the glacier model configurations and the corresponding DoFs, steps listed below:
 
 ![gmd_domain](https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png)
 
 Figure 1. Glacier model configurations; observed surface velocities interpolated on a uniform mesh. Panels $\textbf{(a)}$ and $\textbf{(b)}$  correspond to Jakobshavn Isbrae and Pine Island Glacier respectively.
-
-
-To generate the the glacier model configurations and the corresponding DoFs, steps listed below:
 
 Step 1: Install [ISSM](https://issm.jpl.nasa.gov/download/) <br>
 Step 2: Modify the average element size or spatial resolution "resol"  <br>
