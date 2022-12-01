@@ -35,22 +35,23 @@ CUDA > compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia GPU usi
 Figure 1. Glacier model configurations; observed surface velocities interpolated on a uniform mesh. Panels $\textbf{(a)}$ and $\textbf{(b)}$  correspond to Jakobshavn Isbrae and Pine Island Glacier respectively.
 
 
-To generate the the glacier model configurations and the corresponding DoFs implemented to assess PT method's performance,
+To generate the the glacier model configurations and the corresponding DoFs, steps listed below:
 
 Step 1: Install ISSM <br>
 Step 2: Modify the average element size or spatial resolution "resol" corresponding to DoFs for the glacier model configurations <br>
 
-Jakobshavn Isbrae:
-| DoFs |  resol (m) |         
-| :----: | :----: | 
-| 8e4 | 600 | 
-| 3e5 | 310 | 
-| 7e5 | 200 | 
-| 1e6 | 170 | 
+
+| Jakobshavn Isbrae | Pine Island Glacier|    
+| DoFs |  resol (m) | DoFs |  resol (m)|       
+| :----: | :----: | :----: | :----: | 
+| 8e4 | 600 | 3e4 | 2500 | 
+| 3e5 | 310 | 7e4 | 1750 |
+| 7e5 | 200 | 1e5 | 1250 |
+| 1e6 | 170 | 2e6 |  300 |
 | 2e7 | ?? | 
 
 
-Pine Island Glacier:
+
 | DoFs |  resol (m)| 
 | :----: | :----: | 
 | 3e4 | 2500 | 
