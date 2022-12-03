@@ -25,17 +25,14 @@ Current version can be found:  here??
 - other related documents
 - contact: anjali.sandip@und.edu
 
-# Glacier Model Configurations
-
-To generate the the glacier model configurations and the corresponding DoFs, steps listed below:
+# Configure high-spatial-resolution ice-sheet flow models 
 
 ![gmd_domain](https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png)
 
 Figure 1. Glacier model configurations; observed surface velocities interpolated on a uniform mesh. Panels $\textbf{(a)}$ and $\textbf{(b)}$  correspond to Jakobshavn Isbrae and Pine Island Glacier respectively.
 
 Step 1: Install [ISSM](https://issm.jpl.nasa.gov/download/) <br>
-Step 2: Modify the average element size or spatial resolution "resol"  <br>
-
+Step 2: Run "runme.m" script (located in PIG and JKS folders) <br>
  
 | DoFs |  Jakobshavn Isbrae resol (m) | DoFs | Pine Island Glacier resol (m)|       
 | :----: | :----: | :----: | :----: | 
@@ -43,19 +40,18 @@ Step 2: Modify the average element size or spatial resolution "resol"  <br>
 | 3e5 | 310 | 7e4 | 1750 |
 | 7e5 | 200 | 1e5 | 1250 |
 | 1e6 | 170 | 2e6 |  300 |
-| 2e7 | ?? | 
+| 2e7 | ?? |
 
-Step 3: Run "runme.m" script (located in PIG and JKS folders) <br>
-Step 4: To generate the bin file, in the MATLAB command window type
+Table 1.  Average element size or spatial resolution "resol" for the glacier model configurations chosen in the study <br>
+
+Step 3: To generate the bin file, in the MATLAB command window type
 `md=solve(md,'Stressbalance')`
 
-# Running scripts
+# Conduct high-spatial-resolution ice-sheet flow simulations on GPUs
 To perform the numerical experiments described in the pre-print,  <br>
-Step 1: clone or download this repository.  <br>
-Step 2: compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
-Step 3: Run it `./a.out`  <br>
-
-# Output
+Step 1: Clone or download this repository.  <br>
+Step 2: Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
+Step 3: Run  <br>
 
 Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
 
@@ -77,3 +73,5 @@ Pine Island Glacier:
 | 1e5 | 0.991 | 0.993 | 1e-1 |
 | 2e6 | 0.998 | 0.991 | 1e-1 |
 
+# Conduct high-spatial-resolution ice-sheet flow simulations on CPUs
+We compared the CUDA C PT implementation with the Krylov subspace method relying on biconjugate gradient with block Jacobi pre-conditioner (bcgsl/bjacobi). The chosen CPU architecture was a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node. CPU-based multi-core MPI-parallelized ice-sheet flow simulations were executed on two CPU processors, all 36 cores enabled
