@@ -48,28 +48,16 @@ Step 4. Extract and plot the results, ice velocity distribution, for a glacier m
         - Store .mat file and corresponding outbin file in a MATLAB directory <br>
         - Run the visme.m file from the same directory (as in Step 1) <br>
         - View results <br>
+        
 
-Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
-
-Jakobshavn Isbrae:
-| DoFs |  Damping | Velocity relaxation| Non-linear viscosity relaxation scalar |
-| :----: | :----: | :----: | :----: |
-| 8e4 | 0.98 | 0.99 | 3e-2 |
-| 3e5 | 0.99 | 0.9 | 3e-2 |
-| 7e5 | 0.99 | 0.99 | 1e-1 |
-| 1e6 | 0.992 | 0.999 | 1e-1 |
+| Jakobshavn Isbrae DoFs | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Pine Island Glacier DoFs | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |
+| :----: | :----: | :----: | :----: |:----: | :----: | :----: | :----: |
+| 8e4 | 0.98 | 0.99 | 3e-2 | 3e4 | 0.981 | 0.967 | 7e-2 |
+| 3e5 | 0.99 | 0.9 | 3e-2 | 7e4 | 0.99 | 0.9 | 3e-2 |
+| 7e5 | 0.99 | 0.99 | 1e-1 | 1e5 | 0.99 | 0.993 | 1e-1 |
+| 1e6 | 0.992 | 0.999 | 1e-1 | 2e6 | 0.998 | 0.991 | 1e-1 |
 | 2e7 | 0.992 | 0.999 | 1e-1 |
-
-
-Pine Island Glacier:
-| DoFs |  Damping | Velocity relaxation| Non-linear viscosity relaxation scalar |
-| :----: | :----: | :----: | :----: |
-| 3e4 | 0.981 | 0.967 | 7e-2 |
-| 7e4 | 0.99 | 0.9 | 3e-2 |
-| 1e5 | 0.991 | 0.993 | 1e-1 |
-| 2e6 | 0.998 | 0.991 | 1e-1 |
-
-
+Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
 
 In order to assess the performance of the memory-bound PT algorithm on Ampere A100 SXM4 featuring 80GB on-board memory, we employ the effective memory throughput metric  ${\bf T}_{eff}$.  The results are listed below:
 
