@@ -73,26 +73,13 @@ Pine Island Glacier:
 
 In order to assess the performance of the memory-bound PT algorithm on Ampere A100 SXM4 featuring 80GB on-board memory, we employ the effective memory throughput metric  ${\bf T}_{eff}$.  The results are listed below:
 
-
-Jakobshavn Isbrae:
-| DoFs |   ${\bf T}_{eff}$  (GB/s) | 
-| :----: | :----: | 
-| 8e4 | 34 | 
-| 3e5 | 47 | 
-| 7e5 | 58 | 
-| 1e6 | 56 | 
-| 2e7 | 38 | 
-
-
-Pine Island Glacier:
-| DoFs |   ${\bf T}_{eff}$  (GB/s) | 
-| :----: | :----: | 
-| 3e4| 17 | 
-| 7e4 | 30 | 
-| 1e5 | 36 | 
-| 2e6 | 58 | 
-| 3e7 | 36 | 
-
+| DoFs |  Jakobshavn Isbrae (GB/s)  | DoFs | Pine Island Glacier (GB/s)|       
+| :----: | :----: | :----: | :----: | 
+| 8e4 | 34 | 3e4 | 17 | 
+| 3e5 | 47 | 7e4 | 30 |
+| 7e5 | 58 | 1e5 | 36 |
+| 1e6 | 56 | 2e6 | 58 |
+| 2e7 | 38 | 3e7 | 36 |
 
 # Conduct high-spatial-resolution ice-sheet flow simulations on CPUs
 We compared the CUDA C PT implementation with the Krylov subspace method relying on biconjugate gradient with block Jacobi pre-conditioner (bcgsl/bjacobi). The chosen CPU architecture was a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node. CPU-based multi-core MPI-parallelized ice-sheet flow simulations were executed on two CPU processors, all 36 cores enabled.
