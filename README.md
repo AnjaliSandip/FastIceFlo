@@ -17,7 +17,7 @@ Current version can be found:  here??
 - Conservation of Momentum Balance equations (+ PT Solver + FEM method
 - contact: anjali.sandip@und.edu
 
-# Configure high-spatial-resolution ice-sheet flow models 
+# Ice-sheet flow models configurations 
 
 ![gmd_domain](https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png)
 
@@ -39,7 +39,7 @@ Table 1.  Average element size or spatial resolution "resol" for the glacier mod
 Step 3. Save the .mat file and corresponding .bin file
 `md=solve(md,'Stressbalance')`
 
-# Conduct high-spatial-resolution ice-sheet flow simulations on GPUs
+# High-spatial-resolution ice-sheet flow simulations on GPUs
 To perform the numerical experiments described in the pre-print,  <br>
 Step 1. Clone or download this repository.  <br>
 Step 2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
@@ -61,7 +61,6 @@ Step 4. Extract and plot the results, ice velocity distribution, for a glacier m
 Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
 
 
-# Conduct high-spatial-resolution ice-sheet flow simulations on CPUs
 We compared the CUDA C PT implementation with the Krylov subspace method relying on biconjugate gradient with block Jacobi pre-conditioner (bcgsl/bjacobi). The chosen CPU architecture was a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node. CPU-based multi-core MPI-parallelized ice-sheet flow simulations were executed on two CPU processors, all 36 cores enabled.
 
 In order to assess the performance of the memory-bound PT algorithm on Ampere A100 SXM4 featuring 80GB on-board memory, we employ the effective memory throughput metric  ${\bf T}_{eff}$.  The results are listed below:
