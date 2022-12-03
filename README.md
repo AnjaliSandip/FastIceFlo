@@ -14,15 +14,7 @@ Current version can be found:  here??
 
 - Aim of the project
 - Citation information
-- Conservation of Momentum Balance equations (+ PT Solver + FEM method)
-- Glacier Model Domains/figures
-- Generate bin files/steps
-- src
-
-- output
-- visu
-- Additional scripts?
-- other related documents
+- Conservation of Momentum Balance equations (+ PT Solver + FEM method
 - contact: anjali.sandip@und.edu
 
 # Configure high-spatial-resolution ice-sheet flow models 
@@ -44,7 +36,7 @@ Step 2: Run "runme.m" script (located in PIG and JKS folders) <br>
 
 Table 1.  Average element size or spatial resolution "resol" for the glacier model configurations chosen in the study <br>
 
-Step 3: To generate the bin file, in the MATLAB command window type
+Step 3: Save the .mat file and corresponding .bin file
 `md=solve(md,'Stressbalance')`
 
 # Conduct high-spatial-resolution ice-sheet flow simulations on GPUs
@@ -52,12 +44,10 @@ To perform the numerical experiments described in the pre-print,  <br>
 Step 1: Clone or download this repository.  <br>
 Step 2: Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
 Step 3: Run  <br>
-Step 4: Extract and plot the results, ice velocity distribution, for a glacier model configuration at a spatial resolution (or grid size):
-        Step 4.1.  Store .mat file and corresponding outbin file in a MATLAB directory <br>
-        Step 4.2.  Run the visme.m file from the same directory (as in Step 1) <br>
-        Step 4.3.  View results <br>
-
-Example files made available (example.outbin and example.mat) for testing.
+Step 4: Extract and plot the results, ice velocity distribution, for a glacier model configuration at a spatial resolution (or grid size): <br>
+        - Store .mat file and corresponding outbin file in a MATLAB directory <br>
+        - Run the visme.m file from the same directory (as in Step 1) <br>
+        - View results <br>
 
 Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
 
