@@ -45,9 +45,9 @@ Step 1. Clone or download this repository.  <br>
 Step 2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
 Step 3. Run  <br>
 Step 4. Extract and plot the results, ice velocity distribution, for a glacier model configuration at a spatial resolution (or grid size): <br>
-        - Store .mat file and corresponding outbin file in a MATLAB directory <br>
-        - Run the visme.m file from the same directory (as in Step 1) <br>
-        - View results <br>
+        -  Store .mat file and corresponding outbin file in a MATLAB directory <br>
+        -  Run the visme.m file from the same directory (as in Step 1) <br>
+        -  View results <br>
         
 
 | Jakobshavn Isbrae DoFs | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Pine Island Glacier DoFs | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |
