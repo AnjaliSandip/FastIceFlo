@@ -23,8 +23,8 @@ Current version can be found:  here??
 
 Figure 1. Glacier model configurations; observed surface velocities interpolated on a uniform mesh. Panels $\textbf{(a)}$ and $\textbf{(b)}$  correspond to Jakobshavn Isbrae and Pine Island Glacier respectively.
 
-Step 1: Install [ISSM](https://issm.jpl.nasa.gov/download/) <br>
-Step 2: Run "runme.m" script (located in PIG and JKS folders) <br>
+Step 1. Install [ISSM](https://issm.jpl.nasa.gov/download/) <br>
+Step 2. Run "runme.m" script (located in PIG and JKS folders) <br>
  
 | DoFs |  Jakobshavn Isbrae resol (m) | DoFs | Pine Island Glacier resol (m)|       
 | :----: | :----: | :----: | :----: | 
@@ -36,7 +36,7 @@ Step 2: Run "runme.m" script (located in PIG and JKS folders) <br>
 
 Table 1.  Average element size or spatial resolution "resol" for the glacier model configurations chosen in the study <br>
 
-Step 3: Save the .mat file and corresponding .bin file
+Step 3. Save the .mat file and corresponding .bin file
 `md=solve(md,'Stressbalance')`
 
 # Conduct high-spatial-resolution ice-sheet flow simulations on GPUs
