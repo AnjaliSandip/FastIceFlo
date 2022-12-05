@@ -20,7 +20,7 @@ Current version can be found:  here??
 
 # Ice-sheet flow/2-D Shallow shelf approximation (SSA)
 We employ SSA \citep{macayeal1989large}) to solve the momentum balance to predict ice-sheet flow. The SSA equations in the matrix form read : <br>
-$\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right)$
+$$\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) $$
     =
     \rho g H\nabla s  + \alpha^2 {\bf v}
 \end{equation}
