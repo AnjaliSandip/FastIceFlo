@@ -19,8 +19,8 @@ Current version can be found:  here??
 -
 
 # Ice-sheet flow/2-D Shallow shelf approximation
-We employ SSA \citep{macayeal1989large}) to solve the momentum balance to predict ice-sheet flow. The SSA equations in the matrix form read :
-\begin{equation}\label{eq:ssa}
+We employ SSA \citep{macayeal1989large}) to solve the momentum balance to predict ice-sheet flow. The SSA equations in the matrix form read : <br>
+$\begin{equation}\label{eq:ssa}
 \nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right)
     =
     \rho g H\nabla s  + \alpha^2 {\bf v}
@@ -39,7 +39,7 @@ where
     2 \dot{\varepsilon}_{yy} + \dot{\varepsilon}_{xx} 
     \end{array}
     \right)
-\end{equation}
+\end{equation}$
 where $v_x$ and $v_y$ are the $x$ and $y$ ice velocity components, $H$ is the ice thickness distribution, $\mu$ the dynamic ice viscosity, $\rho$ the ice density, $s$ glacier's upper surface z-coordinate, $g$ the gravitational acceleration and $\alpha^2 {\bf v}$ is the basal friction.
 
 # Pseudo-transient method
