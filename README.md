@@ -66,6 +66,7 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
         plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br>
         - View results <br>
         Does this have to be done in the ISSM environment?
+        - George Washington
         
 
 | Jakobshavn Isbrae DoFs | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Pine Island Glacier DoFs | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |
