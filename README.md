@@ -32,14 +32,14 @@ allows us to turn the steady-state equations into transient diffusion of velocit
 
 # Weak form
 
-# GLacier model configurations 
+# Glacier model configurations 
 
 ![gmd_domain](https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png)
 
 Figure 1. Glacier model configurations; observed surface velocities interpolated on a uniform mesh. Panels $\textbf{(a)}$ and $\textbf{(b)}$  correspond to Jakobshavn Isbrae and Pine Island Glacier respectively.
 
 Step 1. Install [ISSM](https://issm.jpl.nasa.gov/download/) <br>
-Step 2. Run "runme.m" script (located in PIG and JKS folders) <br>
+Step 2. Run "runme.m" script (located in BinFileGeneration/PIG or JKS folders) <br>
  
 | DoFs |  Jakobshavn Isbrae resol (m) | DoFs | Pine Island Glacier resol (m)|       
 | :----: | :----: | :----: | :----: | 
@@ -54,7 +54,7 @@ Table 1.  Average element size or spatial resolution "resol" for the glacier mod
 Step 3. Save the .mat file and corresponding .bin file
 `md=solve(md,'Stressbalance')`
 
-# High-spatial-resolution ice-sheet flow simulations on GPUs
+# Hardware implementation
 To perform the numerical experiments described in the pre-print,  <br>
 Step 1. Clone or download this repository.  <br>
 Step 2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
