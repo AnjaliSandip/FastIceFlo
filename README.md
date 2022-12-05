@@ -14,7 +14,6 @@ Current version can be found:  here??
 
 - Aim of the project
 - Citation information
-- Conservation of Momentum Balance equations (+ PT Solver + FEM method
 - contact: anjali.sandip@und.edu
 -
 
