@@ -23,7 +23,7 @@ $\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) = \rho 
 
 where $H$  is the ice thickness distribution, $\mu$ the dynamic ice viscosity, $\dot{\boldsymbol{\varepsilon}}_{SSA}$ is the effective strain rate, $\rho$ the ice density, $g$ the gravitational acceleration, $s$ glacier's upper surface z-coordinate and $\alpha^2 {\bf v}$ is the basal friction.
 
-# Pseudo-transient method
+# Pseudo-transient (PT) method
 We reformulate the 2-D SSA steady-state momentum balance equations to incorporate the usually ignored inertial terms: <br>
 $\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) -\rho g H\nabla s  - \alpha^2 {\bf v} = \rho H\frac{\partial \bf v}{\partial \tau}$
 
@@ -80,10 +80,10 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
 
 Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
 
+# Additional information
+We compared the PT CUDA C implementation computational time to convergence with the Krylov subspace method relying on a biconjugate gradient with block Jacobi pre-conditioner (bcgsl/bjacobi). We chose a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node for the CPU architecture. We executed CPU-based multi-core MPI-parallelized ice-sheet flow simulations on two CPU processors, all 36 cores enabled. The results are stored [here] https://github.com/AnjaliSandip/GPU_Computing/tree/lr/disp/output
 
-We compared the CUDA C PT implementation with the Krylov subspace method relying on biconjugate gradient with block Jacobi pre-conditioner (bcgsl/bjacobi). The chosen CPU architecture was a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node. CPU-based multi-core MPI-parallelized ice-sheet flow simulations were executed on two CPU processors, all 36 cores enabled.
-
-In order to assess the performance of the memory-bound PT algorithm on Ampere A100 SXM4 featuring 80GB on-board memory, we employ the effective memory throughput metric  ${\bf T}_{eff}$.  The results are listed below:
+In order to assess the performance of the memory-bound PT algorithm, in addition to Tesla V100 GPU, we measured the effective memory throughput metric  ${\bf T}_{eff}$ on Ampere A100 SXM4 featuring 80GB on-board memory. The results are listed below:
 
 | DoFs |  Jakobshavn Isbrae (GB/s)  | DoFs | Pine Island Glacier (GB/s)|       
 | :----: | :----: | :----: | :----: | 
