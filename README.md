@@ -54,7 +54,6 @@ Step 3. Save the .mat file and corresponding .bin file
 `md=solve(md,'Stressbalance')`
 
 # GPU implementation
-To perform the numerical experiments described in the pre-print,  <br>
 Step 1. Clone or download this repository.  <br>
 Step 2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
 Step 3. Run  <br>
