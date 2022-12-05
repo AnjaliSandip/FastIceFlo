@@ -58,13 +58,13 @@ Step 1. Clone or download this repository.  <br>
 Step 2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
 Step 3. Run  <br>
 Step 4. Along with a .txt file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a .outbin file will be generated.  To extract and plot the ice velocity distribution, for a glacier model configuration at a spatial resolution (or grid size): <br>
-        -  Store .mat file (Glacier model configurations/step 3) and corresponding outbin file in a MATLAB directory <br>
-        -  Execute the following statements in the MATLAB command window 
+        - Store .mat file (Glacier model configurations/step 3) and corresponding outbin file in a MATLAB directory <br>
+        - Execute the following statements in the MATLAB command window: <br>
         `load "insert name of .mat file here"  <br>
         md.miscellaneous.name = 'output'; <br>
         md=loadresultsfromdisk(md, 'output.outbin') <br>
         plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br>
-        -  View results <br>
+        - View results <br>
         Does this have to be done in the ISSM environment?
         
 
