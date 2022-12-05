@@ -26,7 +26,7 @@ where $H$  is the ice thickness distribution, $\mu$ the dynamic ice viscosity, $
 
 # Pseudo-transient method
 We reformulate the 2-D SSA steady-state momentum balance equations to incorporate the usually ignored inertial terms: <br>
-$\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) -\rho g H\nabla s  + \alpha^2 {\bf v} = \rho H\frac{\partial \bf v}{\partial \tau}$
+$\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) -\rho g H\nabla s  - \alpha^2 {\bf v} = \rho H\frac{\partial \bf v}{\partial \tau}$
 
 allows us to turn the steady-state equations into transient diffusion of velocities $v_{x,y}$. The velocity time derivatives represent physically motivated expressions we can further use to iteratively reach a steady-state, thus the solution of the system.
 
