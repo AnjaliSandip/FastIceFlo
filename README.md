@@ -1,4 +1,4 @@
-# PT FEM SSA GPU solver
+# FastIceFlo
 
 
 Copyright (C) 2022 Anjali Sandip, Ludovic Raess and and Mathieu Morlighem.
