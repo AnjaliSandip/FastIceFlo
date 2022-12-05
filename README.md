@@ -30,7 +30,9 @@ $\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) -\rho g
 
 allows us to turn the steady-state equations into transient diffusion of velocities $v_{x,y}$. The velocity time derivatives represent physically motivated expressions we can further use to iteratively reach a steady-state, thus the solution of the system.
 
-# Ice-sheet flow model configurations 
+# Weak form
+
+# GLacier model configurations 
 
 ![gmd_domain](https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png)
 
