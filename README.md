@@ -1,21 +1,9 @@
-# FastIceFlo
+
+This study aims to provide a GPU-friendly algorithm to solve momentum balance for unstructured meshes to predict ice-sheet flow for actual glaciers. The solution algorithm is matrix-free and iterative. The insights from this study will benefit efforts to diminish spatial resolution constraints and increase computing speed for unstructured mesh applications, including but not limited to ice-sheet modeling.
 
 
-Copyright (C) 2022 Anjali Sandip, Ludovic Raess and and Mathieu Morlighem.
-
-XXX is a free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-XXX is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with XXX. If not, see http://www.gnu.org/licenses/.
-
-Current version can be found:  here??
-
-
-- Aim of the project
 - Citation information
-- contact: anjali.sandip@und.edu
--
+
 
 # 2-D Shallow shelf approximation (SSA)
 We employ SSA to solve the momentum balance to predict ice-sheet flow. The SSA equations in the matrix form read : <br>
@@ -27,7 +15,7 @@ where $H$  is the ice thickness distribution, $\mu$ the dynamic ice viscosity, $
 We reformulate the 2-D SSA steady-state momentum balance equations to incorporate the usually ignored inertial terms: <br>
 $\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) -\rho g H\nabla s  - \alpha^2 {\bf v} = \rho H\frac{\partial \bf v}{\partial \tau}$
 
-allows us to turn the steady-state equations into transient diffusion of velocities $v_{x,y}$. The velocity time derivatives represent physically motivated expressions we can further use to iteratively reach a steady-state, thus the solution of the system.
+allows us to turn the steady-state equations into transient diffusion of velocities $v_{x,y}$. The velocity-time derivatives represent physically motivated expressions we can further use to iteratively reach a steady state, thus the solution of the system.
 
 # Weak form
 
@@ -92,3 +80,6 @@ In order to assess the performance of the memory-bound PT algorithm, in addition
 | 1e6 | 56 | 2e6 | 58 |
 | 2e7 | 38 | 3e7 | 36 |
 
+
+# Contact information
+For questions, comments and discussions please contact anjali.sandip@und.edu
