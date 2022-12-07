@@ -81,5 +81,5 @@ In order to assess the performance of the memory-bound PT algorithm, in addition
 | 2e7 | 38 | 3e7 | 36 |
 
 
-# Contact information
-For questions, comments and discussions please contact anjali.sandip@und.edu
+# Questions/Comments/Discussion
+For questions, comments and discussions please post in the FastIceFlo discussions forum.
