@@ -2,7 +2,7 @@
   
 # -> to make it executable: chmod +x runme.sh or chmod 755 runme.sh
 
-#Optimal PT solver parameter values for the glacier model configuration and the corresponding DoFs. in this case for JKS8e4
+#Optimal PT solver parameter values for the glacier model configuration and the corresponding DoFs. In this case for JKS8e4
 damp=0.98;
 visc_rela=0.03;
 vel_rela=0.99;
