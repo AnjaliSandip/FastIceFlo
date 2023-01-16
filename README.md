@@ -27,7 +27,7 @@ $= \int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf 
 
 where ${\mathcal H}^1\left(\Omega\right)$ is the space of square-integrable functions whose first derivatives are also square integrable. 
 
-[fig_pt_flowchart.pdf](https://github.com/AnjaliSandip/GPU_Computing/files/10429028/fig_pt_flowchart.pdf)
+![fig_pt_flowchart.pdf](https://github.com/AnjaliSandip/GPU_Computing/files/10429028/fig_pt_flowchart.pdf)
 
 # Glacier model configurations 
 
