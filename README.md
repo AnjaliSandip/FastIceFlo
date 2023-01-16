@@ -27,6 +27,14 @@ $= \int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf 
 
 where ${\mathcal H}^1\left(\Omega\right)$ is the space of square-integrable functions whose first derivatives are also square integrable. 
 
+The weak form (assuming homogeneous Dirichlet conditions along all model boundaries for simplicity) is: $\forall {\bf w}\in {\mathcal H}^1\left(\Omega\right)$,
+\begin{math}\label{eq:weak_form}
+   \int_\Omega {\rho} H\frac{\partial {\bf v}}{\partial \tau} \cdot {\bf w}d\Omega 
++  \int_\Omega  2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} : \dot{\boldsymbol{\varepsilon}}_{w} \;d\Omega \\
+= \int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf w} \;d\Omega 
+\end{math}
+where ${\mathcal H}^1\left(\Omega\right)$ is the space of square-integrable functions whose first derivatives are also square integrable. 
+
 # Glacier model configurations 
 
 ![gmd_domain](https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png)
