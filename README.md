@@ -20,9 +20,8 @@ $\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) -\rho g
 allows us to turn the steady-state equations into transient diffusion of velocities $v_{x,y}$. The velocity-time derivatives represent physically motivated expressions we can further use to iteratively reach a steady state, thus the solution of the system.
 
 # Weak form
-The weak form (assuming homogeneous Dirichlet conditions along all model boundaries for simplicity) is: <br>
-$\forall {\bf w}\in {\mathcal H}^1\left(\Omega\right)$, <br>
-$\int_\Omega {\rho} H\frac{\partial {\bf v}}{\partial \tau} \cdot {\bf w}d\Omega <br>
+The weak form (assuming homogeneous Dirichlet conditions along all model boundaries for simplicity) is: $\forall {\bf w}\in {\mathcal H}^1\left(\Omega\right)$, <br>
+$\int_\Omega {\rho} H\frac{\partial {\bf v}}{\partial \tau} \cdot {\bf w}d\Omega$ <br>
 +  \int_\Omega  2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} : \dot{\boldsymbol{\varepsilon}}_{w} \;d\Omega 
 = \int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf w} \;d\Omega$
 
