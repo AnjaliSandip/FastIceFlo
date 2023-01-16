@@ -22,11 +22,10 @@ allows us to turn the steady-state equations into transient diffusion of velocit
 # Weak form
 The weak form (assuming homogeneous Dirichlet conditions along all model boundaries for simplicity) is: <br>
 $\forall {\bf w}\in {\mathcal H}^1\left(\Omega\right)$,
-$
-   \int_\Omega {\rho} H\frac{\partial {\bf v}}{\partial \tau} \cdot {\bf w}d\Omega 
-+  \int_\Omega  2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} : \dot{\boldsymbol{\varepsilon}}_{w} \;d\Omega \\
-= \int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf w} \;d\Omega 
-$
+$\int_\Omega {\rho} H\frac{\partial {\bf v}}{\partial \tau} \cdot {\bf w}d\Omega 
++  \int_\Omega  2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} : \dot{\boldsymbol{\varepsilon}}_{w} \;d\Omega 
+= \int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf w} \;d\Omega$
+
 where ${\mathcal H}^1\left(\Omega\right)$ is the space of square-integrable functions whose first derivatives are also square integrable. 
 
 # Glacier model configurations 
