@@ -46,15 +46,11 @@ Step 2. Run "runme.m" script (located in BinFileGeneration/PIG or JKS folders) <
 | DoFs |  Jakobshavn Isbrae resol (m) | DoFs | Pine Island Glacier resol (m)|       
 | :----: | :----: | :----: | :----: | 
 | 8e4 | 600 | 3e4 | 2500 | 
-| 3e5 | 310 | 7e4 | 1750 |
-| 7e5 | 200 | 1e5 | 1250 |
-| 1e6 | 170 | 2e6 |  300 |
-| 2e7 | ?? |
 
 Table 1.  Average element size or spatial resolution "resol" for the glacier model configurations chosen in the study <br>
 
 Step 3. Save the .mat file and corresponding .bin file
-`md=solve(md,'Stressbalance')`
+
 
 # GPU implementation
 Step 1. Clone or download this repository.  <br>
