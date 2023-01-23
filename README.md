@@ -33,7 +33,7 @@ where $\boldsymbol{M}$ is the mass matrix, $\boldsymbol{K}$ is the stiffness mat
 
 For every nonlinear PT iteration,  we compute the rate of change in velocity $\dot{\bf v}$ and the explicit CFL time step $\Delta \tau$. We then deploy the reformulated 2D SSA momentum balance equations  to update ice velocity $\bf v$ followed by ice viscosity $\mu_{eff}$.  We iterate in pseudo-time until the stopping criterion is met.
 
-
+![fig_pt_flowchart](https://user-images.githubusercontent.com/60862184/214173173-5936f676-6a99-4f2a-b474-081f1eeb69ff.png)
 
 # Glacier model configurations 
 
