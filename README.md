@@ -28,10 +28,8 @@ $= \int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf 
 where ${\mathcal H}^1\left(\Omega\right)$ is the space of square-integrable functions whose first derivatives are also square integrable. 
 
 Once discretized using the finite-element method, the matrix system to solve is:
-\begin{equation}\label{eq:fe_pt}
-   \boldsymbol{M} \dot{\bf V} + \boldsymbol{K}{\bf V}
-= \boldsymbol{K}
-\end{equation}
+$\boldsymbol{M} \dot{\bf V} + \boldsymbol{K}{\bf V} = \boldsymbol{K}$ <br>
+
 where $\boldsymbol{M}$ is the mass matrix, $\boldsymbol{K}$ is the stiffness matrix, $\boldsymbol{F}$ is the right hand side or load vector, and ${\bf V}$ is the vector of ice velocity.
 
 For every nonlinear PT iteration,  we compute the rate of change in velocity $\dot{\bf v}$ and the explicit CFL time step $\Delta \tau$. We then deploy the reformulated 2D SSA momentum balance equations  to update ice velocity $\bf v$ followed by ice viscosity $\mu_{eff}$.  We iterate in pseudo-time until the stopping criterion is met.
