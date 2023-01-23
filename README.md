@@ -62,13 +62,13 @@ Step 2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla 
 `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
 Step 3. Run `./a.out` <br>
 Step 4. Along with a .txt file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a .outbin file will be generated.  To extract and plot the ice velocity distribution, for a glacier model configuration at a spatial resolution (or grid size): <br>
-- Store .mat file (Glacier model configurations/step 3) and the.outbin file in a MATLAB directory <br>
-- Execute the following statements in the MATLAB command window: <br>
+         4.1 Store .mat file (Glacier model configurations/step 3) and the.outbin file in a MATLAB directory <br>
+         4.2 Execute the following statements in the MATLAB command window: <br>
         `load "insert name of .mat file here"`  <br>
         `md.miscellaneous.name = 'output';` <br>
         `md=loadresultsfromdisk(md, 'output.outbin')` <br>
         `plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br>
-- View results <br>
+        4.3 View results <br>
    
         
 | Jakobshavn Isbrae DoFs | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Pine Island Glacier DoFs | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |
