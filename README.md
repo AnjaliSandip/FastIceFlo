@@ -45,7 +45,7 @@ Step 2. Run "runme.m" script (located in BinFileGeneration/PIG or JKS folders) <
  
 | DoFs |  Jakobshavn Isbrae resol (m) | DoFs | Pine Island Glacier resol (m)|       
 | :----: | :----: | :----: | :----: | 
-| 8e4 | 600 | 3e4 | 2500 | 
+| 8e4 | 600 | 7e4 | 1750 | 
 
 Table 1.  Average element size or spatial resolution "resol" for the glacier model configurations chosen in the study <br>
 
