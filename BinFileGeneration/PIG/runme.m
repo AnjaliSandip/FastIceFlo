@@ -115,7 +115,7 @@ end
 
 if any(steps==6)  %bin file generation
 
-       md=solve(md,'sb','batch','yes');
+        md=solve(md,'sb','batch','yes');
 
 end
 
