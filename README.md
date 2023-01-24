@@ -41,7 +41,7 @@ For every nonlinear PT iteration,  we compute the rate of change in velocity $\d
 Figure 1. Glacier model configurations; observed surface velocities interpolated on a uniform mesh. Panels $\textbf{(a)}$ and $\textbf{(b)}$  correspond to Jakobshavn Isbrae and Pine Island Glacier respectively.
 
 Step 1. Install [ISSM](https://issm.jpl.nasa.gov/download/) <br>
-Step 2. Run "runme.m" script (located in BinFileGeneration/PIG or JKS folders) <br>
+Step 2. Run "runme.m" script (located in BinFileGeneration/PIG or JKS folders). For example, <br>
  
 | DoFs |  Jakobshavn Isbrae resol (m) | DoFs | Pine Island Glacier resol (m)|       
 | :----: | :----: | :----: | :----: | 
