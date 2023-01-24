@@ -56,8 +56,8 @@ if any(steps==3)
 end
 
 
-if any(steps==4)
+if any(steps==4)   %bin file generation
 
-       md=solve(md,'sb','batch','yes');  %generate corresponding bin file
+       md=solve(md,'sb','batch','yes'); 
 
 end
