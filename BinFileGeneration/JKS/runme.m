@@ -1,5 +1,5 @@
 
-steps=[1:3];
+steps=[1:4];
 
 if any(steps==1)
 	disp('	Step 1: Mesh creation'); 
@@ -52,6 +52,12 @@ if any(steps==3)
 	% Update model friction fields accordingly
 	md.friction.coefficient=md.results.StressbalanceSolution.FrictionCoefficient;
     
-	save Jks8e4 md
+	save Jks8e4 md  %save .mat file
 end
 
+
+if any(steps==4)
+
+    md=solve(md,'sb','batch','yes');  %generate corresponding bin file
+
+end
