@@ -58,6 +58,6 @@ end
 
 if any(steps==4)
 
-    md=solve(md,'sb','batch','yes');  %generate corresponding bin file
+       md=solve(md,'sb','batch','yes');  %generate corresponding bin file
 
 end
