@@ -52,7 +52,7 @@ Table 1.  Average element size or spatial resolution "resol" for the glacier mod
 Step 3. Save the .mat file and corresponding .bin file
 
 
-# GPU implementation
+# Hardware implementation
 Step 1. Clone or download this repository.  <br>
 Step 2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU <br>
 `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
@@ -77,10 +77,13 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
 
 Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below. Optimal block size to increase occupancy and reduce wall time.
 
-# Additional information
-We compared the PT CUDA C implementation computational time to convergence with the Krylov subspace method relying on a biconjugate gradient with block Jacobi pre-conditioner (bcgsl/bjacobi). We chose a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node for the CPU architecture. We executed CPU-based multi-core MPI-parallelized ice-sheet flow simulations on two CPU processors, all 36 cores enabled. The results are stored in "output" directory.
+We compare the PT Tesla V100 GPU implementation with ISSM’s “standard” CPU implementation using a conjugate gradient iterative solver. As a CPU, we used a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node. We executed multi-core MPI-parallelized ice-sheet
+flow simulations on two CPUs, all 36 cores enabled. We performed computations using double-precision arithmetic. 
 
-In order to assess the performance of the memory-bound PT algorithm, in addition to Tesla V100 GPU, we measured the effective memory throughput metric  ${\bf T}_{eff}$ on Ampere A100 SXM4 featuring 80GB on-board memory. The results are listed below:
+The results from GPU and CPU implementations are stored in "output" directory.
+
+# Memory metrics
+In order to assess the performance of the memory-bound PT method, in addition to Tesla V100 GPU, we measured the effective memory throughput metric  ${\bf T}_{eff}$ on Ampere A100 SXM4 featuring 80GB on-board memory. The results are listed below:
 
 | DoFs |  Jakobshavn Isbrae (GB/s)  | DoFs | Pine Island Glacier (GB/s)|       
 | :----: | :----: | :----: | :----: | 
