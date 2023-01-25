@@ -50,8 +50,6 @@ Step 2. Run "runme.m" script (located in BinFileGeneration/PIG or JKS folders). 
 Table 1.  Average element size or spatial resolution "resol" for the glacier model configurations chosen in the study <br>
 
 Step 3. Save the .mat file and corresponding .bin file
-![JKS8e4](https://user-images.githubusercontent.com/60862184/214713810-7d731d8f-862e-4199-b1bf-2e0bacbf282d.png)
-
 
 
 # Hardware implementation
@@ -65,13 +63,12 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
         `load "insert name of .mat file here"`  <br>
         `md.miscellaneous.name = 'output';` <br>
         `md=loadresultsfromdisk(md, 'output.outbin')` <br>
-        `plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br>
-       
-   
-        
-        Figure 2. Jakobshavn Isbrae ice velocity field, at 600 meter spatial resolution. <br>
-
+        `plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br
+                                                                                        
         4.3 View results <br>
+        ![JKS8e4](https://user-images.githubusercontent.com/60862184/214715530-8df5c079-698b-4013-a959-82be8f803fe9.png)
+
+        Figure 2. Jakobshavn Isbrae ice velocity field, at 600 meter spatial resolution. <br>
         
 | Jakobshavn Isbrae number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size | Pine Island Glacier number of vertices | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |Block size |
 | :----: | :----: | :----: | :----: |:----: | :----: | :----: | :----: | :----: | :----: |
