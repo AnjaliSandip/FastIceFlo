@@ -63,7 +63,7 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
         `load "insert name of .mat file here"`  <br>
         `md.miscellaneous.name = 'output';` <br>
         `md=loadresultsfromdisk(md, 'output.outbin')` <br>
-        `plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br
+        `plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br>
                                                                                         
         4.3 View results 
         ![JKS8e4](https://user-images.githubusercontent.com/60862184/214715530-8df5c079-698b-4013-a959-82be8f803fe9.png)
