@@ -75,7 +75,7 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
 | 667729 | 0.992 | 0.999 | 1e-1 | 1024 | 1110705 | 0.998 | 0.991 | 1e-1 | 1024 |
 | 2e7 | 0.992 | 0.999 | 1e-1 | 1024 |
 
-Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
+Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below. Optimal block size to increase occupancy and reduce wall time.
 
 # Additional information
 We compared the PT CUDA C implementation computational time to convergence with the Krylov subspace method relying on a biconjugate gradient with block Jacobi pre-conditioner (bcgsl/bjacobi). We chose a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node for the CPU architecture. We executed CPU-based multi-core MPI-parallelized ice-sheet flow simulations on two CPU processors, all 36 cores enabled. The results are stored in "output" directory.
