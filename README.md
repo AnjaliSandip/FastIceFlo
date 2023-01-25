@@ -68,7 +68,7 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
    
         
 | Jakobshavn Isbrae number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size | Pine Island Glacier number of vertices | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |Block size |
-| :----: | :----: | :----: | :----: |:----: | :----: | :----: | :----: |
+| :----: | :----: | :----: | :----: |:----: | :----: | :----: | :----: | :----: | :----: |
 | 44229 | 0.98 | 0.99 | 3e-2 | 128 | 17571 | 0.981 | 0.967 | 7e-2 | 128 |
 | 167337 | 0.99 | 0.9 | 3e-2 | 128 | 35646 | 0.99 | 0.9 | 3e-2 | 256 |
 | 393771 | 0.99 | 0.99 | 1e-1 | 1024 | 69789 | 0.99 | 0.993 | 1e-1 | 512 |
