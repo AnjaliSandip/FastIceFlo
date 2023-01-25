@@ -67,13 +67,13 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
         4.3 View results <br>
    
         
-| Jakobshavn Isbrae number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Pine Island Glacier number of vertices | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |
+| Jakobshavn Isbrae number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size | Pine Island Glacier number of vertices | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |Block size |
 | :----: | :----: | :----: | :----: |:----: | :----: | :----: | :----: |
-| 44229 | 0.98 | 0.99 | 3e-2 | 17571 | 0.981 | 0.967 | 7e-2 |
-| 167337 | 0.99 | 0.9 | 3e-2 | 35646 | 0.99 | 0.9 | 3e-2 |
-| 393771 | 0.99 | 0.99 | 1e-1 | 69789 | 0.99 | 0.993 | 1e-1 |
-| 667729 | 0.992 | 0.999 | 1e-1 | 1110705 | 0.998 | 0.991 | 1e-1 |
-| 2e7 | 0.992 | 0.999 | 1e-1 |
+| 44229 | 0.98 | 0.99 | 3e-2 | 128 | 17571 | 0.981 | 0.967 | 7e-2 | 128 |
+| 167337 | 0.99 | 0.9 | 3e-2 | 128 | 35646 | 0.99 | 0.9 | 3e-2 | 256 |
+| 393771 | 0.99 | 0.99 | 1e-1 | 1024 | 69789 | 0.99 | 0.993 | 1e-1 | 512 |
+| 667729 | 0.992 | 0.999 | 1e-1 | 1024 | 1110705 | 0.998 | 0.991 | 1e-1 | 1024 |
+| 2e7 | 0.992 | 0.999 | 1e-1 | 1024 |
 
 Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below.
 
