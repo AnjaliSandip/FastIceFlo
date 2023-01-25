@@ -66,10 +66,10 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
         `plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br>
        
         ![JKS8e4](https://user-images.githubusercontent.com/60862184/214713118-c9eea1d3-0907-4878-8255-fa101f88eae8.png)
+        
         Figure 2. Jakobshavn Isbrae ice velocity field, at 600 meter spatial resolution. <br>
 
         4.3 View results <br>
-   
         
 | Jakobshavn Isbrae number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size | Pine Island Glacier number of vertices | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |Block size |
 | :----: | :----: | :----: | :----: |:----: | :----: | :----: | :----: | :----: | :----: |
