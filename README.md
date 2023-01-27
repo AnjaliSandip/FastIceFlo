@@ -95,18 +95,17 @@ In order to assess the performance of the memory-bound PT CUDA C implementation,
 
 |Jakobshavn Isbrae number of vertices |  Tesla V100 (GB/s) | Ampere A100 (GB/s)|       
 | :----: | :----: | :----: | 
-| 8e4 | 34 | 17 | 
-| 3e5 | 47 | 30 |
-| 7e5 | 58 | 36 |
-| 1e6 | 56 | 58 |
-| 2e7 | 38 | 36 |
+| 44229 | 24 | 34 | 
+| 167337 | 23 | 47 |
+| 393771 | 23 | 58 |
+| 667729 | 19 | 56 |
+| 10664257 | 11 | 38 |
 |Pine Island Glacier number of vertices |  Tesla V100 (GB/s) | Ampere A100 (GB/s)|       
-| :----: | :----: | :----: | 
-| 34 | 3e4 | 17 | 
-| 47 | 7e4 | 30 |
-| 58 | 1e5 | 36 |
-| 56 | 2e6 | 58 |
-| 38 | 3e7 | 36 |
+| 17571 | 17 | 17 | 
+| 35646 | 23 | 30 |
+| 69789 | 23 | 36 |
+| 1110705 | 18 | 58 |
+| 17747649 | 11 | 36 |
 
 
 # Questions/Comments/Discussion
