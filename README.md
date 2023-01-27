@@ -35,6 +35,8 @@ For every nonlinear PT iteration,  we compute the rate of change in velocity $\d
 ![Screenshot from 2023-01-23 17-15-51](https://user-images.githubusercontent.com/60862184/214173707-a8d442a9-8933-49ec-8b6b-806212e7a8d2.png)
 
 # Glacier model configurations 
+To test the performance of the PT method beyond simple idealized geometries, we apply it to two regional-scale glaciers:
+Jakobshavn Isbræ, in western Greenland, and Pine IslandGlacier, in west Antarctica.
 
 ![gmd_domain](https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png)
 
@@ -53,11 +55,13 @@ Step 3. Save the .mat file and corresponding .bin file
 
 
 # Hardware implementation
+We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
+
 Step 1. Clone or download this repository.  <br>
 Step 2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU <br>
 `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
 Step 3. Run `./a.out` <br>
-Step 4. Along with a .txt file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a .outbin file will be generated.  To extract and plot the ice velocity distribution, for a glacier model configuration at a spatial resolution (or grid size): <br>
+Step 4. Along with a .txt file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a .outbin file will be generated.  To extract and plot the ice velocity distribution: <br>
          4.1 Store .mat file (Glacier model configurations/step 3) and the.outbin file in a MATLAB directory <br>
          4.2 Execute the following statements in the MATLAB command window: <br>
         `load "insert name of .mat file here"`  <br>
@@ -79,18 +83,25 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
 | 667729 | 0.992 | 0.999 | 1e-1 | 1024 | 1110705 | 0.998 | 0.991 | 1e-1 | 1024 |
 | 10664257 | 0.998 | 0.999 | 1e-1 | 1024 |
 
-Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below. Optimal block size to increase occupancy and reduce wall time.
+Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below. Optimal block size was chosen to minimize wall time.
 
-We compare the PT Tesla V100 GPU implementation with ISSM’s “standard” CPU implementation using a conjugate gradient iterative solver. As a CPU, we used a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node. We executed multi-core MPI-parallelized ice-sheet
-flow simulations on two CPUs, all 36 cores enabled. We performed computations using double-precision arithmetic. 
+We compare the PT Tesla V100 GPU implementation with ISSM’s standard CPU implementation using a conjugate gradient iterative solver. As a CPU, we used a 64-bit 18-core Intel Xeon Gold 6140 processor with 192 GB of RAM per node. We executed multi-core MPI-parallelized ice-sheet flow simulations on two CPUs, all 36 cores enabled. We performed computations using double-precision arithmetic. 
 
 The results from GPU and CPU implementations are stored in "output" directory.
 
-# Memory metrics
-In order to assess the performance of the memory-bound PT method, in addition to Tesla V100 GPU, we measured the effective memory throughput metric  ${\bf T}_{eff}$ on Ampere A100 SXM4 featuring 80GB on-board memory. The results are listed below:
+# Memory metric
+In order to assess the performance of the memory-bound PT CUDA C implementation, we employ the effective memory throughput metric on NVIDIA Tesla V100 SXM2 GPU featuring 16 gigabytes (GB) onboard memory and an Ampere A100 SXM4 featuring 80GB onboard memory.
 
-| DoFs |  Jakobshavn Isbrae (GB/s)  | DoFs | Pine Island Glacier (GB/s)|       
-| :----: | :----: | :----: | :----: | 
+
+|Jakobshavn Isbrae number of vertices |  Tesla V100 (GB/s) | Ampere A100 (GB/s)|       
+| :----: | :----: | :----: | 
+| 8e4 | 34 | 3e4 | 17 | 
+| 3e5 | 47 | 7e4 | 30 |
+| 7e5 | 58 | 1e5 | 36 |
+| 1e6 | 56 | 2e6 | 58 |
+| 2e7 | 38 | 3e7 | 36 |
+|Pine Island Glacier number of vertices |  Tesla V100 (GB/s) | Ampere A100 (GB/s)|       
+| :----: | :----: | :----: | 
 | 8e4 | 34 | 3e4 | 17 | 
 | 3e5 | 47 | 7e4 | 30 |
 | 7e5 | 58 | 1e5 | 36 |
