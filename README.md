@@ -96,7 +96,7 @@ We compare the PT Tesla V100 GPU implementation with ISSM’s standard CPU imple
 The results from GPU and CPU implementations are stored in "output" directory.
 
 # Memory metric
-In order to assess the performance of the memory-bound PT CUDA C implementation, we employ the effective memory throughput metric on NVIDIA Tesla V100 SXM2 GPU featuring 16 gigabytes (GB) onboard memory and an Ampere A100 SXM4 featuring 80GB onboard memory.
+In order to assess the performance of the memory-bound PT CUDA C implementation on NVIDIA Tesla V100 SXM2 GPU featuring 16 gigabytes (GB) onboard memory and an Ampere A100 SXM4 featuring 80GB onboard memory we employ the effective memory throughput metric.
 
 
 |Jakobshavn Isbrae number of vertices |  Tesla V100 (GB/s) | Ampere A100 (GB/s)|       
