@@ -81,7 +81,7 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
 | 17571 | 0.981 | 0.967 | 7e-2 | 128 |
 | 35646 | 0.99 | 0.9 | 3e-2 | 256 |
 | 69789 | 0.991 | 0.99 | 2e-2 | 512 |
-| 1110705 | 0.991 | 0.99 | 2e-2 | 1024 |
+| 1110705 | 0.998 | 0.995 | 1e-2 | 1024 |
 
 
 Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below. Optimal block size was chosen to minimize wall time.
