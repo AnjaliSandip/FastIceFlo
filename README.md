@@ -80,7 +80,7 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
 | Pine Island Glacier number of vertices | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |Block size |
 | 17571 | 0.981 | 0.967 | 7e-2 | 128 |
 | 35646 | 0.99 | 0.9 | 3e-2 | 256 |
-| 69789 | 0.99 | 0.993 | 1e-1 | 512 |
+| 69789 | 0.991 | 0.99 | 2e-2 | 512 |
 | 1110705 | 0.991 | 0.99 | 2e-2 | 1024 |
 
 
