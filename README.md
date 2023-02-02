@@ -63,14 +63,12 @@ We developed a CUDA C implementation to solve the SSA equations using the PT app
 3. Run `./a.out` <br>
 4. Along with a .txt file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a .outbin file will be generated.  To extract and plot the ice velocity distribution: <br>
    - Store .mat file (Glacier model configurations/step 3) and the.outbin file in a MATLAB directory <br>
-     - Second nested list item
- - 4.1 Store .mat file (Glacier model configurations/step 3) and the.outbin file in a MATLAB directory <br>
-        - 4.2 Execute the following statements in the MATLAB command window: <br>
+   - Execute the following statements in the MATLAB command window: <br>
         `load "insert name of .mat file here"`  <br>
         `md.miscellaneous.name = 'output';` <br>
         `md=loadresultsfromdisk(md, 'output.outbin')` <br>
         `plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br>
-        - Step 4.3 View results 
+    - View results <br>     
  
 | Jakobshavn Isbrae number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size |
 | :----: | :----: | :----: | :----: |:----: | 
