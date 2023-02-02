@@ -69,7 +69,11 @@ Step 4. Along with a .txt file that stores the computational time, effective mem
         `md=loadresultsfromdisk(md, 'output.outbin')` <br>
         `plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));` <br>
         - Step 4.3 View results 
-        
+ 
+ 1. First list item
+   - First nested list item
+     - Second nested list item
+     - 
 | Jakobshavn Isbrae number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size |
 | :----: | :----: | :----: | :----: |:----: | 
 | 44229 | 0.98 | 0.99 | 3e-2 | 128 | 
