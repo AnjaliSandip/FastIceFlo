@@ -57,13 +57,13 @@ Step 3. Save the .mat file and corresponding .bin file
 # Hardware implementation
 We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
 
-Step 1. Clone or download this repository.  <br>
-Step 2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU <br>
+1. Clone or download this repository.  <br>
+2. Compile the `ssa_fem_pt.cu` routine on a system hosting an Nvidia Tesla V100 GPU <br>
 `nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela`   <br>
-Step 3. Run `./a.out` <br>
-Step 4. Along with a .txt file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a .outbin file will be generated.  To extract and plot the ice velocity distribution: <br>
-        - Step 4.1 Store .mat file (Glacier model configurations/step 3) and the.outbin file in a MATLAB directory <br>
-        - Step 4.2 Execute the following statements in the MATLAB command window: <br>
+3. Run `./a.out` <br>
+4. Along with a .txt file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a .outbin file will be generated.  To extract and plot the ice velocity distribution: <br>
+        - 4.1 Store .mat file (Glacier model configurations/step 3) and the.outbin file in a MATLAB directory <br>
+        - 4.2 Execute the following statements in the MATLAB command window: <br>
         `load "insert name of .mat file here"`  <br>
         `md.miscellaneous.name = 'output';` <br>
         `md=loadresultsfromdisk(md, 'output.outbin')` <br>
