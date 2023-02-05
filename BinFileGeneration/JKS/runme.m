@@ -57,7 +57,5 @@ end
 
 
 if any(steps==4)   %bin file generation
-
        md=solve(md,'sb','batch','yes'); 
-
 end
