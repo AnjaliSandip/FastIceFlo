@@ -25,9 +25,9 @@ This repository relates to the original research article published in the **Geos
 ## 2-D Shallow shelf approximation (SSA)
 We employ SSA to solve the momentum balance to predict ice-sheet flow:
 
-$\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) = \rho g H\nabla s  + \alpha^2 {\bf v}$ ,
+$\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}} \right) = \rho g H\nabla s  + \alpha^2 {\bf v}$ ,
 
-where $H$ is the ice thickness distribution, $\mu$ the dynamic ice viscosity, $\dot{\boldsymbol{\varepsilon}}_{SSA}$ the effective strain rate, $\rho$ the ice density, $g$ the gravitational acceleration, $s$ glacier's upper surface z-coordinate and $\alpha^2 {\bf v}$ is the basal friction.
+where $H$ is the ice thickness distribution, $\mu$ the dynamic ice viscosity, $\dot{\boldsymbol{\varepsilon}}$ the effective strain rate, $\rho$ the ice density, $g$ the gravitational acceleration, $s$ glacier's upper surface z-coordinate and $\alpha^2 {\bf v}$ is the basal friction.
 
 As boundary conditions, we apply water pressure at the ice front $\Gamma_{\sigma}$, and non-homogeneous Dirichlet boundary conditions on the other boundaries $\Gamma_u$ (based on observed velocity).
 
@@ -43,9 +43,9 @@ The weak form (assuming homogeneous Dirichlet conditions along all model boundar
 
 $\forall {\bf w}\in {\mathcal H}^1\left(\Omega\right)$ ,
 
-$\int_\Omega {\rho} H\frac{\partial {\bf v}}{\partial \tau} \cdot {\bf w}d\Omega$ +
+$\int_\Omega {\rho} H\frac{\partial {\bf v}}{\partial \tau} \cdot {\bf w} d\Omega$ + 
+$\int_\Omega 2 H {\mu} \dot{\boldsymbol{\varepsilon}} : \dot{\boldsymbol{\varepsilon}}_{w} \; d\Omega$ =
 
-$\int_\Omega  2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA}: \dot{\boldsymbol{\varepsilon}}_{w} \;d\Omega$ =
 $\int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf w} \;d\Omega$
 
 where ${\mathcal H}^1\left(\Omega\right)$ is the space of square-integrable functions whose first derivatives are also square integrable. 
