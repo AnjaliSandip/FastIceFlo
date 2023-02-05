@@ -1,5 +1,6 @@
 /*CPU Code*/
 /*I/O stuff*/
+typedef double ftype;
 FILE* SetFilePointerToData(FILE* fid,int* pcode,int* pvector_type,const char* data_name){
 
     int found  = 0;
@@ -140,35 +141,38 @@ void FetchData(FILE* fid,int** pmatrix,int* pM,int* pN,const char* data_name){
     if(pN)*pN=N;
 }
 
-void FetchData(FILE* fid,double* pdouble,const char* data_name){
+void FetchData(FILE* fid,ftype* pdouble,const char* data_name){
 
     /*output: */
-    double value;
+    ftype value;
+    double tempValue;
     int code;
 
     /*Set file pointer to beginning of the data: */
     fid=SetFilePointerToData(fid,&code,NULL,data_name);
 
-    if(code!=3)std::cerr <<"expecting a double for \"" << data_name<<"\"";
+    if(code!=3)std::cerr <<"expecting a ftype for \"" << data_name<<"\"";
 
     /*We have to read a integer from disk. First read the dimensions of the integer, then the integer: */
-    if(fread(&value,sizeof(double),1,fid)!=1) std::cerr<<"could not read scalar";
+    if(fread(&tempValue,sizeof(double),1,fid)!=1) std::cerr<<"could not read scalar";
+
+    value = ftype(tempValue);
 
     /*Assign output pointers: */
     *pdouble=value;
 }
 
-void FetchData(FILE* fid,double** pmatrix,int* pM,int* pN,const char* data_name){
+void FetchData(FILE* fid,ftype** pmatrix,int* pM,int* pN,const char* data_name){
 
     /*output: */
     int M,N;
-    double* matrix=NULL;
+    ftype* matrix=NULL;
     // int* integer_matrix=NULL;
     int code=0;
 
     /*Set file pointer to beginning of the data: */
     fid=SetFilePointerToData(fid,&code,NULL,data_name);
-    if(code!=5 && code!=6 && code!=7)std::cerr<<"expecting a IssmDouble, integer or boolean matrix for \""<<data_name<<"\""<<" (Code is "<<code<<")";
+    if(code!=5 && code!=6 && code!=7)std::cerr<<"expecting a Issmftype, integer or boolean matrix for \""<<data_name<<"\""<<" (Code is "<<code<<")";
 
     /*Now fetch: */
 
@@ -179,10 +183,15 @@ void FetchData(FILE* fid,double** pmatrix,int* pM,int* pN,const char* data_name)
 
     /*Now allocate matrix: */
     if(M*N){
-        matrix=new double[M*N];
+        double* tempMatrix=new double[M*N];
 
         /*Read matrix on node 0, then broadcast: */
-        if(fread(matrix,M*N*sizeof(double),1,fid)!=1) std::cerr<<"could not read matrix ";
+        if(fread(tempMatrix,M*N*sizeof(double),1,fid)!=1) std::cerr<<"could not read matrix ";
+        matrix=new ftype[M*N];
+
+        for (int s=0; s<M*N; s++)
+            matrix[s] = ftype(tempMatrix[s]);
+        delete[] tempMatrix;        
     }
 
     /*Assign output pointers: */
@@ -191,7 +200,7 @@ void FetchData(FILE* fid,double** pmatrix,int* pM,int* pN,const char* data_name)
     if(pN)*pN=N;
 }
 
-void WriteData(FILE* fid,double* matrix,int M,int N,const char* data_name){
+void WriteData(FILE* fid,ftype* matrix,int M,int N,const char* data_name){
 
     /*First write enum: */
     int length=(strlen(data_name)+1)*sizeof(char);
@@ -199,9 +208,9 @@ void WriteData(FILE* fid,double* matrix,int M,int N,const char* data_name){
     fwrite(data_name,length,1,fid);
 
     /*Now write time and step: */
-    double time = 0.;
+    ftype time = 0.;
     int    step = 1;
-    fwrite(&time,sizeof(double),1,fid);
+    fwrite(&time,sizeof(ftype),1,fid);
     fwrite(&step,sizeof(int),1,fid);
 
     /*writing a IssmDouble array, type is 3:*/
@@ -209,7 +218,7 @@ void WriteData(FILE* fid,double* matrix,int M,int N,const char* data_name){
     fwrite(&type,sizeof(int),1,fid);
     fwrite(&M,sizeof(int),1,fid);
     fwrite(&N,sizeof(int),1,fid);
-    fwrite(matrix,M*N*sizeof(double),1,fid);
+    fwrite(matrix,M*N*sizeof(ftype),1,fid);
 }
 
 void WriteData(FILE* fid,const char* string,const char* data_name){
@@ -220,9 +229,9 @@ void WriteData(FILE* fid,const char* string,const char* data_name){
     fwrite(data_name,length,1,fid);
 
     /*Now write time and step: */
-    double time = 0.;
+    ftype time = 0.;
     int    step = 1;
-    fwrite(&time,sizeof(double),1,fid);
+    fwrite(&time,sizeof(ftype),1,fid);
     fwrite(&step,sizeof(int),1,fid);
 
     /*writing a string, type is 2: */
@@ -234,12 +243,12 @@ void WriteData(FILE* fid,const char* string,const char* data_name){
     fwrite(string,length,1,fid);
 }
 
-void NodalCoeffs(double** pareas,double** palpha,double** pbeta,int* index,double* x,double* y,int nbe){
+void NodalCoeffs(ftype** pareas,ftype** palpha,ftype** pbeta,int* index,ftype* x,ftype* y,int nbe){
 
     /*Allocate output vectors*/
-    double* areas = new double[nbe];
-    double* alpha = new double[nbe*3];
-    double* beta  = new double[nbe*3];
+    ftype* areas = new ftype[nbe];
+    ftype* alpha = new ftype[nbe*3];
+    ftype* beta  = new ftype[nbe*3];
 
     /*Loop over all elements and calculate nodal function coefficients and element surface area*/
     for(int i = 0; i < nbe; i++) {
@@ -247,14 +256,14 @@ void NodalCoeffs(double** pareas,double** palpha,double** pbeta,int* index,doubl
         int n2 = index[i*3+1]-1;
         int n3 = index[i*3+2]-1;
 
-        double x1 = x[n1];
-        double x2 = x[n2];
-        double x3 = x[n3];
-        double y1 = y[n1];
-        double y2 = y[n2];
-        double y3 = y[n3];
+        ftype x1 = x[n1];
+        ftype x2 = x[n2];
+        ftype x3 = x[n3];
+        ftype y1 = y[n1];
+        ftype y2 = y[n2];
+        ftype y3 = y[n3];
 
-        double invdet = 1./(x1 * (y2 - y3) - x2 * (y1 - y3) + x3 * (y1 - y2));
+        ftype invdet = 1./(x1 * (y2 - y3) - x2 * (y1 - y3) + x3 * (y1 - y2));
 
         alpha[i*3+0] = invdet * (y2 - y3);
         alpha[i*3+1] = invdet * (y3 - y1);
@@ -273,10 +282,10 @@ void NodalCoeffs(double** pareas,double** palpha,double** pbeta,int* index,doubl
     *pbeta  = beta;
 }
 
-void Weights(double** pweights,int* index,double* areas,int nbe,int nbv){
+void Weights(ftype** pweights,int* index,ftype* areas,int nbe,int nbv){
 
     /*Allocate output and initialize as 0*/
-    double* weights = new double[nbv];
+    ftype* weights = new ftype[nbv];
     for(int i = 0; i < nbv; i++) weights[i]=0.;
 
     /*Loop over elements*/
@@ -290,7 +299,7 @@ void Weights(double** pweights,int* index,double* areas,int nbe,int nbv){
     *pweights = weights;
 }
 
-void derive_xy_elem(double* dfdx_e,double* dfdy_e,double* f,int* index,double* alpha,double* beta,int nbe){
+void derive_xy_elem(ftype* dfdx_e,ftype* dfdy_e,ftype* f,int* index,ftype* alpha,ftype* beta,int nbe){
 
     /*WARNING!! Assume that dfdx_e and dfdy_e have been properly allocated*/
 
@@ -303,7 +312,7 @@ void derive_xy_elem(double* dfdx_e,double* dfdy_e,double* f,int* index,double* a
     }
 }
 
-void elem2node(double* f_v,double* f_e,int* index,double* areas,double* weights,int nbe,int nbv){
+void elem2node(ftype* f_v,ftype* f_e,int* index,ftype* areas,ftype* weights,int nbe,int nbv){
 
     /*WARNING!! Assume that f_v has been properly allocated*/
 
@@ -324,12 +333,12 @@ void elem2node(double* f_v,double* f_e,int* index,double* areas,double* weights,
     for(int i=0;i<nbv;i++) f_v[i] = f_v[i]/weights[i];
 }
 
-void MeshSize(double* resolx,double* resoly,int* index,double* x,double* y,double* areas,double* weights,int nbe,int nbv){
+void MeshSize(ftype* resolx,ftype* resoly,int* index,ftype* x,ftype* y,ftype* areas,ftype* weights,int nbe,int nbv){
 
     /*Get element size along x and y directions*/
-    double  xmin,xmax,ymin,ymax;
-    double* dx_elem = new double[nbe];
-    double* dy_elem = new double[nbe];
+    ftype  xmin,xmax,ymin,ymax;
+    ftype* dx_elem = new ftype[nbe];
+    ftype* dy_elem = new ftype[nbe];
     for(int i=0;i<nbe;i++){
         int n1 = index[i*3+0]-1;
         int n2 = index[i*3+1]-1;
@@ -362,10 +371,10 @@ void clean_cuda(){
 }
 
 // Find the max of an array
-__shared__ volatile double block_maxval;
-__global__ void __device_max_d(double* A, int nbv, double* device_maxval){
+__shared__ volatile ftype block_maxval;
+__global__ void __device_max_d(ftype* A, int nbv, ftype* device_maxval){
    
-    double thread_maxval=0.0;
+    ftype thread_maxval=0.0;
    
     int ix  = blockIdx.x*blockDim.x + threadIdx.x; // thread ID, dimension x
     // find the maxval for each block
@@ -373,30 +382,36 @@ __global__ void __device_max_d(double* A, int nbv, double* device_maxval){
     if (threadIdx.x==0){ block_maxval=0.0; }
     __syncthreads();
     for (int i=0; i < (BLOCK_Xv); i++){
-        if (i==threadIdx.x){ block_maxval = max(block_maxval, thread_maxval); }
+           if (i==threadIdx.x) if(isnan(thread_maxval)) {{block_maxval = thread_maxval;} break;} 
+           else { block_maxval = max(block_maxval, thread_maxval);}  
+   //    if (i==threadIdx.x){ block_maxval = max(block_maxval, thread_maxval); }
         __syncthreads();
     }
     device_maxval[blockIdx.x] = block_maxval;
+//    std::cerr<<"Found NaN in dVydt[i]";
+//    printf("Found NaN in dVxdt[i] \n");
 }
 
 #define __device_max_x(dVxdt)   __device_max_d<<<gridv, blockv>>>(d_dVxdt, nbv, d_device_maxvalx); \
-                                cudaMemcpy(device_maxvalx, d_device_maxvalx, GRID_Xv*sizeof(double), cudaMemcpyDeviceToHost); \
-                                double device_MAXx = 0.0;                                     \
+                                cudaMemcpy(device_maxvalx, d_device_maxvalx, GRID_Xv*sizeof(ftype), cudaMemcpyDeviceToHost); \
+                                ftype device_MAXx = 0.0;                                     \
                                 for (int i=0; i < (GRID_Xv); i++){                            \
-                                    device_MAXx = max(device_MAXx, device_maxvalx[i]);        \
+                                     if(isnan(device_maxvalx[i])) {device_MAXx = device_maxvalx[i];std::cerr<<"\n Found NaN in dVxdt[i]"; break;} \
+                                     device_MAXx = max(device_MAXx, device_maxvalx[i]);        \
                                 }
 
 #define __device_max_y(dVydt)   __device_max_d<<<gridv, blockv>>>(d_dVydt, nbv, d_device_maxvaly); \
-                                cudaMemcpy(device_maxvaly, d_device_maxvaly, GRID_Xv*sizeof(double), cudaMemcpyDeviceToHost); \
-                                double device_MAXy = 0.0;                                     \
+                                cudaMemcpy(device_maxvaly, d_device_maxvaly, GRID_Xv*sizeof(ftype), cudaMemcpyDeviceToHost); \
+                                ftype device_MAXy = 0.0;                                     \
                                 for (int i=0; i < (GRID_Xv); i++){                            \
-                                    device_MAXy = max(device_MAXy, device_maxvaly[i]);        \
+                                         if(isnan(device_maxvaly[i])) {device_MAXy = device_maxvaly[i]; std::cerr<<"\n Found NaN in dVydt[i]"; break;} \
+                                         device_MAXy = max(device_MAXy, device_maxvaly[i]);        \
                                 }
 
 // timer
 #include "sys/time.h"
-double timer_start = 0;
-double cpu_sec(){ struct timeval tp; gettimeofday(&tp,NULL); return tp.tv_sec+1e-6*tp.tv_usec; }
+ftype timer_start = 0;
+ftype cpu_sec(){ struct timeval tp; gettimeofday(&tp,NULL); return tp.tv_sec+1e-6*tp.tv_usec; }
 void   tic(){ timer_start = cpu_sec(); }
-double toc(){ return cpu_sec()-timer_start; }
-void   tim(const char *what, double n){ double s=toc(); printf("%s: %8.3f seconds",what,s);if(n>0)printf(", %8.3f GB/s", n/s); printf("\n"); }
+ftype toc(){ return cpu_sec()-timer_start; }
+void   tim(const char *what, ftype n){ ftype s=toc(); printf("%s: %8.3f seconds",what,s);if(n>0)printf(", %8.3f GB/s", n/s); printf("\n"); }

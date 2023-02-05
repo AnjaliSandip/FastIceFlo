@@ -1,0 +1,77 @@
+
+Ice Sheet System Model (ISSM) version  4.19
+(website: http://issm.jpl.nasa.gov contact: issm@jpl.nasa.gov)
+
+call computational core:
+
+   solver residue: norm(KU-F)/norm(F)=0.000341917
+   solver residue too high!: norm(KU-F)/norm(F)=0.000341917 > 0.0001 (md.settings.solver_residue_threshold)WARNING: Solver failed, Trying Recovery Mode
+
+   solver residue: norm(KU-F)/norm(F)=2.21745e-14
+   mechanical equilibrium convergence criterion   7.9161 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        22.734 %
+   Convergence criterion: max(du)                 0.00010672 > 3.17098e-07
+   number of unstable constraints: 0
+
+   solver residue: norm(KU-F)/norm(F)=2.80072e-14
+   mechanical equilibrium convergence criterion   2.19541 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        6.20966 %
+   Convergence criterion: max(du)                 1.33949e-05 > 3.17098e-07
+   number of unstable constraints: 0
+
+   solver residue: norm(KU-F)/norm(F)=3.35399e-14
+   mechanical equilibrium convergence criterion   1.23125 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        4.22136 %
+   Convergence criterion: max(du)                 7.91187e-06 > 3.17098e-07
+   number of unstable constraints: 0
+
+   solver residue: norm(KU-F)/norm(F)=3.92708e-14
+   mechanical equilibrium convergence criterion   0.780564 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        2.73385 %
+   Convergence criterion: max(du)                 4.89822e-06 > 3.17098e-07
+   number of unstable constraints: 0
+
+   solver residue: norm(KU-F)/norm(F)=5.87135e-14
+   mechanical equilibrium convergence criterion   0.501909 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        1.71523 %
+   Convergence criterion: max(du)                 3.0448e-06 > 3.17098e-07
+   number of unstable constraints: 0
+
+   solver residue: norm(KU-F)/norm(F)=6.62718e-14
+   mechanical equilibrium convergence criterion   0.323172 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        1.06795 %
+   Convergence criterion: max(du)                 1.86995e-06 > 3.17098e-07
+   number of unstable constraints: 0
+
+   solver residue: norm(KU-F)/norm(F)=5.78667e-14
+   mechanical equilibrium convergence criterion   0.208235 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        0.664614 %
+   Convergence criterion: max(du)                 1.18892e-06 > 3.17098e-07
+   number of unstable constraints: 0
+
+   solver residue: norm(KU-F)/norm(F)=5.60796e-14
+   mechanical equilibrium convergence criterion   0.134295 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        0.414274 %
+   Convergence criterion: max(du)                 7.58245e-07 > 3.17098e-07
+   number of unstable constraints: 0
+
+   solver residue: norm(KU-F)/norm(F)=5.62101e-14
+   mechanical equilibrium convergence criterion   0.0867532 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        0.258844 %
+   Convergence criterion: max(du)                 4.84716e-07 > 3.17098e-07
+   number of unstable constraints: 0
+
+   solver residue: norm(KU-F)/norm(F)=6.14158e-14
+   mechanical equilibrium convergence criterion   0.0561199 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        0.162165 %
+   Convergence criterion: max(du)                 3.10462e-07 < 3.17098e-07
+   number of unstable constraints: 0
+
+   total number of iterations: 10
+   write lock file:
+
+   FemModel initialization elapsed time:   7.18337
+   Total Core solution elapsed time:       113.33 
+   Linear solver elapsed time:             103.078 (91%)
+
+   Total elapsed time: 0 hrs 2 min 0 sec

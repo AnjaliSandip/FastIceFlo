@@ -1,12 +1,11 @@
-%steps= [4];
-%steps= [1:3];
+
 steps=[1:4];
 
 if any(steps==1)
 	disp('	Step 1: Mesh creation'); 
-    resol = 600;
+        resol = 600;  %average element size
 	md=triangle(model,'Domain.exp',resol);
-    [md.mesh.lat md.mesh.long] = xy2ll(md.mesh.x,md.mesh.y,+1,45,70);
+        [md.mesh.lat md.mesh.long] = xy2ll(md.mesh.x,md.mesh.y,+1,45,70);
 	save JksMesh md
 end 
 
@@ -53,35 +52,10 @@ if any(steps==3)
 	% Update model friction fields accordingly
 	md.friction.coefficient=md.results.StressbalanceSolution.FrictionCoefficient;
     
-	save JksControl md
+	save Jks8e4 md  %save .mat file
 end
 
 
-if any(steps==4)  %GPU solver
-    %load JKS2e4
-    save JKS8e4
-    %md=solve(md,'sb','batch','yes')
-	%load JksControl
-	
-	%Mesh refinement, # of elements increase by 4 fold
-    %md = refine(md);
-   
-
-     %load JKS3e5
-      %load JKS2e4_SSA
-      %save JKS
-   
-%md.inversion.iscontrol=0;
-    %solver selection
-    %md.toolkits.DefaultAnalysis=bcgslbjacobioptions();
-    
-	% Solve
-	%md=solve(md,'Stressbalance');
-    
-
-   %addpath('../../src/');
-   %damp = 0.96;
-  %relaxation = 0.7;
-   %gpu_parallelized_NC
- 
+if any(steps==4)   %bin file generation
+       md=solve(md,'sb','batch','yes'); 
 end
