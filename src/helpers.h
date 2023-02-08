@@ -1,5 +1,4 @@
 /*CPU Code*/
-/*I/O stuff*/
 typedef double ftype;
 FILE* SetFilePointerToData(FILE* fid,int* pcode,int* pvector_type,const char* data_name){
 
@@ -362,7 +361,7 @@ void MeshSize(ftype* resolx,ftype* resoly,int* index,ftype* x,ftype* y,ftype* ar
 
 
 ////////////////////////
-////////////// GPU stuff
+////////////// GPU code
 ////////////////////////
 
 void clean_cuda(){ 
@@ -377,19 +376,15 @@ __global__ void __device_max_d(ftype* A, int nbv, ftype* device_maxval){
     ftype thread_maxval=0.0;
    
     int ix  = blockIdx.x*blockDim.x + threadIdx.x; // thread ID, dimension x
-    // find the maxval for each block
     if (ix<nbv){ thread_maxval = abs(A[ix]); }
     if (threadIdx.x==0){ block_maxval=0.0; }
     __syncthreads();
     for (int i=0; i < (BLOCK_Xv); i++){
            if (i==threadIdx.x) if(isnan(thread_maxval)) {{block_maxval = thread_maxval;} break;} 
            else { block_maxval = max(block_maxval, thread_maxval);}  
-   //    if (i==threadIdx.x){ block_maxval = max(block_maxval, thread_maxval); }
         __syncthreads();
     }
     device_maxval[blockIdx.x] = block_maxval;
-//    std::cerr<<"Found NaN in dVydt[i]";
-//    printf("Found NaN in dVxdt[i] \n");
 }
 
 #define __device_max_x(dVxdt)   __device_max_d<<<gridv, blockv>>>(d_dVxdt, nbv, d_device_maxvalx); \
@@ -408,10 +403,3 @@ __global__ void __device_max_d(ftype* A, int nbv, ftype* device_maxval){
                                          device_MAXy = max(device_MAXy, device_maxvaly[i]);        \
                                 }
 
-// timer
-#include "sys/time.h"
-ftype timer_start = 0;
-ftype cpu_sec(){ struct timeval tp; gettimeofday(&tp,NULL); return tp.tv_sec+1e-6*tp.tv_usec; }
-void   tic(){ timer_start = cpu_sec(); }
-ftype toc(){ return cpu_sec()-timer_start; }
-void   tim(const char *what, ftype n){ ftype s=toc(); printf("%s: %8.3f seconds",what,s);if(n>0)printf(", %8.3f GB/s", n/s); printf("\n"); }
