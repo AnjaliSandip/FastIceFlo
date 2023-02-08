@@ -8,7 +8,7 @@ visc_rela=0.03;
 vel_rela=0.99;
 
 # compile the code on a Tesla V100 
-nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela
+nvcc -arch=sm_70 -O3 -lineinfo   ssa.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela
 
 # run the code
 ./a.out
@@ -18,4 +18,5 @@ nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rel
 
 #Generate NSIGHT Compute report
 #ncu --set full --import-source yes -o report ./a.out;
+
 
