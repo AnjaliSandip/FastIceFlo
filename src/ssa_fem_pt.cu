@@ -7,8 +7,8 @@ using namespace std;
 /*define GPU specific variables*/
 #define GPU_ID    0
 
-#define BLOCK_Xe 1024  //optimal block size for JKS2e4 and PIG3e4
-#define BLOCK_Xv 1024 
+#define BLOCK_Xe 128  
+#define BLOCK_Xv 128
 
 // Device norm subroutine
 #define blockId       (blockIdx.x)
@@ -22,10 +22,9 @@ using namespace std;
 #define div60 0.0166666667
 
 /*CUDA Code*/
-__global__ void PT1(int* reorderd, ftype* vx, ftype* vy, ftype* alpha, ftype* beta, int* index,  ftype* kvx, ftype* kvy, ftype* etan,  ftype* Helem, ftype* areas, bool* isice, ftype* Eta_nbe, ftype* rheology_B, ftype n_glen, ftype eta_0, ftype rele,int nbe){ 
-    // int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    for(int ixt = blockIdx.x * blockDim.x + threadIdx.x; ixt<nbe; ixt += blockDim.x * gridDim.x){ 
-        int ix = reorderd[ixt];
+__global__ void PT1(ftype* vx, ftype* vy, ftype* alpha, ftype* beta, int* index,  ftype* kvx, ftype* kvy, ftype* etan,  ftype* Helem, ftype* areas, bool* isice, ftype* Eta_nbe, ftype* rheology_B, ftype n_glen, ftype eta_0, ftype rele,int nbe){ 
+    for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix<nbe; ix += blockDim.x * gridDim.x){ 
+       
 
         if (isice[ix]){
 
@@ -62,7 +61,7 @@ __global__ void PT1(int* reorderd, ftype* vx, ftype* vy, ftype* alpha, ftype* be
                 for (int i = 0; i < 3; i++){
                         kvx[ix*3+i] = tmp_2hele_etan_areas * ((2 * eps_xx + eps_yy) * Localalpha[i]   +  eps_xy *  Localbeta[i] );
                         kvy[ix*3+i] = tmp_2hele_etan_areas * ((2 * eps_yy + eps_xx) * Localbeta[i]    +  eps_xy * Localalpha[i] );            
-            }//isice loop 
+            }
         }
 
    
@@ -116,7 +115,54 @@ __global__ void PT2_x(ftype* kvx, ftype* groundedratio, ftype* areas, int* index
              for (int k = 0; k < 3; k++){
                 kvx[n3 + k] = tempOutput[k];
             }  
-        }//groundedratio loop
+        }
+    }
+}
+
+__global__ void PT2_x(ftype* kvx, ftype* groundedratio, ftype* areas, int* index, ftype* alpha2, ftype* vx, ftype* gr_a_alpha2, bool* isice,  int nbe){
+
+    for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x){
+        /*Add basal friction*/
+        if (groundedratio[ix] > 0.){
+            int n3 = ix * 3;
+
+       ftype myLocalIndex[3][3];
+            for (int i = 0; i < 3; i++){
+              	for (int j = 0; j < 3; j++){
+                      int j_index = index[n3 + j] - 1;
+                      myLocalIndex[i][j] = gr_a_alpha2[n3 + i] * vx[j_index];
+                }
+            }
+
+
+            ftype tempOutput[3];
+            for (int k = 0; k < 3; k++){
+                tempOutput[k] = kvx[n3 + k];
+            }   
+
+
+            ftype division;
+            for (int k = 0; k < 3; k++){
+                for (int i = 0; i < 3; i++){
+                    for (int j = 0; j < 3; j++){
+                      	ftype temp = myLocalIndex[i][j];
+
+                        if (i == j && j == k){
+			    division = div10;
+                        } else if ((i!=j) && (j!=k) && (k!=i)){
+			    division = div60;
+                        } else{
+			    division = div30;
+                        }
+			tempOutput[k] = isice[ix] * tempOutput[k] + temp*division;
+                    }
+                }
+            } 
+        
+             for (int k = 0; k < 3; k++){
+                kvx[n3 + k] = tempOutput[k];
+            }  
+        }
     }
 }
 
@@ -163,11 +209,10 @@ __global__ void PT2_y(ftype* kvy, ftype* groundedratio, ftype* areas, int* index
             }  
   
 
-        }//groundedratio loop
+        }
     }
 }
 
-//Moving to the next kernel: cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
 __global__ void PT3(ftype* kvx, ftype* kvy, ftype* Eta_nbe,  ftype* eta_nbv,  int* connectivity, int* columns, ftype* weights, ftype* ML, ftype* KVx, ftype* KVy, ftype* Fvx, ftype* Fvy, ftype* dVxdt, ftype* dVydt, ftype* resolx, ftype* resoly, ftype* H, ftype* vx, ftype* vy, ftype* spcvx, ftype* spcvy, ftype* rho_ML, ftype rho, ftype damp, ftype relaxation, ftype eta_b, int nbv){ 
  
     ftype ResVx;
@@ -211,8 +256,8 @@ __global__ void PT3(ftype* kvx, ftype* kvy, ftype* Eta_nbe,  ftype* eta_nbv,  in
         eta_nbv[ix] =tmp_eta_nbv/weights[ix];   
 
         /*1. Get time derivative based on residual (dV/dt)*/
-	ResVx =  (-KVx[ix] + Fvx[ix])/rho_ML[ix];
-	ResVy =  (-KVy[ix] + Fvy[ix])/rho_ML[ix];
+	    ResVx =  (-KVx[ix] + Fvx[ix])/rho_ML[ix];
+	    ResVy =  (-KVy[ix] + Fvy[ix])/rho_ML[ix];
         dVxdt[ix] = dVxdt[ix]*damp + ResVx;
         dVydt[ix] = dVydt[ix]*damp + ResVy;
 
@@ -230,7 +275,7 @@ __global__ void PT3(ftype* kvx, ftype* kvy, ftype* Eta_nbe,  ftype* eta_nbv,  in
         /*Apply Dirichlet boundary condition*/
         if (!isnan(spcvx[ix])){
             vx[ix]    = spcvx[ix];
-            dVxdt[ix] = 0.;
+             dVxdt[ix] = 0.;
         }
         if (!isnan(spcvy[ix])){
             vy[ix]    = spcvy[ix];
@@ -238,7 +283,6 @@ __global__ void PT3(ftype* kvx, ftype* kvy, ftype* Eta_nbe,  ftype* eta_nbv,  in
         }
     }
 }
-
 
 
 /*Main*/
@@ -294,15 +338,14 @@ int main(){
 
     /*Constants*/
     ftype n_glen     = 3.;
-    ftype damp       = dmp; //change to 0.992 for JKS1e6 and 0.998 for PIG2e6
-    ftype rele       = rela;   
+    ftype damp       = dmp;  
+    ftype rele       = rela;  
     ftype eta_b      = 0.5;
     ftype eta_0      = 1.e+14/2.;
-    int    niter     = 5e6; //5e6
-    int    nout_iter  = 100; //100
+    int    niter     = 5e6; 
+    int    nout_iter  = 100; 
     ftype epsi       = 3.171e-7;
-    ftype relaxation = stability; //change to 0.999 for JKS1e6 and 0.991 for PIG2e6
-    //ftype constant = 4*(1.+eta_b)*4.1;
+    ftype relaxation = stability; 
         
     // Ceiling division to get the close to optimal GRID size
     unsigned int GRID_Xe = 1 + ((nbe - 1) / BLOCK_Xe);
@@ -311,7 +354,7 @@ int main(){
     std::cout<<"GRID_Xe="<<GRID_Xe<<std::endl;
     std::cout<<"GRID_Xv="<<GRID_Xv<<std::endl;
 
-    // Set up GPU
+    /* Set up GPU*/
     int gpu_id=-1;
     dim3 gridv, blockv;
     dim3 gride, blocke;
@@ -320,7 +363,7 @@ int main(){
     gpu_id = GPU_ID; cudaSetDevice(gpu_id); cudaGetDevice(&gpu_id);
     cudaDeviceReset(); cudaDeviceSetCacheConfig(cudaFuncCachePreferL1);  // set L1 to prefered
     printf("Process uses GPU with id %d.\n", gpu_id);
-    //cudaSetDevice  selects the device, set the gpu id you selected
+
 
     /*Initial guesses (except vx and vy that we already loaded)*/
     ftype* etan = new ftype[nbe];
@@ -418,7 +461,7 @@ int main(){
             }
             continue;
         }
-        /*RHS, 'F ' in equation 22 (Driving Stress)*/
+        /*RHS, 'F ' Driving Stress*/
         for(int i=0;i<3;i++){
             for(int j=0;j<3;j++){
                 if (i==j){
@@ -433,28 +476,11 @@ int main(){
         }
     }
 
-    int countIced = 0;
-    for(int n=0;n<nbe;n++){
-        if(isice[n])
-            countIced++;
-    }
-    int* h_icedOrdered = new int[nbe];
-    int notIcedCounter = countIced;
-    countIced=0;
-    for(int n=0;n<nbe;n++){
-        if(isice[n]){
-            h_icedOrdered[countIced++]=n;
-        }else{
-            h_icedOrdered[notIcedCounter++]=n;
-        }
-    }
-
-
+   
 
     /*RHS (Water pressure at the ice front)*/
-    //  ftype level[3];
     for(int n=0;n<nbe;n++){
-        /*Determine if there is an ice front there*/
+        /*Determine if there is an ice front*/
         level[0] = ice_levelset[index[n*3+0]-1];
         level[1] = ice_levelset[index[n*3+1]-1];
         level[2] = ice_levelset[index[n*3+2]-1];
@@ -624,8 +650,7 @@ int main(){
             }
          }
     }
-
-    /*------------ now copy all relevant vectors from host to device ---------------*/
+  /*------------Copy all relevant vectors from host (CPU) to device (GPU) ---------------*/
     int *d_index = NULL;
     cudaMalloc(&d_index, nbe*3*sizeof(int));
     cudaMemcpy(d_index, index, nbe*3*sizeof(int), cudaMemcpyHostToDevice);
@@ -743,12 +768,7 @@ int main(){
     cudaMalloc(&d_device_maxvaly, GRID_Xv*sizeof(ftype));
     cudaMemcpy(d_device_maxvaly, device_maxvaly, GRID_Xv*sizeof(ftype), cudaMemcpyHostToDevice); 
 
-    int *d_icedOrdered = NULL;
-    cudaMalloc(&d_icedOrdered, nbe*sizeof(int));
-    cudaMemcpy(d_icedOrdered, h_icedOrdered, nbe*sizeof(int), cudaMemcpyHostToDevice);
-
-
-    /*------------ allocate relevant vectors on host (GPU)---------------*/
+    /*------------ Allocate relevant vectors on device (GPU)---------------*/
     cudaMalloc(&dvxdx,nbe*sizeof(ftype));
 
     cudaMalloc(&dvxdy, nbe*sizeof(ftype));
@@ -774,13 +794,14 @@ int main(){
 
     ftype *kvy = NULL;
     cudaMalloc(&kvy, nbe*3*sizeof(ftype));
+	
     
-    //Creating CUDA streams
+    /*Creating CUDA streams*/
     cudaStream_t stream1, stream2;
     cudaStreamCreate(&stream1);
     cudaStreamCreate(&stream2);
     
-    // Perf
+    /*Performance metrics*/
     ftype time_s = 0.0;
     ftype mem = (ftype)1e-9*(ftype)nbv*sizeof(ftype);
     int nIO = 8;
@@ -798,7 +819,7 @@ int main(){
       
        if (iter==11) cudaEventRecord(start);
 
-        PT1<<<gride, blocke, 0, stream1>>>(d_icedOrdered,d_vx, d_vy, d_alpha, d_beta, d_index, kvx,  kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, d_rheology_B, n_glen, eta_0, rele, nbe);
+        PT1<<<gride, blocke, 0, stream1>>>(d_vx, d_vy, d_alpha, d_beta, d_index, kvx,  kvy, d_etan, d_Helem, d_areas, d_isice, Eta_nbe, d_rheology_B, n_glen, eta_0, rele, nbe);
         cudaStreamSynchronize(stream1);
 
         PT2_x<<<gride, blocke, 0, stream1>>>(kvx, d_groundedratio, d_areas, d_index, d_alpha2, d_vx, d_gr_a_alpha2, d_isice, nbe);
@@ -811,7 +832,7 @@ int main(){
         cudaStreamSynchronize(stream1);
 
        if ((iter % nout_iter) == 0){
-            //Get final error estimate/
+            //Get final error estimate//
             __device_max_x(dVxdt); 
             __device_max_y(dVydt);
             if (isnan(device_MAXx) || isnan(device_MAXy)) {break;}
@@ -836,7 +857,7 @@ int main(){
     cudaMemcpy(vx, d_vx, nbv*sizeof(ftype), cudaMemcpyDeviceToHost );
     cudaMemcpy(vy, d_vy, nbv*sizeof(ftype), cudaMemcpyDeviceToHost );
  
-    /*Write output*/
+     /*Write output*/
     fid = fopen(outputfile,"wb");
     if (fid==NULL) std::cerr<<"could not open file " << outputfile << " for binary reading or writing";
     WriteData(fid, "PTsolution", "SolutionType");
@@ -878,7 +899,6 @@ int main(){
     delete [] Fvy;
     delete [] rho_ML;
     delete [] gr_a_alpha2;
-    delete [] h_icedOrdered;
 
     cudaFree(d_index);
     cudaFree(d_rho_ML);
@@ -919,7 +939,6 @@ int main(){
     cudaFree(kvy);
     cudaFree(d_device_maxvalx);
     cudaFree(d_device_maxvaly);
-    cudaFree(d_icedOrdered);
 
     //Destroying CUDA streams
     cudaStreamDestroy(stream1);
@@ -931,4 +950,5 @@ int main(){
 
     clean_cuda();
     return 0;
+ 
 }
