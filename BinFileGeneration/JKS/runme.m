@@ -52,7 +52,7 @@ if any(steps==3)
 	% Update model friction fields accordingly
 	md.friction.coefficient=md.results.StressbalanceSolution.FrictionCoefficient;
     
-	save Jks8e4 md  %save .mat file
+	save JKS8e4 md  %save .mat file
 end
 
 
