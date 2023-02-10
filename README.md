@@ -73,13 +73,7 @@ Figure 1. Glacier model configurations; observed surface velocities interpolated
 
 Step 1. Install [ISSM](https://issm.jpl.nasa.gov/download/)
 
-Step 2. Run `runme.m` script (located in `BinFileGeneration/PIG` or `JKS` folders). For example,
-
-| DoFs |  Jakobshavn Isbrae resol (m) | DoFs | Pine Island Glacier resol (m)|
-| :----: | :----: | :----: | :----: |
-| 8e4 | 600 | 7e4 | 1750 | 
-
-Table 1.  Average element size or spatial resolution "resol" for the glacier model configurations chosen in the study
+Step 2. Run `runme.m` script (located in `BinFileGeneration/PIG` or `JKS` folders). 
 
 Step 3. Save the .mat file and corresponding .bin file
 
