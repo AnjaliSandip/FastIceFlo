@@ -65,7 +65,7 @@ To test the performance of the PT method beyond simple idealized geometries, we 
 
 Step 1. Install [ISSM](https://issm.jpl.nasa.gov/download/)
 
-Step 2. Run `runme.m` script (located in `BinFileGeneration/PIG` or `JKS` folders). 
+Step 2. Run `runme.m` script to generate the [Jakobshavn Isbrae](BinFileGeneration/JKS/runme.m) or [Pine Island](BinFileGeneration/PIG/runme.m) Glacier models
 
 Step 3. Save the .mat file and corresponding .bin file
 
