@@ -71,8 +71,8 @@ To generate the glacier model configurations, follow the steps listed below:
 We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
 
 1. Clone or download this repository.
-2. Transfer the .bin file generated along with files in [src](src) folder to a directory 
-3. Compile the [`ssa_fem_pt.cu`](src/ssa_fem_pt.cu) routine on a system hosting a (recent) Nvidia CUDA-capable GPU (here shown for a Tesla V100)
+2. Transfer the .bin file generated along with files in [src](src) folder to a directory on a system hosting a (recent) Nvidia CUDA-capable GPU (here shown for a Tesla V100)
+3. Compile the [`ssa_fem_pt.cu`](src/ssa_fem_pt.cu) routine 
 ```bash
 nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela
 ```
