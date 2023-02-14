@@ -62,12 +62,10 @@ For every nonlinear PT iteration, we compute the rate of change in velocity $\do
 ## Glacier model configurations 
 To test the performance of the PT method beyond simple idealized geometries, we apply it to two regional-scale glaciers: [Jakobshavn Isbræ, in western Greenland, and Pine IslandGlacier, in west Antarctica](docs/fig_gmd.pdf).
 
-
-Step 1. Install [ISSM](https://issm.jpl.nasa.gov/download/)
-
-Step 2. Run `runme.m` script to generate the [Jakobshavn Isbrae](BinFileGeneration/JKS/runme.m) or [Pine Island](BinFileGeneration/PIG/runme.m) Glacier models
-
-Step 3. Save the .mat file and corresponding .bin file
+To generate the glacier model configurations, follow the steps listed below:
+1. Install [ISSM](https://issm.jpl.nasa.gov/download/)
+2. Run `runme.m` script to generate the [Jakobshavn Isbrae](BinFileGeneration/JKS/runme.m) or [Pine Island](BinFileGeneration/PIG/runme.m) Glacier models
+3. Save the .mat file and corresponding .bin file
 
 ## Hardware implementation
 We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
