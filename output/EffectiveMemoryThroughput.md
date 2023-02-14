@@ -17,4 +17,4 @@ In order to assess the performance of the memory-bound PT CUDA C implementation 
 | 1110705 | 18 | 58 |
 | 17747649 | 11 | 36 |
 
-We compared the effective memory throughput with the peak, i.e. the memory transfer speed for performing memory copy operations only. It represents the hardware performance limit. The code [`memcopy.cu`](scripts/memcopy.cu) located in the [scripts](scripts) directory reports the peak memory throughput. The reported peak memory throughput for the GPU hardware NVIDIA Tesla V100 and NVIDIA A100 were 785 GB/s and 1536 GB/s respectively.  
+We compared the effective memory throughput with the peak, i.e. the memory transfer speed for performing memory copy operations only. It represents the hardware performance limit. The code [`memcopy.cu`](/scripts/memcopy.cu) located in the [scripts](/scripts) directory reports the peak memory throughput. The reported peak memory throughput for the GPU hardware NVIDIA Tesla V100 and NVIDIA A100 were 785 GB/s and 1536 GB/s respectively.  
