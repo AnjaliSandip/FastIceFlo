@@ -71,7 +71,7 @@ To generate the glacier model configurations, follow the steps listed below:
 We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
 
 1. Clone or download this repository.
-2. Transfer the .bin file generated in the previous step along with files in [src](src) folder to a directory 
+2. Transfer the .bin file generated along with files in [src](src) folder to a directory 
 3. Compile the [`ssa_fem_pt.cu`](src/ssa_fem_pt.cu) routine on a system hosting a (recent) Nvidia CUDA-capable GPU (here shown for a Tesla V100)
 ```bash
 nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela
@@ -81,7 +81,7 @@ nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rel
 
 ## Step 3: Post-processing
 To extract and plot the ice velocity distribution, follow the steps listed below:
- 1. Store `.mat` file (Glacier model configurations "step 3") and the `.outbin` file (Hardware implementation "step 4") in a MATLAB directory
+ 1. Store `.mat` file (from Glacier model configurations) and the `.outbin` file (Hardware implementation) in a MATLAB directory
  2. In the ISSM environment, execute the following statements in the MATLAB command window:
         ```Matlab
         load "insert name of .mat file here"
