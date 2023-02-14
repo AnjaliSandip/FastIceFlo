@@ -63,7 +63,7 @@ For every nonlinear PT iteration, we compute the rate of change in velocity $\do
 </p>
 
 ## Glacier model configurations 
-To test the performance of the PT method beyond simple idealized geometries, we apply it to two regional-scale glaciers: Jakobshavn Isbræ, in western Greenland, and Pine IslandGlacier, in west Antarctica [`.cu`](docs/fig_gmd.pdf).
+To test the performance of the PT method beyond simple idealized geometries, we apply it to two regional-scale glaciers: [Jakobshavn Isbræ, in western Greenland, and Pine IslandGlacier, in west Antarctica](docs/fig_gmd.pdf).
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png" alt="Flow chart" width="600" />
