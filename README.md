@@ -65,20 +65,20 @@ To test the performance of the PT method beyond simple idealized geometries, we 
 To generate the glacier model configurations, follow the steps listed below:
 1. Install [ISSM](https://issm.jpl.nasa.gov/download/)
 2. Run `runme.m` script to generate the [Jakobshavn Isbræ](BinFileGeneration/JKS/runme.m) or [Pine Island](BinFileGeneration/PIG/runme.m) Glacier models
-3. Save the .mat file and corresponding .bin file
+3. Save the `.mat` file and corresponding `.bin` file
 
 ## Step 2: Hardware implementation
 We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
 
 1. Clone or download this repository.
-2. Transfer the .bin file generated along with files in [src](src) folder to a directory on a system hosting a (recent) Nvidia CUDA-capable GPU (here shown for a Tesla V100)
+2. Transfer the `.bin` file generated along with files in [src](src) folder to a directory on a system hosting a (recent) Nvidia CUDA-capable GPU (here shown for a Tesla V100)
 3. Compile the [`ssa_fem_pt.cu`](src/ssa_fem_pt.cu) routine 
 ```bash
 nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela
 ```
 3. Run the generated executable `./a.out`
 4. Along with a `.txt` file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a `.outbin` file will be generated.
-5. Save the .outbin file
+5. Save the `.outbin` file
 
 ## Step 3: Post-processing
 To extract and plot the ice velocity distribution, follow the steps listed below:
