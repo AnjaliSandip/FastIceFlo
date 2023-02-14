@@ -59,7 +59,7 @@ where $\boldsymbol{M}$ is the mass matrix, $\boldsymbol{K}$ is the stiffness mat
 For every nonlinear PT iteration, we compute the rate of change in velocity $\dot{\bf v}$ and the explicit CFL time step $\Delta \tau$. We then deploy the reformulated 2D SSA momentum balance equations  to update ice velocity $\bf v$ followed by ice viscosity $\mu_{eff}$.  [We iterate in pseudo-time until the stopping criterion is met](docs/fig_pt_flowchart.pdf).
 
 
-## Glacier model configurations 
+## Step 1: Generate glacier model configurations 
 To test the performance of the PT method beyond simple idealized geometries, we apply it to two regional-scale glaciers: [Jakobshavn Isbræ, in western Greenland, and Pine IslandGlacier, in west Antarctica](docs/fig_gmd.pdf).
 
 To generate the glacier model configurations, follow the steps listed below:
@@ -67,7 +67,7 @@ To generate the glacier model configurations, follow the steps listed below:
 2. Run `runme.m` script to generate the [Jakobshavn Isbrae](BinFileGeneration/JKS/runme.m) or [Pine Island](BinFileGeneration/PIG/runme.m) Glacier models
 3. Save the .mat file and corresponding .bin file
 
-## Hardware implementation
+## Step 2: Hardware implementation
 We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
 
 1. Clone or download this repository.
@@ -77,7 +77,9 @@ nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rel
 ```
 3. Run the generated executable `./a.out`
 4. Along with a `.txt` file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a `.outbin` file will be generated.
-5. To extract and plot the ice velocity distribution:
+
+## Step 3: Post-processing
+To extract and plot the ice velocity distribution:
    - Store `.mat` file (Glacier model configurations "step 3") and the `.outbin` file in a MATLAB directory
    - Execute the following statements in the MATLAB command window:
         ```Matlab
