@@ -56,21 +56,12 @@ $\boldsymbol{M} \dot{\bf V} + \boldsymbol{K}{\bf V} = \boldsymbol{K}$ ,
 
 where $\boldsymbol{M}$ is the mass matrix, $\boldsymbol{K}$ is the stiffness matrix, $\boldsymbol{F}$ is the right hand side or load vector, and ${\bf V}$ is the vector of ice velocity.
 
-For every nonlinear PT iteration, we compute the rate of change in velocity $\dot{\bf v}$ and the explicit CFL time step $\Delta \tau$. We then deploy the reformulated 2D SSA momentum balance equations  to update ice velocity $\bf v$ followed by ice viscosity $\mu_{eff}$.  We iterate in pseudo-time until the stopping criterion is met.
+For every nonlinear PT iteration, we compute the rate of change in velocity $\dot{\bf v}$ and the explicit CFL time step $\Delta \tau$. We then deploy the reformulated 2D SSA momentum balance equations  to update ice velocity $\bf v$ followed by ice viscosity $\mu_{eff}$.  [We iterate in pseudo-time until the stopping criterion is met](docs/fig_pt_flowchart.pdf).
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/60862184/214173707-a8d442a9-8933-49ec-8b6b-806212e7a8d2.png" alt="Flow chart" width="300" />
-</p>
 
 ## Glacier model configurations 
 To test the performance of the PT method beyond simple idealized geometries, we apply it to two regional-scale glaciers: [Jakobshavn Isbræ, in western Greenland, and Pine IslandGlacier, in west Antarctica](docs/fig_gmd.pdf).
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/60862184/204933517-d4b81b5b-acb3-4256-a8be-02439db7f3dc.png" alt="Flow chart" width="600" />
-</p>
-
-
-Figure 1. Glacier model configurations; observed surface velocities interpolated on a uniform mesh. Panels $\textbf{(a)}$ and $\textbf{(b)}$ correspond to Jakobshavn Isbrae and Pine Island Glacier respectively.
 
 Step 1. Install [ISSM](https://issm.jpl.nasa.gov/download/)
 
