@@ -64,7 +64,7 @@ To test the performance of the PT method beyond simple idealized geometries, we 
 
 To generate the glacier model configurations, follow the steps listed below:
 1. Install [ISSM](https://issm.jpl.nasa.gov/download/)
-2. Run `runme.m` script to generate the [Jakobshavn Isbrae](BinFileGeneration/JKS/runme.m) or [Pine Island](BinFileGeneration/PIG/runme.m) Glacier models
+2. Run `runme.m` script to generate the [Jakobshavn Isbræ](BinFileGeneration/JKS/runme.m) or [Pine Island](BinFileGeneration/PIG/runme.m) Glacier models
 3. Save the .mat file and corresponding .bin file
 
 ## Step 2: Hardware implementation
@@ -91,7 +91,7 @@ To extract and plot the ice velocity distribution, follow the steps listed below
         ```
   3. View results
 
-| Jakobshavn Isbrae number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size |
+| Jakobshavn Isbræ number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size |
 | :----: | :----: | :----: | :----: |:----: |
 | 44229 | 0.98 | 0.99 | 3e-2 | 128 | 
 | 167337 | 0.99 | 0.9 | 3e-2 | 128 | 
@@ -113,7 +113,7 @@ Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosit
 In order to assess the performance of the memory-bound PT CUDA C implementation on NVIDIA Tesla V100 SXM2 GPU (16GB DRAM) and a Tesla A100 SXM4 (40GB DRAM) we employ the **effective memory throughput** metric.
 
 
-|Jakobshavn Isbrae number of vertices | V100 (GB/s) | A100 (GB/s)|
+|Jakobshavn Isbræ number of vertices | V100 (GB/s) | A100 (GB/s)|
 | :----: | :----: | :----: | 
 | 44229 | 24 | 34 | 
 | 167337 | 23 | 47 |
