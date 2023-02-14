@@ -71,7 +71,8 @@ To generate the glacier model configurations, follow the steps listed below:
 We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
 
 1. Clone or download this repository.
-2. Compile the [`ssa_fem_pt.cu`](src/ssa_fem_pt.cu) routine on a system hosting a (recent) Nvidia CUDA-capable GPU (here shown for a Tesla V100)
+2. Transfer the .bin file generated in the previous step along with files in [src](src) folder to a directory 
+3. Compile the [`ssa_fem_pt.cu`](src/ssa_fem_pt.cu) routine on a system hosting a (recent) Nvidia CUDA-capable GPU (here shown for a Tesla V100)
 ```bash
 nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela
 ```
@@ -79,16 +80,16 @@ nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rel
 4. Along with a `.txt` file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a `.outbin` file will be generated.
 
 ## Step 3: Post-processing
-To extract and plot the ice velocity distribution:
-   - Store `.mat` file (Glacier model configurations "step 3") and the `.outbin` file in a MATLAB directory
-   - Execute the following statements in the MATLAB command window:
+To extract and plot the ice velocity distribution, follow the steps listed below:
+ 1. Store `.mat` file (Glacier model configurations "step 3") and the `.outbin` file (Hardware implementation "step 4") in a MATLAB directory
+ 2. In the ISSM environment, execute the following statements in the MATLAB command window:
         ```Matlab
         load "insert name of .mat file here"
         md.miscellaneous.name = 'output';
         md=loadresultsfromdisk(md, 'output.outbin')
         plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));
         ```
-    - View results
+  3. View results
 
 | Jakobshavn Isbrae number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size |
 | :----: | :----: | :----: | :----: |:----: |
