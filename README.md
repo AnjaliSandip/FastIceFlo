@@ -78,11 +78,13 @@ nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rel
 ```
 3. Run the generated executable `./a.out`
 4. Along with a `.txt` file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a `.outbin` file will be generated.
+5. Save the .outbin file
 
 ## Step 3: Post-processing
 To extract and plot the ice velocity distribution, follow the steps listed below:
- 1. Store `.mat` file (from Glacier model configurations) and the `.outbin` file (Hardware implementation) in a MATLAB directory
- 2. In the ISSM environment, execute the following statements in the MATLAB command window:
+ 1. Transfer `.mat` file (from Glacier model configurations) and the `.outbin` files (Hardware implementation) generated to a directory in MATLAB
+ 2. Activate the ISSM environment
+ 3. Execute the following statements in the MATLAB command window:
         ```Matlab
         load "insert name of .mat file here"
         md.miscellaneous.name = 'output';
