@@ -68,7 +68,7 @@ To generate the glacier model configurations, follow the steps listed below:
 3. Save the `.mat` file and corresponding `.bin` file
 
 ## Step 2: Hardware implementation
-We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes.  We choose a stopping criterion of $||v - v^{old}||_{\infty}$ < 10 m $yr^{-1}$. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
+We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes.  We choose a stopping criterion of $||v^{old} - v||_{\infty}$ < 10 m $yr^{-1}$. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
 
 1. Clone or download this repository.
 2. Transfer the `.bin` file generated along with files in [src](src) folder to a directory on a system hosting a (recent) Nvidia CUDA-capable GPU (here shown for a Tesla V100)
