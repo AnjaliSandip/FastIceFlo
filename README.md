@@ -31,14 +31,14 @@ where $H$ is the ice thickness distribution, $\mu$ the dynamic ice viscosity, $\
 
 As boundary conditions, we apply water pressure at the ice front $\Gamma_{\sigma}$, and non-homogeneous Dirichlet boundary conditions on the other boundaries $\Gamma_u$ (based on observed velocity).
 
-## Pseudo-transient (PT) method
+### Pseudo-transient (PT) method
 We reformulate the 2-D SSA steady-state momentum balance equations to incorporate the usually ignored inertial terms:
 
 $\nabla \cdot \left(2 H \mu \dot{\boldsymbol{\varepsilon}}_{SSA} \right) -\rho g H\nabla s  - \alpha^2 {\bf v} = \rho H\frac{\partial \bf v}{\partial \tau}$ ,
 
 which allows us to turn the steady-state equations into transient diffusion of velocities $v_{x,y}$. The velocity-time derivatives represent physically motivated expressions we can further use to iteratively reach a steady state, thus the solution of the system.
 
-## Weak form
+### Weak form
 The weak form (assuming homogeneous Dirichlet conditions along all model boundaries for simplicity) reads:
 
 $\forall {\bf w}\in {\mathcal H}^1\left(\Omega\right)$ ,
@@ -58,8 +58,8 @@ where $\boldsymbol{M}$ is the mass matrix, $\boldsymbol{K}$ is the stiffness mat
 
 For every nonlinear PT iteration, we compute the rate of change in velocity $\dot{\bf v}$ and the explicit CFL time step $\Delta \tau$. We then deploy the reformulated 2D SSA momentum balance equations  to update ice velocity $\bf v$ followed by ice viscosity $\mu_{eff}$.  [We iterate in pseudo-time until the stopping criterion is met](docs/fig_pt_flowchart.pdf).
 
-
-## Step 1: Generate glacier model configurations 
+##Steps to run the code
+### Step 1: Generate glacier model configurations 
 To test the performance of the PT method beyond simple idealized geometries, we apply it to two regional-scale glaciers: [Jakobshavn Isbræ, in western Greenland, and Pine IslandGlacier, in west Antarctica](docs/fig_gmd.pdf).
 
 To generate the glacier model configurations, follow the steps listed below:
@@ -67,7 +67,7 @@ To generate the glacier model configurations, follow the steps listed below:
 2. Run `runme.m` script to generate the [Jakobshavn Isbræ](BinFileGeneration/JKS/runme.m) or [Pine Island](BinFileGeneration/PIG/runme.m) Glacier models
 3. Save the `.mat` file and corresponding `.bin` file
 
-## Step 2: Hardware implementation
+### Step 2: Hardware implementation
 We developed a CUDA C implementation to solve the SSA equations using the PT approach on unstructured meshes.  We choose a stopping criterion of $||v^{old} - v||_{\infty}$ < 10 m $yr^{-1}$. To execute on a NVIDIA Tesla V100 GPU and view results, follow the steps listed below:
 
 1. Clone or download this repository.
@@ -80,7 +80,7 @@ nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rel
 4. Along with a `.txt` file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a `.outbin` file will be generated.
 5. Save the `.outbin` file
 
-## Step 3: Post-processing
+### Step 3: Post-processing
 To extract and plot the ice velocity distribution, follow the steps listed below:
  1. Transfer `.mat` file (from Glacier model configurations) and the `.outbin` files (Hardware implementation) generated to a directory in MATLAB
  2. Activate the ISSM environment
