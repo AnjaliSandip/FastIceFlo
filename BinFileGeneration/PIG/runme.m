@@ -6,7 +6,7 @@ if any(steps==1) %Mesh Generation #1
 
 	%Mesh parameters
 	domain =['./DomainOutline.exp'];
-	resol=2500;   % average element size 
+	resol=2750;   % average element size 
 	md=triangle(model,'DomainOutline.exp',resol);
 
 
@@ -109,10 +109,17 @@ if any(steps==5)  %drag inversion
 	% Update model friction fields accordingly
 	md.friction.coefficient=md.results.StressbalanceSolution.FrictionCoefficient;
 
-	save ./PIG3e4 md;   %saving .mat file
+	save ./PIG2e4 md;   %saving .mat file
 end
 
 
 if any(steps==6)  %bin file generation
+        load PIG2e4
+	md.inversion.iscontrol = 0;
+        md.stressbalance.abstol = 10;
+        md.stressbalance.restol = 1000;
+        md.stressbalance.reltol = NaN;
+        md.settings.solver_residue_threshold = 1.e-4;
+        md.verbose.convergence = 1;
         md=solve(md,'sb','batch','yes');
 end
