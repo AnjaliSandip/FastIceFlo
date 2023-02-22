@@ -57,5 +57,12 @@ end
 
 
 if any(steps==4)   %bin file generation
+       load JKS8e4
+       md.inversion.iscontrol = 0;
+       md.stressbalance.abstol = 10;
+       md.stressbalance.restol = 1000;
+       md.stressbalance.reltol = NaN;
+       md.settings.solver_residue_threshold = 1.e-4;
+       md.verbose.convergence = 1;
        md=solve(md,'sb','batch','yes'); 
 end
