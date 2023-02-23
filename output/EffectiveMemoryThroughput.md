@@ -11,7 +11,6 @@ In order to assess the performance of the memory-bound PT CUDA C implementation 
 
 |Pine Island Glacier number of vertices | V100 (GB/s) | A100 (GB/s)|
 | :----: | :----: | :----: |  
-| 14460 | 15 | 17 | 
 | 35646 | 23 | 30 |
 | 69789 | 23 | 36 |
 | 1110705 | 18 | 58 |
