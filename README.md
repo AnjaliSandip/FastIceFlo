@@ -58,7 +58,7 @@ where $\boldsymbol{M}$ is the mass matrix, $\boldsymbol{K}$ is the stiffness mat
 
 For every nonlinear PT iteration, we compute the rate of change in velocity $\dot{\bf v}$ and the explicit CFL time step $\Delta \tau$. We then deploy the reformulated 2D SSA momentum balance equations  to update ice velocity $\bf v$ followed by ice viscosity $\mu_{eff}$.  [We iterate in pseudo-time until the stopping criterion is met](docs/fig_pt_flowchart.pdf).
 
-##Steps to run the code
+## Steps to run the code
 ### Step 1: Generate glacier model configurations 
 To test the performance of the PT method beyond simple idealized geometries, we apply it to two regional-scale glaciers: [Jakobshavn Isbræ, in western Greenland, and Pine IslandGlacier, in west Antarctica](docs/fig_gmd.pdf).
 
