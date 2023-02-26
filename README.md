@@ -96,7 +96,7 @@ To extract and plot the ice velocity distribution, follow the steps listed below
 | Jakobshavn Isbræ number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size |
 | :----: | :----: | :----: | :----: |:----: |
 | 44229 | 0.98 | 0.99 | 3e-2 | 128 | 
-| 167337 | 0.99 | 0.9 | 3e-2 | 128 | 
+| 164681 | 0.987 | 0.98 | 7e-2 | 128 | 
 | 393771 | 0.99 | 0.99 | 1e-1 | 1024 |
 | 667729 | 0.992 | 0.999 | 1e-1 | 1024 |
 | 10664257 | 0.998 | 0.999 | 1e-1 | 1024 |
