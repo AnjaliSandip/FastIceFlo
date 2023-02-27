@@ -80,19 +80,6 @@ nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rel
 4. Along with a `.txt` file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a `.outbin` file will be generated.
 5. Save the `.outbin` file
 
-### Step 3: Post-processing
-To extract and plot the ice velocity distribution, follow the steps listed below:
- 1. Transfer `.mat` file and the `.outbin` files generated from steps 1 and 2 to a directory in MATLAB
- 2. Activate the ISSM environment
- 3. Execute the following statements in the MATLAB command window:
-        ```Matlab
-        load "insert name of .mat file here"
-        md.miscellaneous.name = 'output';
-        md=loadresultsfromdisk(md, 'output.outbin')
-        plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));
-        ```
-  3. View results
-
 | Jakobshavn Isbræ number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size |
 | :----: | :----: | :----: | :----: |:----: |
 | 44229 | 0.98 | 0.99 | 3e-2 | 128 | 
@@ -109,8 +96,20 @@ To extract and plot the ice velocity distribution, follow the steps listed below
 | 1110705 | 0.998 | 0.995 | 1e-2 | 1024 |
 
 
-Table 2. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below. Optimal block size was chosen to minimize wall time.
+Table 1. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below. Optimal block size was chosen to minimize wall time.
 
+### Step 3: Post-processing
+To extract and plot the ice velocity distribution, follow the steps listed below:
+ 1. Transfer `.mat` file and the `.outbin` files generated from steps 1 and 2 to a directory in MATLAB
+ 2. Activate the ISSM environment
+ 3. Execute the following statements in the MATLAB command window:
+        ```Matlab
+        load "insert name of .mat file here"
+        md.miscellaneous.name = 'output';
+        md=loadresultsfromdisk(md, 'output.outbin')
+        plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));
+        ```
+  3. View results
 
 ## Questions/Comments/Discussion
 For questions, comments and discussions please post in the FastIceFlo discussions forum.
