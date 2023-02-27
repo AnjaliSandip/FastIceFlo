@@ -104,7 +104,7 @@ To extract and plot the ice velocity distribution, follow the steps listed below
 | Pine Island Glacier number of vertices | $\gamma$ | $\theta_v$ | $\theta_{\mu}$ |Block size |
 | :----: | :----: | :----: | :----: |:----: |
 | 14460 | 0.98 | 0.6 | 1e-1 | 128 |
-| 35646 | 0.99 | 0.9 | 3e-2 | 256 |
+| 35646 | 0.99 | 0.49 | 8e-2 | 256 |
 | 69789 | 0.991 | 0.99 | 2e-2 | 512 |
 | 1110705 | 0.998 | 0.995 | 1e-2 | 1024 |
 
