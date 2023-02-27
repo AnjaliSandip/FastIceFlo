@@ -112,4 +112,4 @@ To extract and plot the ice velocity distribution, follow the steps listed below
   3. View results
 
 ## Questions/Comments/Discussion
-For questions, comments and discussions please post in the FastIceFlo discussions [discussions](Discussions) forum.
+For questions, comments and discussions please post in the FastIceFlo discussions [discussions](https://github.com/AnjaliSandip/FastIceFlo/discussions) forum.
