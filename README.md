@@ -43,15 +43,13 @@ The weak form (assuming homogeneous Dirichlet conditions along all model boundar
 $\forall {\bf w}\in {\mathcal H}^1\left(\Omega\right)$ ,
 
 $\int_\Omega {\rho} H\frac{\partial {\bf v}}{\partial \tau} \cdot {\bf w} d\Omega$ + 
-$\int_\Omega 2 H {\mu} \dot{\boldsymbol{\varepsilon}} : \dot{\boldsymbol{\varepsilon}}_{w} d\Omega$ =
-
-$\int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf w} d\Omega$
+$\int_\Omega 2 H {\mu} \dot{\boldsymbol{\varepsilon}} : \dot{\boldsymbol{\varepsilon}}_{w} d\Omega$ = $\int_\Omega  - \rho g H \nabla s \cdot {\bf w} - \alpha^2 {\bf v} \cdot {\bf w} d\Omega$
 
 where ${\mathcal H}^1\left(\Omega\right)$ is the space of square-integrable functions whose first derivatives are also square integrable. 
 
 Once discretized using the finite-element method, the matrix system to solve is:
 
-$\boldsymbol{M} \dot{\bf V} + \boldsymbol{K}{\bf V} = \boldsymbol{K}$ ,
+$\boldsymbol{M} \dot{\bf V} + \boldsymbol{K}{\bf V} = \boldsymbol{F}$ ,
 
 where $\boldsymbol{M}$ is the mass matrix, $\boldsymbol{K}$ is the stiffness matrix, $\boldsymbol{F}$ is the right hand side or load vector, and ${\bf V}$ is the vector of ice velocity.
 
