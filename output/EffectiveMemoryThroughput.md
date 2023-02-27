@@ -1,4 +1,4 @@
-In order to assess the performance of the memory-bound PT CUDA C implementation on NVIDIA Tesla V100 SXM2 GPU (16GB DRAM) and a Tesla A100 SXM4 (40GB DRAM) we employ the **effective memory throughput** metric.
+In order to assess the performance of the memory-bound PT CUDA C implementation on NVIDIA Tesla V100 SXM2 GPU (16GB DRAM) and a Ampere A100 SXM4 (80GB DRAM) we employ the **effective memory throughput** metric.
 
 
 |Jakobshavn Isbræ number of vertices | V100 (GB/s) | A100 (GB/s)|
