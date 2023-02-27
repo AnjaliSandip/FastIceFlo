@@ -1,74 +1,72 @@
 
-Ice Sheet System Model (ISSM) version  4.19
+Ice-sheet and Sea-level System Model (ISSM) version  4.21
 (website: http://issm.jpl.nasa.gov contact: issm@jpl.nasa.gov)
 
 call computational core:
 
-   solver residue: norm(KU-F)/norm(F)=7.80186e-07
-   mechanical equilibrium convergence criterion   56.3656 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        30.9423 %
-   Convergence criterion: max(du)                 0.000112762 > 3.17098e-07
+   solver residue: norm(KU-F)/norm(F)=6.63433e-07
+   mechanical equilibrium convergence criterion   60.6083 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        27.9549 %
+   Convergence criterion: max(du)                 9.93605e-05 > 3.17098e-07
    number of unstable constraints: 0
 
-   solver residue: norm(KU-F)/norm(F)=2.07738e-07
-   mechanical equilibrium convergence criterion   15.6397 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        6.31427 %
-   Convergence criterion: max(du)                 1.88072e-05 > 3.17098e-07
+   solver residue: norm(KU-F)/norm(F)=5.23884e-07
+   mechanical equilibrium convergence criterion   16.1334 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        5.39302 %
+   Convergence criterion: max(du)                 1.23826e-05 > 3.17098e-07
    number of unstable constraints: 0
 
-   solver residue: norm(KU-F)/norm(F)=5.37976e-09
-   mechanical equilibrium convergence criterion   7.47112 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        3.18115 %
-   Convergence criterion: max(du)                 5.68016e-06 > 3.17098e-07
+   solver residue: norm(KU-F)/norm(F)=7.84446e-07
+   mechanical equilibrium convergence criterion   7.62074 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        2.91391 %
+   Convergence criterion: max(du)                 6.30209e-06 > 3.17098e-07
    number of unstable constraints: 0
 
-   solver residue: norm(KU-F)/norm(F)=7.16232e-08
-   mechanical equilibrium convergence criterion   4.17313 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        2.09726 %
-   Convergence criterion: max(du)                 3.5e-06 > 3.17098e-07
+   solver residue: norm(KU-F)/norm(F)=5.86567e-07
+   mechanical equilibrium convergence criterion   4.16312 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        1.79156 %
+   Convergence criterion: max(du)                 3.41816e-06 > 3.17098e-07
    number of unstable constraints: 0
 
-   solver residue: norm(KU-F)/norm(F)=6.39613e-09
-   mechanical equilibrium convergence criterion   2.44589 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        1.35965 %
-   Convergence criterion: max(du)                 2.47534e-06 > 3.17098e-07
+   solver residue: norm(KU-F)/norm(F)=0.00044253
+solver residue too high!: norm(KU-F)/norm(F)=0.00044253 > 0.0001 (md.settings.solver_residue_threshold)
+WARNING: Solver failed, Trying Recovery Mode
+
+   solver residue: norm(KU-F)/norm(F)=1.08517e-14
+   mechanical equilibrium convergence criterion   2.40983 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        1.09556 %
+   Convergence criterion: max(du)                 1.80009e-06 > 3.17098e-07
    number of unstable constraints: 0
 
-   solver residue: norm(KU-F)/norm(F)=1.65118e-08
-   mechanical equilibrium convergence criterion   1.46084 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        0.859449 %
-   Convergence criterion: max(du)                 1.64485e-06 > 3.17098e-07
+   solver residue: norm(KU-F)/norm(F)=1.2091e-14
+   mechanical equilibrium convergence criterion   1.42923 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        0.669105 %
+   Convergence criterion: max(du)                 1.05751e-06 > 3.17098e-07
    number of unstable constraints: 0
 
-   solver residue: norm(KU-F)/norm(F)=1.28934e-08
-   mechanical equilibrium convergence criterion   0.882872 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        0.535992 %
-   Convergence criterion: max(du)                 1.05785e-06 > 3.17098e-07
+   solver residue: norm(KU-F)/norm(F)=1.16084e-14
+   mechanical equilibrium convergence criterion   0.859675 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        0.409733 %
+   Convergence criterion: max(du)                 6.61426e-07 > 3.17098e-07
    number of unstable constraints: 0
 
-   solver residue: norm(KU-F)/norm(F)=8.0314e-08
-   mechanical equilibrium convergence criterion   0.538233 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        0.332275 %
-   Convergence criterion: max(du)                 6.69264e-07 > 3.17098e-07
+   solver residue: norm(KU-F)/norm(F)=1.2521e-14
+   mechanical equilibrium convergence criterion   0.522191 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        0.251893 %
+   Convergence criterion: max(du)                 4.13493e-07 > 3.17098e-07
    number of unstable constraints: 0
 
-   solver residue: norm(KU-F)/norm(F)=8.36662e-09
-   mechanical equilibrium convergence criterion   0.330492 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        0.205585 %
-   Convergence criterion: max(du)                 4.20169e-07 > 3.17098e-07
+   solver residue: norm(KU-F)/norm(F)=1.3492e-14
+   mechanical equilibrium convergence criterion   0.319718 < 100000 %
+   Convergence criterion: norm(du)/norm(u)        0.155516 %
+   Convergence criterion: max(du)                 2.58815e-07 < 3.17098e-07
    number of unstable constraints: 0
 
-   solver residue: norm(KU-F)/norm(F)=3.55634e-09
-   mechanical equilibrium convergence criterion   0.204168 < 100000 %
-   Convergence criterion: norm(du)/norm(u)        0.127251 %
-   Convergence criterion: max(du)                 2.62997e-07 < 3.17098e-07
-   number of unstable constraints: 0
+   total number of iterations: 9
+write lock file:
 
-   total number of iterations: 10
-   write lock file:
+   FemModel initialization elapsed time:   0.191531
+   Total Core solution elapsed time:       4.60578
+   Linear solver elapsed time:             4.34688 (94%)
 
-   FemModel initialization elapsed time:   0.245657
-   Total Core solution elapsed time:       0.956533
-   Linear solver elapsed time:             0.527749 (55%)
-
-   Total elapsed time: 0 hrs 0 min 1 sec
+   Total elapsed time: 0 hrs 0 min 4 sec
