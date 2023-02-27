@@ -82,7 +82,7 @@ nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rel
 
 ### Step 3: Post-processing
 To extract and plot the ice velocity distribution, follow the steps listed below:
- 1. Transfer `.mat` file (from Glacier model configurations) and the `.outbin` files (Hardware implementation) generated to a directory in MATLAB
+ 1. Transfer `.mat` file and the `.outbin` files generated from steps 1 and 2 to a directory in MATLAB
  2. Activate the ISSM environment
  3. Execute the following statements in the MATLAB command window:
         ```Matlab
