@@ -2,9 +2,8 @@
 
 [![DOI](https://zenodo.org/badge/xxx.svg)](https://zenodo.org/badge/latestdoi/xxx)
 
-This study aims to provide a GPU-friendly matrix-free and iterative algorithm to solve momentum balance for unstructured meshes to predict ice-sheet flow for actual glaciers. 
+This study aims to provide a graphics processing unit accelerated ice flow solver for unstructured meshes using the Shallow Shelf Approximation.
 
-The insights from this study will benefit efforts to diminish spatial resolution constraints and increase computing speed for unstructured mesh applications, including but not limited to ice-sheet modeling.
 
 This repository relates to the original research article published in the **Geoscientific Model Development** journal:
 ```
