@@ -96,7 +96,7 @@ nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rel
 | 1110705 | 0.998 | 0.995 | 1e-2 | 1024 |
 
 
-Table 1. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed below. Optimal block size was chosen to minimize wall time.
+Table 1. Optimal combination of damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$  to maintain the linear scaling and solution stability for the glacier model configurations and DoFs listed. Optimal block size was chosen to minimize wall time.
 
 ### Step 3: Post-processing
 To extract and plot the ice velocity distribution, follow the steps listed below:
