@@ -243,7 +243,7 @@ __global__ void PT3(ftype* kvx, ftype* kvy, ftype* Eta_nbe,  ftype* eta_nbv,  in
 int main(){
 
       /*Open input binary file*/
-    const char* inputfile  = "./Jakobshavn.bin";
+    const char* inputfile  = "./JKS8e4.bin";
     const char* outputfile = "./output.outbin";
     FILE* fid = fopen(inputfile,"rb");
     if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
