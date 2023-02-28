@@ -7,7 +7,7 @@ using namespace std;
 /*define GPU specific variables*/
 #define GPU_ID    0
 
-#define BLOCK_Xe 128  
+#define BLOCK_Xe 128 
 #define BLOCK_Xv 128
 
 // Device norm subroutine
@@ -70,54 +70,6 @@ __global__ void PT1(ftype* vx, ftype* vy, ftype* alpha, ftype* beta, int* index,
 
 }
 
-
-__global__ void PT2_x(ftype* kvx, ftype* groundedratio, ftype* areas, int* index, ftype* alpha2, ftype* vx, ftype* gr_a_alpha2, bool* isice,  int nbe){
-
-    for(int ix = blockIdx.x * blockDim.x + threadIdx.x; ix < nbe; ix += blockDim.x * gridDim.x){
-        /*Add basal friction*/
-        if (groundedratio[ix] > 0.){
-             //   if(groundedratio[ix] > 0. && isice[ix]){
-            int n3 = ix * 3;
-
-       ftype myLocalIndex[3][3];
-            for (int i = 0; i < 3; i++){
-              	for (int j = 0; j < 3; j++){
-                      int j_index = index[n3 + j] - 1;
-                      myLocalIndex[i][j] = gr_a_alpha2[n3 + i] * vx[j_index];
-                }
-            }
-
-
-            ftype tempOutput[3];
-            for (int k = 0; k < 3; k++){
-                tempOutput[k] = kvx[n3 + k];
-            }   
-
-
-            ftype division;
-            for (int k = 0; k < 3; k++){
-                for (int i = 0; i < 3; i++){
-                    for (int j = 0; j < 3; j++){
-                      	ftype temp = myLocalIndex[i][j];
-
-                        if (i == j && j == k){
-			    division = div10;
-                        } else if ((i!=j) && (j!=k) && (k!=i)){
-			    division = div60;
-                        } else{
-			    division = div30;
-                        }
-			tempOutput[k] = isice[ix] * tempOutput[k] + temp*division;
-                    }
-                }
-            } 
-        
-             for (int k = 0; k < 3; k++){
-                kvx[n3 + k] = tempOutput[k];
-            }  
-        }
-    }
-}
 
 __global__ void PT2_x(ftype* kvx, ftype* groundedratio, ftype* areas, int* index, ftype* alpha2, ftype* vx, ftype* gr_a_alpha2, bool* isice,  int nbe){
 
@@ -213,6 +165,7 @@ __global__ void PT2_y(ftype* kvy, ftype* groundedratio, ftype* areas, int* index
     }
 }
 
+//Moving to the next kernel: cannot update kvx and perform indirect access, lines 474 and 475, in the same kernel//
 __global__ void PT3(ftype* kvx, ftype* kvy, ftype* Eta_nbe,  ftype* eta_nbv,  int* connectivity, int* columns, ftype* weights, ftype* ML, ftype* KVx, ftype* KVy, ftype* Fvx, ftype* Fvy, ftype* dVxdt, ftype* dVydt, ftype* resolx, ftype* resoly, ftype* H, ftype* vx, ftype* vy, ftype* spcvx, ftype* spcvy, ftype* rho_ML, ftype rho, ftype damp, ftype relaxation, ftype eta_b, int nbv){ 
  
     ftype ResVx;
@@ -285,11 +238,12 @@ __global__ void PT3(ftype* kvx, ftype* kvy, ftype* Eta_nbe,  ftype* eta_nbv,  in
 }
 
 
+
 /*Main*/
 int main(){
 
       /*Open input binary file*/
-    const char* inputfile  = "./JKS8e4.bin";
+    const char* inputfile  = "./Jakobshavn.bin";
     const char* outputfile = "./output.outbin";
     FILE* fid = fopen(inputfile,"rb");
     if(fid==NULL) std::cerr<<"could not open file " << inputfile << " for binary reading or writing";
@@ -650,7 +604,8 @@ int main(){
             }
          }
     }
-  /*------------Copy all relevant vectors from host (CPU) to device (GPU) ---------------*/
+
+    /*------------Copy all relevant vectors from host (CPU) to device (GPU) ---------------*/
     int *d_index = NULL;
     cudaMalloc(&d_index, nbe*3*sizeof(int));
     cudaMemcpy(d_index, index, nbe*3*sizeof(int), cudaMemcpyHostToDevice);
@@ -794,7 +749,6 @@ int main(){
 
     ftype *kvy = NULL;
     cudaMalloc(&kvy, nbe*3*sizeof(ftype));
-	
     
     /*Creating CUDA streams*/
     cudaStream_t stream1, stream2;
@@ -857,7 +811,7 @@ int main(){
     cudaMemcpy(vx, d_vx, nbv*sizeof(ftype), cudaMemcpyDeviceToHost );
     cudaMemcpy(vy, d_vy, nbv*sizeof(ftype), cudaMemcpyDeviceToHost );
  
-     /*Write output*/
+    /*Write output*/
     fid = fopen(outputfile,"wb");
     if (fid==NULL) std::cerr<<"could not open file " << outputfile << " for binary reading or writing";
     WriteData(fid, "PTsolution", "SolutionType");
@@ -950,5 +904,4 @@ int main(){
 
     clean_cuda();
     return 0;
- 
 }
