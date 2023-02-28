@@ -104,9 +104,9 @@ To extract and plot the ice velocity distribution, follow the steps listed below
  2. Activate the ISSM environment
  3. Execute the following statements in the MATLAB command window:
         ```Matlab
-        load "insert name of .mat file here" <br>
-        md.miscellaneous.name = 'output'; <br>
-        md=loadresultsfromdisk(md, 'output.outbin') <br>
+        load "insert name of .mat file here" 
+        md.miscellaneous.name = 'output'; 
+        md=loadresultsfromdisk(md, 'output.outbin'); 
         plotmodel(md,'data',sqrt(md.results.PTsolution.Vx.^2 + md.results.PTsolution.Vy.^2));
         ```
   3. View results
