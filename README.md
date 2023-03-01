@@ -63,7 +63,7 @@ For every nonlinear PT iteration, we compute the rate of change in velocity $\do
 To test the performance of the PT method beyond simple idealized geometries, we apply it to two regional-scale glaciers: [Jakobshavn Isbræ, in western Greenland, and Pine IslandGlacier, in west Antarctica](docs/fig_gmd.pdf).
 
 To generate the glacier model configurations, follow the steps listed below:
-1. Install [ISSM](https://issm.jpl.nasa.gov/download/)
+1. Install [ISSM](https://issm.jpl.nasa.gov/download/) and download the datasets
 2. Run `runme.m` script to generate the [Jakobshavn Isbræ](BinFileGeneration/JKS/runme.m) or [Pine Island](BinFileGeneration/PIG/runme.m) Glacier models
 3. Save the `.mat` file and corresponding `.bin` file
 
