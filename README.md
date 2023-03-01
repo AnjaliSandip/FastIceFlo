@@ -1,7 +1,5 @@
 # FastIceFlo
 
-[![DOI](https://zenodo.org/badge/xxx.svg)](https://zenodo.org/badge/latestdoi/xxx)
-
 This study aims to provide a graphics processing unit accelerated ice flow solver for unstructured meshes using the Shallow Shelf Approximation.
 
 
