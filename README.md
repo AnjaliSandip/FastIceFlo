@@ -72,13 +72,14 @@ We developed a CUDA C implementation to solve the SSA equations using the PT app
 
 1. Clone or download this repository.
 2. Transfer the `.bin` file generated along with files in [src](src) folder to a directory on a system hosting a (recent) Nvidia CUDA-capable GPU (here shown for a Tesla V100)
-3. Compile the [`ssa_fem_pt.cu`](src/ssa_fem_pt.cu) routine 
+3. Plug in the damping parameter $\gamma$,  non-linear viscosity relaxation scalar $\theta_{\mu}$ and relaxation $\theta_v$ for the chosen glacier model configuration and spatial resolution
+4. Compile the [`ssa_fem_pt.cu`](src/ssa_fem_pt.cu) routine 
 ```bash
 nvcc -arch=sm_70 -O3 -lineinfo   ssa_fem_pt.cu  -Ddmp=$damp -Dstability=$vel_rela -Drela=$visc_rela
 ```
-3. Run the generated executable `./a.out`
-4. Along with a `.txt` file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a `.outbin` file will be generated.
-5. Save the `.outbin` file
+5. Run the generated executable `./a.out`
+6. Along with a `.txt` file that stores the computational time, effective memory throughput and the PT iterations to meet stopping criterion, a `.outbin` file will be generated.
+7. Save the `.outbin` file
 
 | Jakobshavn Isbræ number of vertices | $\gamma$  | $\theta_v$ | $\theta_{\mu}$ | Block size |
 | :----: | :----: | :----: | :----: |:----: |
