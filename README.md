@@ -11,12 +11,12 @@ This repository relates to the original research article published in the **Geos
     AUTHOR = {Sandip, A. and R\"ass, L. and Morlighem, M.},
     TITLE = {Graphics processing unit accelerated ice flow solver for unstructured meshes using the Shallow Shelf Approximation (FastIceFlo v1.0)},
     JOURNAL = {Geoscientific Model Development},
-    VOLUME = {xx},
-    YEAR = {xx},
-    NUMBER = {xx},
-    PAGES = {xx--xx},
-    URL = {xx},
-    DOI = {xx}
+    VOLUME = {17},
+    YEAR = {2024},
+    NUMBER = {2},
+    PAGES = {899-909},
+    URL = {https://gmd.copernicus.org/articles/17/899/2024/},
+    DOI = {10.5194/gmd-17-899-2024}
 }
 ```
 
